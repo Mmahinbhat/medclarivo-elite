@@ -545,7 +545,7 @@
             <div class="track h-2 mb-6"><div class="fill h-2" id="missionBar" style="width:50%"></div></div>
 
             <div class="space-y-2.5" id="tasksList">
-              <div class="task-row done flex items-center gap-3 p-3.5 rounded-2xl hover:bg-mist transition-colors" data-done="true">
+              <div class="task-row flex items-center gap-3 p-3.5 rounded-2xl hover:bg-mist transition-colors" data-done="false" data-task-id="task1">
                 <button class="check-btn" onclick="toggleTask(this)"><i data-lucide="check"></i></button>
                 <div class="flex-1 min-w-0">
                   <div class="flex items-center gap-2 flex-wrap">
@@ -559,7 +559,7 @@
                 </div>
               </div>
 
-              <div class="task-row flex items-center gap-3 p-3.5 rounded-2xl hover:bg-mist transition-colors" data-done="false" style="background:rgba(15,168,154,0.04)">
+              <div class="task-row flex items-center gap-3 p-3.5 rounded-2xl hover:bg-mist transition-colors" data-done="false" data-task-id="task2" style="background:rgba(15,168,154,0.04)">
                 <button class="check-btn" onclick="toggleTask(this)"><i data-lucide="check"></i></button>
                 <div class="flex-1 min-w-0">
                   <div class="flex items-center gap-2 flex-wrap">
@@ -574,7 +574,7 @@
                 </div>
               </div>
 
-              <div class="task-row flex items-center gap-3 p-3.5 rounded-2xl hover:bg-mist transition-colors" data-done="false">
+              <div class="task-row flex items-center gap-3 p-3.5 rounded-2xl hover:bg-mist transition-colors" data-done="false" data-task-id="task3">
                 <button class="check-btn" onclick="toggleTask(this)"><i data-lucide="check"></i></button>
                 <div class="flex-1 min-w-0">
                   <div class="flex items-center gap-2 flex-wrap">
@@ -588,7 +588,7 @@
                 </div>
               </div>
 
-              <div class="task-row flex items-center gap-3 p-3.5 rounded-2xl hover:bg-mist transition-colors" data-done="false">
+              <div class="task-row flex items-center gap-3 p-3.5 rounded-2xl hover:bg-mist transition-colors" data-done="false" data-task-id="task4">
                 <button class="check-btn" onclick="toggleTask(this)"><i data-lucide="check"></i></button>
                 <div class="flex-1 min-w-0">
                   <div class="flex items-center gap-2 flex-wrap">
@@ -924,13 +924,51 @@
     closeSidebar();
   }
 
-  // ── Task toggle ──
-  function toggleTask(btn){
+  // ── Task toggle (persists to backend) ──
+  async function toggleTask(btn){
     const row = btn.closest('[data-done]');
-    const done = row.getAttribute('data-done') === 'true';
-    row.setAttribute('data-done', done ? 'false' : 'true');
-    row.classList.toggle('done', !done);
+    const wasDone = row.getAttribute('data-done') === 'true';
+    const newDone = !wasDone;
+    const taskId = row.getAttribute('data-task-id');
+
+    row.setAttribute('data-done', newDone ? 'true' : 'false');
+    row.classList.toggle('done', newDone);
     updateMission();
+
+    try {
+      const token = localStorage.getItem('mc_token');
+      const res = await fetch(`${API_BASE}/study/missions`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ taskId, done: newDone }),
+      });
+      if (!res.ok) throw new Error('Save failed');
+    } catch (err) {
+      console.error('Failed to save mission progress', err);
+      row.setAttribute('data-done', wasDone ? 'true' : 'false');
+      row.classList.toggle('done', wasDone);
+      updateMission();
+    }
+  }
+
+  async function loadMissions(){
+    try {
+      const token = localStorage.getItem('mc_token');
+      const res = await fetch(`${API_BASE}/study/missions`, {
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (!data.success) return;
+      const completed = new Set(data.completedTaskIds || []);
+      document.querySelectorAll('#tasksList [data-task-id]').forEach(row => {
+        const isDone = completed.has(row.getAttribute('data-task-id'));
+        row.setAttribute('data-done', isDone ? 'true' : 'false');
+        row.classList.toggle('done', isDone);
+      });
+      updateMission();
+    } catch (err) {
+      console.error('Failed to load missions', err);
+    }
   }
   function updateMission(){
     const rows = document.querySelectorAll('#tasksList [data-done]');

@@ -5,6 +5,7 @@ const User = require('../models/User');
 const Chapter = require('../models/Chapter');
 const StudySession = require('../models/StudySession');
 const UserProgress = require('../models/UserProgress');
+const DailyMission = require('../models/DailyMission');
 
 // ════════════════════════════════════════════════════════════════
 // GET /api/study/in-progress
@@ -205,6 +206,49 @@ router.get('/stats', protect, async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ success: false, message: 'Server error.' });
+  }
+});
+
+function todayDateString() {
+  const d = new Date();
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}`;
+}
+
+router.get('/missions', protect, async (req, res) => {
+  try {
+    const date = todayDateString();
+    const mission = await DailyMission.findOne({ user: req.user._id, date });
+    res.json({ success: true, date, completedTaskIds: mission ? mission.completedTaskIds : [] });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: 'Failed to fetch missions' });
+  }
+});
+
+router.patch('/missions', protect, async (req, res) => {
+  try {
+    const { taskId, done } = req.body;
+    if (!taskId || typeof done !== 'boolean') {
+      return res.status(400).json({ success: false, message: 'taskId and done (boolean) are required' });
+    }
+    const date = todayDateString();
+    const update = done
+      ? { $addToSet: { completedTaskIds: taskId } }
+      : { $pull: { completedTaskIds: taskId } };
+
+    const mission = await DailyMission.findOneAndUpdate(
+      { user: req.user._id, date },
+      update,
+      { upsert: true, new: true, setDefaultsOnInsert: true }
+    );
+
+    res.json({ success: true, date, completedTaskIds: mission.completedTaskIds });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: 'Failed to update mission' });
   }
 });
 
