@@ -15,12 +15,13 @@ const app  = express();
 const PORT = process.env.PORT || 5000;
 
 // ── Security & Middleware ─────────────────────────────────────
+app.set('trust proxy', 1);
 app.use(helmet());
 app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'));
 app.use(express.json());
-app.use(express.urlencoded({ extended: true })); // needed for Apple's POST callback
+app.use(express.urlencoded({ extended: true }));
 
-// CORS — allow your GitHub Pages frontend
+// CORS — allow GitHub Pages frontend
 app.use(cors({
   origin: [
     process.env.CLIENT_URL,
@@ -32,24 +33,24 @@ app.use(cors({
   credentials: true,
 }));
 
-// Rate limiting — 100 requests per 15 minutes per IP
+// Rate limiting
 app.use('/api/', rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 100,
   message: { success: false, message: 'Too many requests. Please try again later.' },
 }));
 
-// Stricter limit on auth endpoints
 app.use('/api/auth/login', rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 10,
   message: { success: false, message: 'Too many login attempts. Try again in 15 minutes.' },
 }));
-app.use('/api/study', studyRoutes);
+
 app.use(passport.initialize());
 
 // ── Routes ───────────────────────────────────────────────────
-app.use('/api/auth', authRoutes);
+app.use('/api/auth',       authRoutes);
+app.use('/api/study',      studyRoutes);
 app.use('/api/curriculum', curriculumRoutes);
 
 // Health check
