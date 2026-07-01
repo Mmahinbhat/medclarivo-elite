@@ -604,39 +604,50 @@
           </div>
 
               <!-- Mentor -->
-              <section class="panel p-6 lg:col-span-2 reveal" style="animation-delay:.1s; border-top:3px solid var(--teal)">
+              <section id="mentorCard" class="panel p-6 lg:col-span-2 reveal" style="animation-delay:.1s; border-top:3px solid var(--teal)">
                 <div class="flex items-center justify-between mb-4">
                   <h3 class="font-display text-lg text-ink">My Mentor</h3>
-                  <span class="flex items-center gap-1.5 text-emerald-600 text-xs font-bold">
-                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 pulse-dot"></span>Available
+                  <span id="mentorStatusBadge" class="flex items-center gap-1.5 text-emerald-600 text-xs font-bold" style="display:none">
+                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 pulse-dot"></span>Assigned
                   </span>
                 </div>
-                <div class="flex items-center gap-3 mb-4">
-                  <div class="avatar-ring flex-shrink-0">
-                    <div class="w-14 h-14 rounded-full flex items-center justify-center text-white font-display text-xl" style="background:var(--navy)">A</div>
-                  </div>
-                  <div>
-                    <p class="text-ink font-bold">Dr. Arjun Mehta</p>
-                    <p class="text-ink-faint text-xs">AIIMS Delhi '19 &middot; AIR 7</p>
-                    <div class="flex items-center gap-1 mt-0.5">
-                      <i data-lucide="star" class="w-3 h-3" style="color:var(--gold);fill:var(--gold)"></i>
-                      <span class="text-xs font-bold text-ink">4.9</span>
-                      <span class="text-ink-faint text-xs">(142 sessions)</span>
+
+                <!-- Loading state -->
+                <div id="mentorLoading" class="text-ink-faint text-sm py-4">Loading mentor&hellip;</div>
+
+                <!-- No mentor assigned yet -->
+                <div id="mentorEmptyState" class="hidden">
+                  <div class="flex items-center gap-3 mb-4">
+                    <div class="w-14 h-14 rounded-full flex items-center justify-center flex-shrink-0" style="background:rgba(15,168,154,0.08)">
+                      <i data-lucide="user-round" class="w-6 h-6" style="color:var(--teal)"></i>
+                    </div>
+                    <div>
+                      <p class="text-ink font-bold">No mentor assigned yet</p>
+                      <p class="text-ink-faint text-xs">We'll pair you with one soon</p>
                     </div>
                   </div>
+                  <p class="text-ink-faint text-xs">Mentors are assigned by the MedClarivo team. Check back here once you've been paired &mdash; this card will update automatically.</p>
                 </div>
-                <div class="p-3.5 rounded-xl mb-4" style="background:rgba(15,168,154,0.06);border:1px solid rgba(15,168,154,0.16)">
-                  <p class="text-teal-deep text-xs font-bold mb-0.5">Next Session</p>
-                  <p class="text-ink font-semibold text-sm">Oct 24 &middot; 4:00 PM</p>
-                  <p class="text-ink-faint text-xs">Organic Chemistry Strategy</p>
-                </div>
-                <div class="flex gap-2">
-                  <button class="btn-primary flex-1 py-2.5 text-[13px] font-bold flex items-center justify-center gap-1.5">
-                    <i data-lucide="video" class="w-3.5 h-3.5"></i>Join
-                  </button>
-                  <button class="btn-outline flex-1 py-2.5 text-[13px] font-bold flex items-center justify-center gap-1.5">
-                    <i data-lucide="message-square" class="w-3.5 h-3.5"></i>Message
-                  </button>
+
+                <!-- Real mentor -->
+                <div id="mentorFilledState" class="hidden">
+                  <div class="flex items-center gap-3 mb-4">
+                    <div class="avatar-ring flex-shrink-0">
+                      <div id="mentorAvatarInitial" class="w-14 h-14 rounded-full flex items-center justify-center text-white font-display text-xl" style="background:var(--navy)"></div>
+                    </div>
+                    <div>
+                      <p id="mentorName" class="text-ink font-bold"></p>
+                      <p id="mentorTitle" class="text-ink-faint text-xs"></p>
+                    </div>
+                  </div>
+                  <div class="flex gap-2">
+                    <button class="btn-primary flex-1 py-2.5 text-[13px] font-bold flex items-center justify-center gap-1.5">
+                      <i data-lucide="video" class="w-3.5 h-3.5"></i>Join
+                    </button>
+                    <button id="mentorMessageBtn" class="btn-outline flex-1 py-2.5 text-[13px] font-bold flex items-center justify-center gap-1.5">
+                      <i data-lucide="message-square" class="w-3.5 h-3.5"></i>Message
+                    </button>
+                  </div>
                 </div>
               </section>
         </section>
@@ -1208,6 +1219,41 @@
     }
   }
 
+  async function loadMentor(token){
+    const loadingEl = document.getElementById('mentorLoading');
+    const emptyEl   = document.getElementById('mentorEmptyState');
+    const filledEl  = document.getElementById('mentorFilledState');
+    const badgeEl   = document.getElementById('mentorStatusBadge');
+    try {
+      const res = await fetch(`${API_BASE}/auth/my-mentor`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      loadingEl.classList.add('hidden');
+
+      if (!res.ok || !data.success || !data.mentorAssigned) {
+        emptyEl.classList.remove('hidden');
+        return;
+      }
+
+      const m = data.mentor;
+      document.getElementById('mentorName').textContent = m.name || 'Your Mentor';
+      document.getElementById('mentorTitle').textContent = (m.mentorProfile && m.mentorProfile.title) || '';
+      document.getElementById('mentorAvatarInitial').textContent = (m.name || 'M').trim().charAt(0).toUpperCase();
+
+      const messageBtn = document.getElementById('mentorMessageBtn');
+      if (messageBtn) messageBtn.onclick = () => { window.location.href = `mailto:${m.email}`; };
+
+      filledEl.classList.remove('hidden');
+      badgeEl.style.display = '';
+      if (window.lucide) lucide.createIcons();
+    } catch (err) {
+      console.warn('Could not load mentor:', err);
+      loadingEl.classList.add('hidden');
+      emptyEl.classList.remove('hidden');
+    }
+  }
+
   // ── Fetch real user data on load ──
   (async function loadUserData(){
     const token = localStorage.getItem('mc_token');
@@ -1227,6 +1273,7 @@
     loadSubjects(token);
     loadContinueLearning(token);
     loadStats(token);
+    loadMentor(token);
   })();
 
   // ── Count-up numbers + ring animation on load ──

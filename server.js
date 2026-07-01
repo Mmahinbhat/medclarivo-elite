@@ -10,6 +10,7 @@ const passport   = require('./config/passport');
 const authRoutes       = require('./routes/auth');
 const studyRoutes      = require('./routes/study');
 const curriculumRoutes = require('./routes/curriculum');
+const mentorRoutes     = require('./routes/mentor');
 
 const app  = express();
 const PORT = process.env.PORT || 5000;
@@ -52,6 +53,7 @@ app.use(passport.initialize());
 app.use('/api/auth',       authRoutes);
 app.use('/api/study',      studyRoutes);
 app.use('/api/curriculum', curriculumRoutes);
+app.use('/api/mentor',     mentorRoutes);
 
 // Health check
 app.get('/health', (req, res) => {

@@ -99,6 +99,30 @@ router.get('/me', protect, (req, res) => {
   res.json({ success: true, user: req.user });
 });
 // ════════════════════════════════════════════════════════════════
+// GET /api/auth/my-mentor  (protected) — the logged-in student's
+// assigned mentor, or mentorAssigned: false if none yet.
+// ════════════════════════════════════════════════════════════════
+router.get('/my-mentor', protect, async (req, res) => {
+  try {
+    if (!req.user.mentorId) {
+      return res.json({ success: true, mentorAssigned: false, mentor: null });
+    }
+
+    const mentor = await User.findById(req.user.mentorId)
+      .select('name avatar mentorProfile email');
+
+    if (!mentor) {
+      return res.json({ success: true, mentorAssigned: false, mentor: null });
+    }
+
+    res.json({ success: true, mentorAssigned: true, mentor });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: 'Server error.' });
+  }
+});
+
+// ════════════════════════════════════════════════════════════════
 // PATCH /api/auth/onboarding  (protected) — save onboarding answers
 // ════════════════════════════════════════════════════════════════
 router.patch('/onboarding', protect, async (req, res) => {

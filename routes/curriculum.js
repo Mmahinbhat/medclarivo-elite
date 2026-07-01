@@ -184,3 +184,4 @@ router.patch('/progress/:chapterId', protect, async (req, res) => {
 });
 
 module.exports = router;
+module.exports.examGroupFor = examGroupFor;

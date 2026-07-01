@@ -27,7 +27,7 @@ const UserSchema = new mongoose.Schema({
   // Meta
   role: {
     type: String,
-    enum: ['student', 'mentor', 'admin'],
+    enum: ['student', 'mentor', 'admin', 'parent'],
     default: 'student',
   },
   isVerified: {
@@ -35,6 +35,18 @@ const UserSchema = new mongoose.Schema({
     default: false,
   },
   lastLogin: { type: Date },
+  // Mentorship — only meaningful for students (points to a User with role: 'mentor')
+  mentorId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    default: null,
+  },
+  // Mentor-only profile fields (ignored for students)
+  mentorProfile: {
+    title:      { type: String },  // e.g. "AIIMS Delhi '19 · AIR 7"
+    bio:        { type: String },
+    specialty:  { type: String },
+  },
   // Study stats (used by Study Mode / dashboard)
   totalStudyMinutes: { type: Number, default: 0 },
   streak:            { type: Number, default: 0 },

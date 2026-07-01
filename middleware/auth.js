@@ -23,4 +23,13 @@ const protect = async (req, res, next) => {
   }
 };
 
-module.exports = { protect };
+// Restrict a route to specific roles, e.g. restrictTo('mentor', 'admin')
+// Must be used AFTER `protect` so req.user is already set.
+const restrictTo = (...roles) => (req, res, next) => {
+  if (!req.user || !roles.includes(req.user.role)) {
+    return res.status(403).json({ success: false, message: 'Not authorized for this resource.' });
+  }
+  next();
+};
+
+module.exports = { protect, restrictTo };

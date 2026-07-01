@@ -774,7 +774,11 @@ async function redirectToDashboard() {
     const data = await res.json();
     if (res.ok && data.success) {
       localStorage.setItem('mc_user', JSON.stringify(data.user));
-      if (data.user.onboardingComplete) {
+      if (data.user.role === 'mentor') {
+        window.location.href = 'mentor-dashboard.html';
+      } else if (data.user.role === 'admin') {
+        window.location.href = 'mentor-dashboard.html'; // TODO: dedicated admin-dashboard.html later
+      } else if (data.user.onboardingComplete) {
         window.location.href = 'dashboard.html';
       } else {
         window.location.href = 'onboarding.html';
