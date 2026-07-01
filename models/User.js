@@ -35,6 +35,13 @@ const UserSchema = new mongoose.Schema({
     default: false,
   },
   lastLogin: { type: Date },
+  // Study stats (used by Study Mode / dashboard)
+  totalStudyMinutes: { type: Number, default: 0 },
+  streak:            { type: Number, default: 0 },
+  lastStudyDate:     { type: Date },
+  level:             { type: Number, default: 1 },
+  xp:                { type: Number, default: 0 },
+  xpPerLevel:        { type: Number, default: 1000 },
   // Onboarding
   onboardingComplete: {
     type: Boolean,

@@ -428,7 +428,7 @@
       <div class="flex items-center gap-1.5 md:gap-2">
         <div class="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full" style="background:var(--gold-soft)">
           <i data-lucide="flame" class="w-[15px] h-[15px]" style="color:var(--gold)"></i>
-          <span class="font-mono font-bold text-[13px]" style="color:#8A6B36">24</span>
+          <span class="font-mono font-bold text-[13px]" style="color:#8A6B36" id="streakBadge">0</span>
         </div>
         <button class="btn-ghost-icon" onclick="toggleDark()" data-tip="Toggle theme">
           <i data-lucide="moon" class="w-[18px] h-[18px]"></i>
@@ -464,20 +464,20 @@
                 <span class="text-white/50 text-xs" id="examTargetLabel">AIIMS Delhi Target</span>
               </div>
               <h1 class="font-display text-white text-[32px] md:text-[42px] leading-[1.1] tracking-tight">Good morning, <span id="greetingName">Mahin</span></h1>
-              <p class="text-white/50 mt-2 text-sm md:text-[15px] max-w-md leading-relaxed">Consistency is the bridge between goals and rank. You're carrying a <span class="text-teal-2 font-semibold">24‑day streak</span> &mdash; keep the momentum alive.</p>
+              <p class="text-white/50 mt-2 text-sm md:text-[15px] max-w-md leading-relaxed">Consistency is the bridge between goals and rank. You're carrying a <span class="text-teal-2 font-semibold" id="greetingStreakText">0-day streak</span> &mdash; keep the momentum alive.</p>
 
               <div class="flex flex-wrap gap-6 mt-7">
                 <div>
                   <p class="text-white/35 text-[10.5px] uppercase tracking-widest font-bold mb-1">Level</p>
-                  <p class="font-display text-white text-2xl">14 <span class="font-sans not-italic text-sm text-white/40 font-normal">Aspirant</span></p>
+                  <p class="font-display text-white text-2xl"><span id="levelNumber">1</span> <span class="font-sans not-italic text-sm text-white/40 font-normal">Aspirant</span></p>
                 </div>
                 <div>
                   <p class="text-white/35 text-[10.5px] uppercase tracking-widest font-bold mb-1">XP</p>
-                  <p class="font-mono font-bold text-white text-2xl"><span id="xpCount">0</span><span class="text-white/40 text-sm font-sans"> /3200</span></p>
+                  <p class="font-mono font-bold text-white text-2xl"><span id="xpCount">0</span><span class="text-white/40 text-sm font-sans"> /<span id="xpMax">1000</span></span></p>
                 </div>
                 <div>
                   <p class="text-white/35 text-[10.5px] uppercase tracking-widest font-bold mb-1">Rank</p>
-                  <p class="font-display text-white text-2xl">#12 <span class="font-sans not-italic text-sm text-white/40 font-normal">of 980</span></p>
+                  <p class="font-display text-white text-2xl">#<span id="rankNumber">1</span> <span class="font-sans not-italic text-sm text-white/40 font-normal">of <span id="rankTotal">1</span></span></p>
                 </div>
               </div>
 
@@ -504,7 +504,7 @@
                 <div class="absolute inset-0 flex flex-col items-center justify-center">
                   <p class="text-white/40 text-[10px] uppercase tracking-widest font-bold">Today's Goal</p>
                   <p class="font-display text-white text-3xl mt-1"><span id="goalPct">0</span>%</p>
-                  <p class="text-white/35 text-[11px] mt-1">5.1 / 7 hrs</p>
+                  <p class="text-white/35 text-[11px] mt-1" id="goalHoursText">0 / 0 hrs</p>
                 </div>
               </div>
 
@@ -733,7 +733,7 @@
                       <i data-lucide="flame" class="w-5 h-5" style="color:var(--gold)"></i>
                     </div>
                     <div class="min-w-0">
-                      <p class="text-ink font-bold text-[13px]">24-Day Streak</p>
+                      <p class="text-ink font-bold text-[13px]" id="achStreakText">0-Day Streak</p>
                       <p class="text-ink-faint text-[11px]">Unlocked today</p>
                     </div>
                   </div>
@@ -799,13 +799,13 @@
             <div class="panel p-7 reveal" style="animation-delay:.1s">
               <div class="flex items-center justify-between mb-4">
                 <h3 class="font-display text-lg text-ink">Weekly Goal</h3>
-                <span class="text-teal-deep font-bold text-sm font-mono">67.5%</span>
+                <span class="text-teal-deep font-bold text-sm font-mono" id="weeklyGoalPct">0%</span>
               </div>
               <div class="flex justify-between items-end mb-2">
-                <span class="font-bold text-ink text-sm">27h <span class="text-ink-faint font-normal">/ 40h</span></span>
-                <span class="text-ink-faint text-xs">13h remaining</span>
+                <span class="font-bold text-ink text-sm"><span id="weeklyHoursActual">0</span>h <span class="text-ink-faint font-normal">/ <span id="weeklyHoursTarget">0</span>h</span></span>
+                <span class="text-ink-faint text-xs" id="weeklyRemaining">0h remaining</span>
               </div>
-              <div class="track h-2.5"><div class="fill h-2.5" style="width:67.5%"></div></div>
+              <div class="track h-2.5"><div class="fill h-2.5" id="weeklyGoalFill" style="width:0%"></div></div>
             </div>
 
 
@@ -1163,6 +1163,51 @@
     }
   }
 
+  // ── Header stats: streak, XP, level, rank, today's/weekly goal — all real ──
+  async function loadStats(token){
+    try {
+      const res = await fetch(`${API_BASE}/study/stats`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) return;
+      const s = data.stats;
+
+      const setText = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+
+      setText('streakBadge', s.streak);
+      setText('greetingStreakText', `${s.streak}-day streak`);
+      setText('achStreakText', `${s.streak}-Day Streak`);
+      setText('levelNumber', s.level);
+      if (window.countUp) countUp(document.getElementById('xpCount'), s.xp, 1000); else setText('xpCount', s.xp);
+      setText('xpMax', s.xpPerLevel);
+      setText('rankNumber', s.rank);
+      setText('rankTotal', s.totalUsers);
+
+      const todayHrs = (s.todayMinutes / 60).toFixed(1);
+      const targetHrs = (s.dailyTargetMinutes / 60).toFixed(1);
+      setText('goalHoursText', `${todayHrs} / ${targetHrs} hrs`);
+      if (window.countUp) countUp(document.getElementById('goalPct'), s.goalPct, 1000); else setText('goalPct', s.goalPct);
+      const orbitFillEl = document.getElementById('orbitFill');
+      if (orbitFillEl) {
+        const CIRC = 515.2; // matches this ring's fixed stroke-dasharray
+        orbitFillEl.setAttribute('stroke-dashoffset', String(CIRC * (1 - s.goalPct / 100)));
+      }
+
+      setText('weeklyGoalPct', `${s.weeklyPct}%`);
+      const weekActualHrs = Math.round(s.weekMinutes / 60 * 10) / 10;
+      const weekTargetHrs = Math.round(s.weeklyTargetMinutes / 60 * 10) / 10;
+      setText('weeklyHoursActual', weekActualHrs);
+      setText('weeklyHoursTarget', weekTargetHrs);
+      const remainingHrs = Math.max(0, Math.round((s.weeklyTargetMinutes - s.weekMinutes) / 60 * 10) / 10);
+      setText('weeklyRemaining', `${remainingHrs}h remaining`);
+      const weeklyFillEl = document.getElementById('weeklyGoalFill');
+      if (weeklyFillEl) weeklyFillEl.style.width = `${s.weeklyPct}%`;
+    } catch (err) {
+      console.warn('Could not load stats:', err);
+    }
+  }
+
   // ── Fetch real user data on load ──
   (async function loadUserData(){
     const token = localStorage.getItem('mc_token');
@@ -1181,6 +1226,7 @@
     }
     loadSubjects(token);
     loadContinueLearning(token);
+    loadStats(token);
   })();
 
   // ── Count-up numbers + ring animation on load ──
@@ -1194,9 +1240,6 @@
     requestAnimationFrame(tick);
   }
   window.addEventListener('load', () => {
-    countUp(document.getElementById('xpCount'), 2140, 1400);
-    countUp(document.getElementById('goalPct'), 73, 1400);
-    document.getElementById('orbitFill').style.strokeDashoffset = (515.2 * (1 - 0.73)).toFixed(1);
     document.querySelectorAll('.fill').forEach(el => {
       const w = el.style.width;
       el.style.width = '0%';

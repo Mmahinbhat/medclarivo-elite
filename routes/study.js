@@ -133,4 +133,79 @@ router.post('/sessions', protect, async (req, res) => {
   }
 });
 
+// ── Parse onboarding's "hours per day" range (e.g. "4-6", "8+") into a target in minutes ──
+function parseDailyTargetMinutes(hoursStr) {
+  const DEFAULT_MINUTES = 240; // 4 hrs/day fallback if the user never set this
+  if (!hoursStr) return DEFAULT_MINUTES;
+  const str = String(hoursStr).trim();
+  if (str.endsWith('+')) {
+    const n = parseFloat(str);
+    return isNaN(n) ? DEFAULT_MINUTES : n * 60;
+  }
+  const parts = str.split('-').map(s => parseFloat(s));
+  if (parts.length === 2 && !parts.some(isNaN)) {
+    return ((parts[0] + parts[1]) / 2) * 60;
+  }
+  const n = parseFloat(str);
+  return isNaN(n) ? DEFAULT_MINUTES : n * 60;
+}
+
+// ════════════════════════════════════════════════════════════════
+// GET /api/study/stats  (protected)
+// Real numbers for the dashboard header: XP/level/streak (from the
+// user doc), rank (computed live against every other real user by
+// XP), and today's/this week's study-goal progress (computed from
+// real StudySession records, target derived from onboarding.hours).
+// ════════════════════════════════════════════════════════════════
+router.get('/stats', protect, async (req, res) => {
+  try {
+    const user = req.user;
+
+    // Rank: how many real users have strictly more XP, +1
+    const higherCount = await User.countDocuments({ xp: { $gt: user.xp || 0 } });
+    const totalUsers = await User.countDocuments({});
+    const rank = higherCount + 1;
+
+    // Today's real study minutes
+    const startOfToday = new Date();
+    startOfToday.setHours(0, 0, 0, 0);
+    const todaySessions = await StudySession.find({ user: user._id, completedAt: { $gte: startOfToday } }).lean();
+    const todayMinutes = todaySessions.reduce((sum, s) => sum + (s.durationMinutes || 0), 0);
+
+    // This week's (last 7 days incl. today) real study minutes
+    const startOfWeek = new Date();
+    startOfWeek.setDate(startOfWeek.getDate() - 6);
+    startOfWeek.setHours(0, 0, 0, 0);
+    const weekSessions = await StudySession.find({ user: user._id, completedAt: { $gte: startOfWeek } }).lean();
+    const weekMinutes = weekSessions.reduce((sum, s) => sum + (s.durationMinutes || 0), 0);
+
+    const dailyTargetMinutes = parseDailyTargetMinutes(user.onboarding && user.onboarding.hours);
+    const weeklyTargetMinutes = dailyTargetMinutes * 7;
+    const goalPct = dailyTargetMinutes > 0 ? Math.min(100, Math.round((todayMinutes / dailyTargetMinutes) * 100)) : 0;
+    const weeklyPct = weeklyTargetMinutes > 0 ? Math.min(100, Math.round((weekMinutes / weeklyTargetMinutes) * 100)) : 0;
+
+    res.json({
+      success: true,
+      stats: {
+        xp: user.xp || 0,
+        level: user.level || 1,
+        xpPerLevel: user.xpPerLevel || 1000,
+        streak: user.streak || 0,
+        totalStudyMinutes: user.totalStudyMinutes || 0,
+        rank,
+        totalUsers,
+        todayMinutes,
+        dailyTargetMinutes,
+        goalPct,
+        weekMinutes,
+        weeklyTargetMinutes,
+        weeklyPct,
+      },
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: 'Server error.' });
+  }
+});
+
 module.exports = router;
