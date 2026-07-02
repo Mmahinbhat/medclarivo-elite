@@ -42,10 +42,13 @@ const UserSchema = new mongoose.Schema({
     default: null,
   },
   // Mentor-only profile fields (ignored for students)
-  mentorProfile: {
-    title:      { type: String },  // e.g. "AIIMS Delhi '19 · AIR 7"
-    bio:        { type: String },
-    specialty:  { type: String },
+ mentorProfile: {
+    title:               { type: String },  // e.g. "AIIMS Delhi '19 · AIR 7"
+    bio:                 { type: String },
+    specialty:           { type: String },
+    rating:              { type: Number, default: 5.0 },
+    reviewCount:         { type: Number, default: 0 },
+    weeklySessionTarget: { type: Number, default: 8 },
   },
   // Study stats (used by Study Mode / dashboard)
   totalStudyMinutes: { type: Number, default: 0 },
