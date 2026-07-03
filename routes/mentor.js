@@ -6,6 +6,9 @@ const Subject = require('../models/Subject');
 const Chapter = require('../models/Chapter');
 const UserProgress = require('../models/UserProgress');
 const { examGroupFor } = require('./curriculum');
+const MentorRequest = require('../models/MentorRequest');
+const Session = require('../models/Session');
+const { draftReply } = require('../services/anthropic.service');
 
 // ════════════════════════════════════════════════════════════════
 // GET /api/mentor/mentees  (mentor/admin only)
@@ -97,5 +100,124 @@ router.get('/mentees/:id/subjects', protect, restrictTo('mentor', 'admin'), asyn
     res.status(500).json({ success: false, message: 'Failed to fetch mentee subjects.' });
   }
 });
+// ════════════════════════════════════════════════════════════════
+// GET /api/mentor/requests
+// ════════════════════════════════════════════════════════════════
+router.get('/requests', protect, restrictTo('mentor', 'admin'), async (req, res) => {
+  try {
+    const requests = await MentorRequest.find({ mentor: req.user._id, status: 'pending' })
+      .populate('student', 'name email avatar onboarding')
+      .sort('-createdAt')
+      .lean();
+    res.json({ success: true, requests });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: 'Failed to fetch requests.' });
+  }
+});
 
+// ════════════════════════════════════════════════════════════════
+// POST /api/mentor/requests/:requestId/:action  (accept | decline)
+// ════════════════════════════════════════════════════════════════
+router.post('/requests/:requestId/:action', protect, restrictTo('mentor', 'admin'), async (req, res) => {
+  try {
+    const { requestId, action } = req.params;
+    if (!['accept', 'decline'].includes(action)) {
+      return res.status(400).json({ success: false, message: 'Invalid action.' });
+    }
+
+    const request = await MentorRequest.findOne({ _id: requestId, mentor: req.user._id });
+    if (!request) {
+      return res.status(404).json({ success: false, message: 'Request not found.' });
+    }
+
+    request.status = action === 'accept' ? 'accepted' : 'declined';
+    request.respondedAt = new Date();
+    await request.save();
+
+    if (action === 'accept') {
+      await User.findByIdAndUpdate(request.student, { mentorId: req.user._id });
+    }
+
+    res.json({ success: true });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: 'Failed to update request.' });
+  }
+});
+
+// ════════════════════════════════════════════════════════════════
+// GET /api/mentor/sessions/upcoming
+// ════════════════════════════════════════════════════════════════
+router.get('/sessions/upcoming', protect, restrictTo('mentor', 'admin'), async (req, res) => {
+  try {
+    const now = new Date();
+    const startOfWeek = new Date(now);
+    startOfWeek.setDate(now.getDate() - now.getDay());
+    startOfWeek.setHours(0, 0, 0, 0);
+
+    const upcoming = await Session.find({ mentor: req.user._id, startTime: { $gte: now }, status: 'scheduled' })
+      .populate('mentee', 'name avatar')
+      .sort('startTime')
+      .lean();
+
+    const recent = await Session.find({ mentor: req.user._id, status: 'completed' })
+      .populate('mentee', 'name avatar')
+      .sort('-startTime')
+      .limit(10)
+      .lean();
+
+    const weeklyCount = await Session.countDocuments({
+      mentor: req.user._id,
+      status: 'completed',
+      startTime: { $gte: startOfWeek },
+    });
+
+    res.json({
+      success: true,
+      upcoming,
+      recent,
+      weeklySessionsCompleted: weeklyCount,
+      weeklySessionTarget: (req.user.mentorProfile && req.user.mentorProfile.weeklySessionTarget) || 8,
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: 'Failed to fetch sessions.' });
+  }
+});
+
+// ════════════════════════════════════════════════════════════════
+// PATCH /api/mentor/sessions/:sessionId/complete
+// ════════════════════════════════════════════════════════════════
+router.patch('/sessions/:sessionId/complete', protect, restrictTo('mentor', 'admin'), async (req, res) => {
+  try {
+    const session = await Session.findOne({ _id: req.params.sessionId, mentor: req.user._id });
+    if (!session) {
+      return res.status(404).json({ success: false, message: 'Session not found.' });
+    }
+    session.status = 'completed';
+    await session.save();
+    res.json({ success: true });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: 'Failed to update session.' });
+  }
+});
+
+// ════════════════════════════════════════════════════════════════
+// POST /api/mentor/ai/draft-reply
+// ════════════════════════════════════════════════════════════════
+router.post('/ai/draft-reply', protect, restrictTo('mentor', 'admin'), async (req, res) => {
+  try {
+    const { question, menteeName, subject } = req.body;
+    if (!question || question.length > 2000) {
+      return res.status(400).json({ success: false, message: 'Question is required and must be under 2000 characters.' });
+    }
+    const draft = await draftReply({ question, menteeName, subject });
+    res.json({ success: true, draft });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: 'Failed to generate draft reply.' });
+  }
+});
 module.exports = router;
