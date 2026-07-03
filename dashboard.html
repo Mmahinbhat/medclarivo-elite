@@ -523,17 +523,6 @@
           </div>
         </section>
 
-        <!-- ═══ CONTINUE LEARNING ═══ -->
-        <section class="reveal" style="animation-delay:.05s">
-          <div class="flex items-center justify-between mb-4">
-            <h2 class="font-display text-[22px] text-ink">Continue Learning</h2>
-            <button class="text-teal-deep text-sm font-semibold hover:underline">View study plan &rarr;</button>
-          </div>
-          <div id="continueLearningGrid" class="flex gap-4 overflow-x-auto no-scrollbar pb-1 -mx-1 px-1">
-            <p class="text-ink-faint text-sm py-4" id="continueLearningLoading">Loading your progress&hellip;</p>
-          </div>
-        </section>
-
         <!-- ═══ MISSION + AI COACH ═══ -->
         <section class="grid grid-cols-1 lg:grid-cols-5 gap-6">
           <!-- Today's Mission -->
@@ -1196,51 +1185,12 @@
           openSubjectModal(activeModalSubjectId, subjName, '#0FA89A');
         }
         loadSubjects(token);
-        loadContinueLearning(token);
       }
     } catch (err) {
       console.warn('Could not update progress:', err);
     }
   }
-
-  // ── Continue Learning — real in-progress chapters, honest empty state ──
-  function continueLearningCardHTML(item){
-    const pct = item.percentComplete || 0;
-    return `
-      <div class="panel panel-lift p-5 flex-shrink-0 w-[300px]">
-        <div class="flex items-center justify-between mb-3">
-          <span class="chip" style="background:${item.subjectColor}1A;color:${item.subjectColor}">${item.subjectName}</span>
-          <span class="text-ink-faint text-xs font-mono">${item.unitsCompleted}/${item.totalUnits} units</span>
-        </div>
-        <p class="font-display text-[19px] text-ink leading-snug mb-1">${item.chapterTitle}</p>
-        <p class="text-ink-faint text-xs mb-4">${item.estimatedMinutes} min &middot; ${pct}% complete</p>
-        <div class="track h-1.5 mb-4"><div class="fill h-1.5" style="width:${pct}%"></div></div>
-        <button class="btn-primary w-full py-2.5 text-[13px] font-bold flex items-center justify-center gap-1.5" onclick="sendPrompt('Continue ${item.chapterTitle}')">
-          <i data-lucide="play" class="w-3.5 h-3.5"></i> Resume
-        </button>
-      </div>`;
-  }
-
-  async function loadContinueLearning(token){
-    const gridEl = document.getElementById('continueLearningGrid');
-    try {
-      const res = await fetch(`${API_BASE}/curriculum/continue-learning`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const data = await res.json();
-      if (res.ok && data.success && gridEl) {
-        if (data.items.length === 0) {
-          gridEl.innerHTML = '<p class="text-ink-faint text-sm py-4">Nothing in progress yet — pick a subject below in Subject Performance to start your first chapter.</p>';
-        } else {
-          gridEl.innerHTML = data.items.map(continueLearningCardHTML).join('');
-          if (window.lucide) lucide.createIcons();
-        }
-      }
-    } catch (err) {
-      console.warn('Could not load continue-learning items:', err);
-      if (gridEl) gridEl.innerHTML = '<p class="text-ink-faint text-sm py-4">Could not load your progress right now.</p>';
-    }
-  }
+  // Continue Learning card removed from dashboard — loadContinueLearning intentionally deleted.
 
   // ── Header stats: streak, XP, level, rank, today's/weekly goal — all real ──
   async function loadStats(token){
@@ -1339,7 +1289,6 @@
       console.warn('Could not load live user data, showing defaults:', err);
     }
     loadSubjects(token);
-    loadContinueLearning(token);
     loadStats(token);
     loadMentor(token);
     loadMissions();
