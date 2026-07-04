@@ -1093,14 +1093,34 @@
   // this yet either. Showing a clear message instead of a failing call.
   // Build POST /api/mentor/ai/draft-reply (calls Claude server-side with
   // your API key) to make this real. ──
-  async function askDoubt(){
-    const input = document.getElementById('doubtInput');
-    const responseEl = document.getElementById('doubtResponse');
-    const q = input.value.trim();
-    if (!q) return;
-    responseEl.classList.remove('hidden');
-    responseEl.textContent = 'Reply drafting isn\'t available yet — coming soon.';
+ async function askDoubt(){
+  const input = document.getElementById('doubtInput');
+  const responseEl = document.getElementById('doubtResponse');
+  const q = input.value.trim();
+  if (!q) return;
+  const token = localStorage.getItem('mc_token');
+  if (!token) return;
+  responseEl.classList.remove('hidden');
+  responseEl.textContent = 'Drafting reply...';
+  try {
+    const res = await fetch(`${API_BASE}/mentor/ai/draft-reply`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`
+      },
+      body: JSON.stringify({ question: q })
+    });
+    const data = await res.json();
+    if (data.success) {
+      responseEl.textContent = data.draft;
+    } else {
+      responseEl.textContent = 'Could not draft a reply: ' + (data.message || 'unknown error');
+    }
+  } catch (err) {
+    responseEl.textContent = 'Something went wrong contacting the AI service.';
   }
+}
   document.getElementById('doubtInput').addEventListener('keydown', e => { if (e.key === 'Enter') askDoubt(); });
 
   document.getElementById('signOutBtn').addEventListener('click', () => {
