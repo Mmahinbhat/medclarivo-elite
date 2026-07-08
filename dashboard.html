@@ -1,6 +1,9 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"/>
+  <meta http-equiv="Pragma" content="no-cache"/>
+  <meta http-equiv="Expires" content="0"/>
 <script src="sessionGuard.js"></script>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
@@ -364,11 +367,12 @@
       <a href="#" class="nav-item active" onclick="setNav(this,event)" data-tip="Dashboard" data-action="top">
         <i data-lucide="layout-dashboard"></i><span class="nav-label">Dashboard</span>
       </a>
-      <a href="study.html" class="nav-item" onclick="setNav(this,event)" data-tip="Study Plan" data-action="page" data-target="study.html">
-        <i data-lucide="book-open"></i><span class="nav-label">Study Plan</span>
+      <a href="#" class="nav-item" onclick="setNav(this,event)" data-tip="Progress" data-action="soon">
+        <i data-lucide="trending-up"></i><span class="nav-label flex-1">Progress</span>
+        <span class="hide-on-collapse chip chip-teal" style="padding:1px 7px;font-size:9.5px">Soon</span>
       </a>
-      <a href="#" class="nav-item" onclick="setNav(this,event)" data-tip="Practice Tests" data-action="soon">
-        <i data-lucide="file-question"></i><span class="nav-label flex-1">Practice Tests</span>
+      <a href="#" class="nav-item" onclick="setNav(this,event)" data-tip="Content Library" data-action="soon">
+        <i data-lucide="library"></i><span class="nav-label flex-1">Content Library</span>
         <span class="hide-on-collapse chip chip-teal" style="padding:1px 7px;font-size:9.5px">Soon</span>
       </a>
       <a href="#" class="nav-item" onclick="setNav(this,event)" data-tip="Analytics" data-action="scroll" data-target="analyticsSection">
@@ -876,13 +880,13 @@
     <i data-lucide="layout-dashboard" class="w-5 h-5"></i>
     <span class="text-[9px] font-bold">Home</span>
   </button>
-  <button class="flex flex-col items-center gap-1 p-2 text-ink-faint" onclick="window.location.href='study.html'">
-    <i data-lucide="book-open" class="w-5 h-5"></i>
-    <span class="text-[9px] font-semibold">Study</span>
+  <button class="flex flex-col items-center gap-1 p-2 text-ink-faint" onclick="showToast('Progress coming soon')">
+    <i data-lucide="trending-up" class="w-5 h-5"></i>
+    <span class="text-[9px] font-semibold">Progress</span>
   </button>
-  <button class="flex flex-col items-center gap-1 p-2 text-ink-faint" onclick="showToast('Practice Tests is coming soon')">
-    <i data-lucide="file-question" class="w-5 h-5"></i>
-    <span class="text-[9px] font-semibold">Tests</span>
+  <button class="flex flex-col items-center gap-1 p-2 text-ink-faint" onclick="showToast('Content Library coming soon')">
+    <i data-lucide="library" class="w-5 h-5"></i>
+    <span class="text-[9px] font-semibold">Library</span>
   </button>
   <button class="flex flex-col items-center gap-1 p-2 text-ink-faint relative" onclick="document.getElementById('mentorCard')?.scrollIntoView({behavior:'smooth',block:'start'})">
     <i data-lucide="users" class="w-5 h-5"></i>

@@ -12,10 +12,6 @@ const { draftReply } = require('../services/anthropic.service');
 
 // ════════════════════════════════════════════════════════════════
 // GET /api/mentor/mentees  (mentor/admin only)
-// Every student manually assigned to the logged-in mentor (mentorId),
-// with real overall mastery + chapter counts computed from their
-// actual curriculum progress — same source of truth as the student's
-// own Subject Performance panel.
 // ════════════════════════════════════════════════════════════════
 router.get('/mentees', protect, restrictTo('mentor', 'admin'), async (req, res) => {
   try {
@@ -59,8 +55,6 @@ router.get('/mentees', protect, restrictTo('mentor', 'admin'), async (req, res) 
 
 // ════════════════════════════════════════════════════════════════
 // GET /api/mentor/mentees/:id/subjects  (mentor/admin only)
-// Per-subject mastery breakdown for one assigned mentee — verifies
-// the mentee actually belongs to this mentor before returning anything.
 // ════════════════════════════════════════════════════════════════
 router.get('/mentees/:id/subjects', protect, restrictTo('mentor', 'admin'), async (req, res) => {
   try {
@@ -100,6 +94,7 @@ router.get('/mentees/:id/subjects', protect, restrictTo('mentor', 'admin'), asyn
     res.status(500).json({ success: false, message: 'Failed to fetch mentee subjects.' });
   }
 });
+
 // ════════════════════════════════════════════════════════════════
 // GET /api/mentor/requests
 // ════════════════════════════════════════════════════════════════
@@ -220,4 +215,91 @@ router.post('/ai/draft-reply', protect, restrictTo('mentor', 'admin'), async (re
     res.status(500).json({ success: false, message: 'Failed to generate draft reply.' });
   }
 });
+
+// ════════════════════════════════════════════════════════════════
+// GET /api/mentor/available  (student only)
+// ════════════════════════════════════════════════════════════════
+router.get('/available', protect, restrictTo('student'), async (req, res) => {
+  try {
+    const mentors = await User.find({ role: 'mentor' })
+      .select('name avatar mentorProfile')
+      .lean();
+    res.json({ success: true, mentors });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: 'Failed to fetch mentors.' });
+  }
+});
+
+// ════════════════════════════════════════════════════════════════
+// POST /api/mentor/requests  (student only)
+// ════════════════════════════════════════════════════════════════
+router.post('/requests', protect, restrictTo('student'), async (req, res) => {
+  try {
+    const { mentorId, message } = req.body;
+    if (!mentorId) {
+      return res.status(400).json({ success: false, message: 'mentorId is required.' });
+    }
+
+    const mentor = await User.findOne({ _id: mentorId, role: 'mentor' });
+    if (!mentor) {
+      return res.status(404).json({ success: false, message: 'Mentor not found.' });
+    }
+
+    if (req.user.mentorId && req.user.mentorId.toString() === mentorId) {
+      return res.status(400).json({ success: false, message: 'This mentor is already assigned to you.' });
+    }
+
+    const existing = await MentorRequest.findOne({
+      mentor: mentorId,
+      student: req.user._id,
+      status: 'pending',
+    });
+    if (existing) {
+      return res.status(400).json({ success: false, message: 'You already have a pending request with this mentor.' });
+    }
+
+    const request = await MentorRequest.create({
+      mentor: mentorId,
+      student: req.user._id,
+      message: message || '',
+    });
+
+    res.status(201).json({ success: true, request });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: 'Failed to create request.' });
+  }
+});
+
+// ════════════════════════════════════════════════════════════════
+// POST /api/mentor/sessions  (mentor only)
+// ════════════════════════════════════════════════════════════════
+router.post('/sessions', protect, restrictTo('mentor', 'admin'), async (req, res) => {
+  try {
+    const { menteeId, startTime, type, topic } = req.body;
+    if (!menteeId || !startTime) {
+      return res.status(400).json({ success: false, message: 'menteeId and startTime are required.' });
+    }
+
+    const mentee = await User.findOne({ _id: menteeId, mentorId: req.user._id, role: 'student' });
+    if (!mentee) {
+      return res.status(404).json({ success: false, message: 'Mentee not found or not assigned to you.' });
+    }
+
+    const session = await Session.create({
+      mentor: req.user._id,
+      mentee: menteeId,
+      type: type || '1:1',
+      topic: topic || '',
+      startTime: new Date(startTime),
+    });
+
+    res.status(201).json({ success: true, session });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: 'Failed to create session.' });
+  }
+});
+
 module.exports = router;
