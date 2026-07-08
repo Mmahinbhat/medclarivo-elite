@@ -11,6 +11,9 @@ const authRoutes       = require('./routes/auth');
 const studyRoutes      = require('./routes/study');
 const curriculumRoutes = require('./routes/curriculum');
 const mentorRoutes     = require('./routes/mentor');
+const adminUserRoutes  = require('./routes/adminUsers');
+const permissionRoutes = require('./routes/permissions');
+const auditLogRoutes   = require('./routes/auditLogs');
 
 const app  = express();
 const PORT = process.env.PORT || 5000;
@@ -54,6 +57,9 @@ app.use('/api/auth',       authRoutes);
 app.use('/api/study',      studyRoutes);
 app.use('/api/curriculum', curriculumRoutes);
 app.use('/api/mentor',     mentorRoutes);
+app.use('/api/admin/users', adminUserRoutes);
+app.use('/api/permissions', permissionRoutes);
+app.use('/api/audit-logs', auditLogRoutes);
 
 // Health check
 app.get('/health', (req, res) => {

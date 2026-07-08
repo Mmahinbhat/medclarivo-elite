@@ -605,7 +605,7 @@
                 <!-- Loading state -->
                 <div id="mentorLoading" class="text-ink-faint text-sm py-4">Loading mentor&hellip;</div>
 
-                <!-- No mentor assigned yet -->
+                <!-- No mentor assigned yet — admin assigns, not the student -->
                 <div id="mentorEmptyState" class="hidden">
                   <div class="flex items-center gap-3 mb-4">
                     <div class="w-14 h-14 rounded-full flex items-center justify-center flex-shrink-0" style="background:rgba(15,168,154,0.08)">
@@ -630,7 +630,7 @@
                       <p id="mentorTitle" class="text-ink-faint text-xs"></p>
                     </div>
                   </div>
-                  <div class="flex gap-2">
+                  <div class="flex gap-2 mb-3">
                     <button class="btn-primary flex-1 py-2.5 text-[13px] font-bold flex items-center justify-center gap-1.5">
                       <i data-lucide="video" class="w-3.5 h-3.5"></i>Join
                     </button>
@@ -638,6 +638,25 @@
                       <i data-lucide="message-square" class="w-3.5 h-3.5"></i>Message
                     </button>
                   </div>
+
+                  <!-- Request a mentor change -->
+                  <button id="requestChangeToggle" class="text-ink-faint text-xs font-semibold hover:underline">Not a good fit? Request a mentor change &rarr;</button>
+
+                  <div id="requestChangePendingNote" class="hidden text-ink-faint text-xs mt-2 p-2.5 rounded-lg" style="background:rgba(15,168,154,0.06)">
+                    Your change request is pending review.
+                  </div>
+
+                  <form id="requestChangeForm" class="hidden mt-3 flex flex-col gap-2.5">
+                    <select id="preferredMentorSelect" class="w-full text-xs rounded-lg px-2.5 py-2" style="border:1px solid var(--border)">
+                      <option value="">No preference — let the team pick</option>
+                    </select>
+                    <textarea id="requestChangeReason" required maxlength="500" rows="2" placeholder="Why would you like to switch mentors? (required)" class="w-full text-xs rounded-lg px-2.5 py-2 resize-none" style="border:1px solid var(--border)"></textarea>
+                    <div class="flex gap-2">
+                      <button type="submit" class="btn-primary flex-1 py-2 text-[12px] font-bold">Submit request</button>
+                      <button type="button" id="requestChangeCancel" class="btn-outline flex-1 py-2 text-[12px] font-bold">Cancel</button>
+                    </div>
+                    <p id="requestChangeError" class="hidden text-xs" style="color:#DC2626"></p>
+                  </form>
                 </div>
               </section>
         </section>
@@ -1265,10 +1284,102 @@
       filledEl.classList.remove('hidden');
       badgeEl.style.display = '';
       if (window.lucide) lucide.createIcons();
+
+      initRequestChangeUI(token);
     } catch (err) {
       console.warn('Could not load mentor:', err);
       loadingEl.classList.add('hidden');
       emptyEl.classList.remove('hidden');
+    }
+  }
+
+  // ── Request a mentor change (only shown once a mentor is already assigned) ──
+  async function initRequestChangeUI(token){
+    const toggleBtn   = document.getElementById('requestChangeToggle');
+    const pendingNote = document.getElementById('requestChangePendingNote');
+    const form        = document.getElementById('requestChangeForm');
+    const select      = document.getElementById('preferredMentorSelect');
+    const errorEl     = document.getElementById('requestChangeError');
+
+    // Check for an existing pending request first
+    try {
+      const res = await fetch(`${API_BASE}/mentor/my-change-requests`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      const hasPending = res.ok && data.success && (data.requests || []).some(r => r.status === 'pending');
+      if (hasPending) {
+        toggleBtn.classList.add('hidden');
+        pendingNote.classList.remove('hidden');
+        return;
+      }
+    } catch (err) {
+      console.warn('Could not check existing change requests:', err);
+    }
+
+    toggleBtn.onclick = () => {
+      toggleBtn.classList.add('hidden');
+      form.classList.remove('hidden');
+      loadMentorListForSelect(token, select);
+    };
+
+    document.getElementById('requestChangeCancel').onclick = () => {
+      form.classList.add('hidden');
+      toggleBtn.classList.remove('hidden');
+      errorEl.classList.add('hidden');
+    };
+
+    form.onsubmit = async (e) => {
+      e.preventDefault();
+      errorEl.classList.add('hidden');
+      const reason = document.getElementById('requestChangeReason').value.trim();
+      if (!reason) return;
+      const submitBtn = form.querySelector('button[type="submit"]');
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Sending…';
+      try {
+        const res = await fetch(`${API_BASE}/mentor/request-change`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ reason, preferredMentorId: select.value || undefined }),
+        });
+        const data = await res.json();
+        if (res.ok && data.success) {
+          form.classList.add('hidden');
+          pendingNote.classList.remove('hidden');
+        } else {
+          errorEl.textContent = data.message || 'Could not submit request.';
+          errorEl.classList.remove('hidden');
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Submit request';
+        }
+      } catch (err) {
+        errorEl.textContent = 'Could not connect. Please try again.';
+        errorEl.classList.remove('hidden');
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Submit request';
+      }
+    };
+  }
+
+  async function loadMentorListForSelect(token, selectEl){
+    if (selectEl.dataset.loaded) return;
+    try {
+      const res = await fetch(`${API_BASE}/mentor/list`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        (data.mentors || []).forEach(m => {
+          const opt = document.createElement('option');
+          opt.value = m.id;
+          opt.textContent = m.title ? `${m.name} — ${m.title}` : m.name;
+          selectEl.appendChild(opt);
+        });
+        selectEl.dataset.loaded = 'true';
+      }
+    } catch (err) {
+      console.warn('Could not load mentor list:', err);
     }
   }
 

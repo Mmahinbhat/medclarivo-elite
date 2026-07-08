@@ -1,6 +1,5 @@
 const mongoose = require('mongoose');
 const bcrypt   = require('bcryptjs');
-const { ROLE_LIST, ROLES } = require('../utils/rbacConstants');
 
 const UserSchema = new mongoose.Schema({
   name: {
@@ -28,40 +27,15 @@ const UserSchema = new mongoose.Schema({
   // Meta
   role: {
     type: String,
-    enum: ROLE_LIST, // <- defined in utils/rbacConstants.js; add new roles there only
-    default: ROLES.STUDENT,
+    enum: ['student', 'mentor', 'admin', 'parent'],
+    default: 'student',
   },
   isVerified: {
     type: Boolean,
     default: false,
   },
   lastLogin: { type: Date },
-
-  // RBAC — dormant multi-tenancy field. Unused today (every user is
-  // effectively in one implicit organization). If multi-tenancy is turned
-  // on later, start populating this and the permission engine already
-  // knows how to scope by it — no migration of this field's *type* needed.
-  organizationId: {
-    type: mongoose.Schema.Types.ObjectId,
-    default: null,
-  },
-
-  // Bumped on every role/permission-affecting change (role edit, suspension,
-  // permission override). Embedded in the JWT at login; if it doesn't match
-  // the live DB value on a request, the token is treated as stale and the
-  // user must log in again — this is how role changes take effect quickly
-  // without a server-side session store.
-  permissionVersion: { type: Number, default: 1 },
-
-  isActive: { type: Boolean, default: true }, // suspension flag
-  suspendedAt: { type: Date, default: null },
-  suspendedReason: { type: String, default: null },
-
-  // Mentorship — meaning depends on role:
-  //   role: 'student'   -> the mentor this student is assigned to
-  //   role: 'assistant' -> the mentor this assistant is delegated from
-  // (kept as one field to match your existing schema/usage rather than
-  // introducing a second, near-duplicate field)
+  // Mentorship — only meaningful for students (points to a User with role: 'mentor')
   mentorId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
@@ -100,15 +74,6 @@ const UserSchema = new mongoose.Schema({
   timestamps: true,
 });
 
-// Enforce role-specific requirements at the schema level (second line of
-// defense after the service layer).
-UserSchema.pre('validate', function (next) {
-  if (this.role === ROLES.ASSISTANT && !this.mentorId) {
-    return next(new Error('Assistant must be linked to a mentorId.'));
-  }
-  next();
-});
-
 // Hash password before save
 UserSchema.pre('save', async function (next) {
   if (!this.isModified('passwordHash') || !this.passwordHash) return next();
@@ -120,11 +85,6 @@ UserSchema.pre('save', async function (next) {
 UserSchema.methods.comparePassword = async function (candidate) {
   if (!this.passwordHash) return false;
   return bcrypt.compare(candidate, this.passwordHash);
-};
-
-UserSchema.methods.bumpPermissionVersion = function () {
-  this.permissionVersion += 1;
-  return this.save();
 };
 
 // Strip sensitive fields from JSON output

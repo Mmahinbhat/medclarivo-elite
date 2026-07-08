@@ -16,21 +16,6 @@ const protect = async (req, res, next) => {
       return res.status(401).json({ success: false, message: 'User not found.' });
     }
 
-    if (!user.isActive) {
-      return res.status(401).json({ success: false, message: 'This account has been suspended.' });
-    }
-
-    // NEW: if a role/permission change happened after this token was issued,
-    // permissionVersion on the token no longer matches the live DB value —
-    // reject and force re-login so the user picks up the new permissions.
-    // (Tokens signed before this change won't have this field; treat
-    // `undefined` as version 1 so existing sessions aren't broken by the
-    // upgrade itself.)
-    const tokenVersion = decoded.permissionVersion ?? 1;
-    if (tokenVersion !== user.permissionVersion) {
-      return res.status(401).json({ success: false, message: 'Session expired due to a permission change. Please log in again.' });
-    }
-
     req.user = user;
     next();
   } catch (err) {
@@ -38,7 +23,8 @@ const protect = async (req, res, next) => {
   }
 };
 
-// Unchanged — your existing simple role-gate, still works for existing routes.
+// Restrict a route to specific roles, e.g. restrictTo('mentor', 'admin')
+// Must be used AFTER `protect` so req.user is already set.
 const restrictTo = (...roles) => (req, res, next) => {
   if (!req.user || !roles.includes(req.user.role)) {
     return res.status(403).json({ success: false, message: 'Not authorized for this resource.' });

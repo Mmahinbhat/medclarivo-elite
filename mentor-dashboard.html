@@ -339,10 +339,6 @@
       <a href="#" class="nav-item" onclick="setNav(this,event)" data-tip="My Mentees">
         <i data-lucide="users"></i><span class="nav-label">My Mentees</span>
       </a>
-      <a href="#" class="nav-item" onclick="setNav(this,event)" data-tip="Requests">
-        <i data-lucide="user-check"></i><span class="nav-label flex-1">Requests</span>
-        <span class="hide-on-collapse chip chip-navy" style="padding:1px 7px;font-size:9.5px">Soon</span>
-      </a>
       <a href="#" class="nav-item" onclick="setNav(this,event)" data-tip="Analytics">
         <i data-lucide="bar-chart-3"></i><span class="nav-label">Analytics</span>
       </a>
@@ -475,17 +471,6 @@
                 <p class="text-white/30 text-[10px] text-center mt-2" id="nextSessionWho">No session scheduled</p>
               </div>
             </div>
-          </div>
-        </section>
-
-        <!-- ═══ MENTEE REQUESTS (coming soon — mentees are currently assigned manually) ═══ -->
-        <section class="reveal" style="animation-delay:.05s">
-          <div class="flex items-center justify-between mb-4">
-            <h2 class="font-display text-[22px] text-ink">Mentee Requests</h2>
-            <span class="chip chip-navy">Coming soon</span>
-          </div>
-          <div class="panel p-6">
-            <p class="text-ink-faint text-sm">Mentees are currently assigned to you by the MedClarivo team. A self-serve request flow will land here once that's built.</p>
           </div>
         </section>
 
@@ -852,12 +837,33 @@
   }
   setInterval(updateCountdown, 60000);
 
-  // ── Sessions: no scheduling/booking system exists in the backend yet.
-  // Rendering the empty state directly rather than hitting a route that
-  // doesn't exist. Build /api/mentor/sessions/upcoming when session
-  // booking becomes a real feature, then swap this back to a fetch. ──
+  // ── Sessions: real data from /api/mentor/sessions/upcoming ──
+  function adaptSession(s){
+    const mentee = s.mentee || {};
+    return {
+      id: s._id,
+      startsAt: s.startTime,
+      status: s.status,
+      topic: s.topic || '',
+      menteeName: mentee.name || 'Mentee',
+      menteeExam: (mentee.onboarding && mentee.onboarding.exam) || '',
+    };
+  }
+
   async function loadSessions(token){
-    allSessions = [];
+    let weeklyCompleted = 0;
+    let weeklyTarget = 8;
+    try {
+      const res = await fetch(`${API_BASE}/mentor/sessions/upcoming`, { headers: { Authorization: `Bearer ${token}` } });
+      const data = await res.json();
+      if (!(res.ok && data.success)) throw new Error('bad response');
+      allSessions = [...(data.upcoming || []), ...(data.recent || [])].map(adaptSession);
+      weeklyCompleted = data.weeklySessionsCompleted || 0;
+      weeklyTarget = data.weeklySessionTarget || 8;
+    } catch (err) {
+      console.warn('Could not load sessions:', err);
+      allSessions = [];
+    }
 
     const now = new Date();
     const today = allSessions.filter(s => new Date(s.startsAt).toDateString() === now.toDateString());
@@ -900,9 +906,6 @@
       document.getElementById('nextSessionWho').textContent = 'No session scheduled';
     }
 
-    const weekStart = new Date(now); weekStart.setDate(now.getDate() - now.getDay()); weekStart.setHours(0,0,0,0);
-    const weeklyCompleted = allSessions.filter(s => s.status === 'completed' && new Date(s.startsAt) >= weekStart).length;
-    const weeklyTarget = 8; // TODO: source from mentorProfile.weeklySessionTarget once your backend exposes it
     const weeklyPct = Math.min(100, Math.round((weeklyCompleted / weeklyTarget) * 100));
     document.getElementById('weeklyPctLabel').textContent = weeklyPct + '%';
     document.getElementById('weeklyFractionLabel').innerHTML = `${weeklyCompleted} <span class="text-ink-faint font-normal">/ ${weeklyTarget} sessions</span>`;
@@ -916,7 +919,8 @@
     if (window.lucide) lucide.createIcons();
   }
 
-  // ── Mentee requests: not built yet — mentees are assigned manually for now.
+  // Mentor change requests are reviewed by admins now, not mentors — see
+  // scripts/listChangeRequests.js and scripts/resolveChangeRequest.js.
 
   // ── Mentee progress grid + modal ──
   function menteeCardHTML(m, i){
@@ -1087,19 +1091,27 @@
   // ── Dark mode toggle (visual only placeholder, matches the student dashboard) ──
   function toggleDark(){ document.documentElement.classList.toggle('dark'); }
 
-  // ── Reply Assistant: not built yet. Calling api.anthropic.com directly
-  // from the browser is unsafe (same issue flagged for "Quick Doubt" on
-  // the student dashboard) and there's no server-side proxy route for
-  // this yet either. Showing a clear message instead of a failing call.
-  // Build POST /api/mentor/ai/draft-reply (calls Claude server-side with
-  // your API key) to make this real. ──
+  // ── Reply Assistant: calls YOUR backend (POST /api/mentor/ai/draft-reply),
+  // which proxies to Claude server-side. Requires ANTHROPIC_API_KEY set on Render. ──
   async function askDoubt(){
     const input = document.getElementById('doubtInput');
     const responseEl = document.getElementById('doubtResponse');
     const q = input.value.trim();
     if (!q) return;
     responseEl.classList.remove('hidden');
-    responseEl.textContent = 'Reply drafting isn\'t available yet — coming soon.';
+    responseEl.textContent = 'Drafting…';
+    const token = localStorage.getItem('mc_token');
+    try {
+      const res = await fetch(`${API_BASE}/mentor/ai/draft-reply`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+        body: JSON.stringify({ question: q }),
+      });
+      const data = await res.json();
+      responseEl.textContent = (res.ok && data.success && data.draft) ? data.draft : (data.message || 'No draft available. Please try again.');
+    } catch (e) {
+      responseEl.textContent = 'Could not connect. Please check your connection.';
+    }
   }
   document.getElementById('doubtInput').addEventListener('keydown', e => { if (e.key === 'Enter') askDoubt(); });
 
