@@ -691,47 +691,47 @@
               <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-7">
                 <div>
                   <p class="text-ink-faint text-[11px] uppercase tracking-wider font-semibold mb-1">Weekly Hours</p>
-                  <p class="font-display text-3xl text-ink">27.0<span class="text-ink-faint text-base font-sans">/40h</span></p>
+                  <p class="font-display text-3xl text-ink"><span id="analyticsWeeklyHours">0.0</span><span class="text-ink-faint text-base font-sans">/<span id="analyticsWeeklyTarget">0</span>h</span></p>
                 </div>
                 <div>
                   <p class="text-ink-faint text-[11px] uppercase tracking-wider font-semibold mb-1">Consistency</p>
-                  <p class="font-display text-3xl text-ink">92<span class="text-ink-faint text-base font-sans">%</span></p>
+                  <p class="font-display text-3xl text-ink"><span id="analyticsConsistency">0</span><span class="text-ink-faint text-base font-sans">%</span></p>
                 </div>
                 <div>
-                  <p class="text-ink-faint text-[11px] uppercase tracking-wider font-semibold mb-1">Focus Score</p>
-                  <p class="font-display text-3xl text-ink">8.4<span class="text-ink-faint text-base font-sans">/10</span></p>
+                  <p class="text-ink-faint text-[11px] uppercase tracking-wider font-semibold mb-1">Avg Session</p>
+                  <p class="font-display text-3xl text-ink"><span id="analyticsAvgSession">0</span><span class="text-ink-faint text-base font-sans"> min</span></p>
                 </div>
               </div>
 
               <!-- Weekly bar chart -->
-              <div class="grid grid-cols-7 gap-2 mb-7">
+              <div class="grid grid-cols-7 gap-2 mb-7" id="analyticsBarChart">
                 <div class="flex flex-col items-center gap-2">
-                  <div class="w-full h-20 bg-mist rounded-lg relative overflow-hidden flex items-end"><div class="w-full rounded-lg fill" style="height:85%"></div></div>
-                  <span class="text-[10px] text-ink-faint font-semibold">Mon</span>
+                  <div class="w-full h-20 bg-mist rounded-lg relative overflow-hidden flex items-end"><div class="w-full rounded-lg fill" id="bar-0" style="height:0%"></div></div>
+                  <span class="text-[10px] text-ink-faint font-semibold" id="barlabel-0">Mon</span>
                 </div>
                 <div class="flex flex-col items-center gap-2">
-                  <div class="w-full h-20 bg-mist rounded-lg relative overflow-hidden flex items-end"><div class="w-full rounded-lg fill" style="height:70%"></div></div>
-                  <span class="text-[10px] text-ink-faint font-semibold">Tue</span>
+                  <div class="w-full h-20 bg-mist rounded-lg relative overflow-hidden flex items-end"><div class="w-full rounded-lg fill" id="bar-1" style="height:0%"></div></div>
+                  <span class="text-[10px] text-ink-faint font-semibold" id="barlabel-1">Tue</span>
                 </div>
                 <div class="flex flex-col items-center gap-2">
-                  <div class="w-full h-20 bg-mist rounded-lg relative overflow-hidden flex items-end"><div class="w-full rounded-lg fill" style="height:95%"></div></div>
-                  <span class="text-[10px] text-ink-faint font-semibold">Wed</span>
+                  <div class="w-full h-20 bg-mist rounded-lg relative overflow-hidden flex items-end"><div class="w-full rounded-lg fill" id="bar-2" style="height:0%"></div></div>
+                  <span class="text-[10px] text-ink-faint font-semibold" id="barlabel-2">Wed</span>
                 </div>
                 <div class="flex flex-col items-center gap-2">
-                  <div class="w-full h-20 bg-mist rounded-lg relative overflow-hidden flex items-end"><div class="w-full rounded-lg fill" style="height:60%"></div></div>
-                  <span class="text-[10px] text-ink-faint font-semibold">Thu</span>
+                  <div class="w-full h-20 bg-mist rounded-lg relative overflow-hidden flex items-end"><div class="w-full rounded-lg fill" id="bar-3" style="height:0%"></div></div>
+                  <span class="text-[10px] text-ink-faint font-semibold" id="barlabel-3">Thu</span>
                 </div>
                 <div class="flex flex-col items-center gap-2">
-                  <div class="w-full h-20 bg-mist rounded-lg relative overflow-hidden flex items-end"><div class="w-full rounded-lg" style="height:50%;background:var(--gold)"></div></div>
-                  <span class="text-[10px] font-bold" style="color:var(--gold)">Fri</span>
+                  <div class="w-full h-20 bg-mist rounded-lg relative overflow-hidden flex items-end"><div class="w-full rounded-lg fill" id="bar-4" style="height:0%"></div></div>
+                  <span class="text-[10px] text-ink-faint font-semibold" id="barlabel-4">Fri</span>
                 </div>
                 <div class="flex flex-col items-center gap-2">
-                  <div class="w-full h-20 bg-mist rounded-lg relative overflow-hidden"></div>
-                  <span class="text-[10px] text-ink-faint font-semibold">Sat</span>
+                  <div class="w-full h-20 bg-mist rounded-lg relative overflow-hidden flex items-end"><div class="w-full rounded-lg fill" id="bar-5" style="height:0%"></div></div>
+                  <span class="text-[10px] text-ink-faint font-semibold" id="barlabel-5">Sat</span>
                 </div>
                 <div class="flex flex-col items-center gap-2">
-                  <div class="w-full h-20 bg-mist rounded-lg relative overflow-hidden"></div>
-                  <span class="text-[10px] text-ink-faint font-semibold">Sun</span>
+                  <div class="w-full h-20 bg-mist rounded-lg relative overflow-hidden flex items-end"><div class="w-full rounded-lg fill" id="bar-6" style="height:0%"></div></div>
+                  <span class="text-[10px] text-ink-faint font-semibold" id="barlabel-6">Sun</span>
                 </div>
               </div>
 
@@ -833,26 +833,10 @@
             <div id="sessionsSection" class="panel p-7 reveal" style="animation-delay:.14s">
               <h3 class="font-display text-lg text-ink mb-4">Upcoming Sessions</h3>
               <div class="space-y-3">
-                <div class="flex items-center gap-3 p-2.5 rounded-xl hover:bg-mist transition-colors">
-                  <div class="w-11 h-11 rounded-xl flex flex-col items-center justify-center flex-shrink-0 leading-none" style="background:var(--navy)">
-                    <span class="text-teal-2 text-[8.5px] font-bold uppercase">Oct</span>
-                    <span class="text-white font-display text-base">24</span>
-                  </div>
-                  <div class="min-w-0">
-                    <p class="text-ink font-semibold text-[13px] truncate">1:1 Mentor Session</p>
-                    <p class="text-ink-faint text-[11px]">4:00 PM &middot; Dr. Mehta</p>
-                  </div>
-                  <span class="ml-auto chip chip-teal flex-shrink-0">Today</span>
-                </div>
-                <div class="flex items-center gap-3 p-2.5 rounded-xl hover:bg-mist transition-colors">
-                  <div class="w-11 h-11 rounded-xl bg-mist flex flex-col items-center justify-center flex-shrink-0 leading-none">
-                    <span class="text-ink-faint text-[8.5px] font-bold uppercase">Oct</span>
-                    <span class="text-ink font-display text-base">27</span>
-                  </div>
-                  <div class="min-w-0">
-                    <p class="text-ink font-semibold text-[13px] truncate">Mock Test #13</p>
-                    <p class="text-ink-faint text-[11px]">9:00 AM &middot; NEET Pattern</p>
-                  </div>
+                <div class="text-center py-8">
+                  <i data-lucide="calendar-x" class="w-8 h-8 text-ink-faint mx-auto mb-2"></i>
+                  <p class="text-ink-faint text-sm font-semibold">No sessions scheduled yet</p>
+                  <p class="text-ink-faint text-xs mt-1">Sessions booked with your mentor will show up here.</p>
                 </div>
               </div>
             </div>
@@ -959,6 +943,70 @@
     toast.style.opacity = '1';
     clearTimeout(toast._timer);
     toast._timer = setTimeout(() => { toast.style.opacity = '0'; }, 2200);
+  }
+
+
+  // ── Load real analytics (weekly hours, consistency, avg session, bar chart, heatmap) ──
+  async function loadAnalytics(){
+    try {
+      const token = localStorage.getItem('mc_token');
+      const res = await fetch(`${API_BASE}/study/analytics`, {
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (!data.success) return;
+      const a = data.analytics;
+
+      if (typeof setText === 'function') {
+        setText('analyticsWeeklyHours', a.weeklyHours.toFixed(1));
+        setText('analyticsWeeklyTarget', Math.round(a.weeklyTargetHours));
+        setText('analyticsConsistency', a.consistencyPct);
+        setText('analyticsAvgSession', a.avgSessionMinutes);
+      } else {
+        const set = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+        set('analyticsWeeklyHours', a.weeklyHours.toFixed(1));
+        set('analyticsWeeklyTarget', Math.round(a.weeklyTargetHours));
+        set('analyticsConsistency', a.consistencyPct);
+        set('analyticsAvgSession', a.avgSessionMinutes);
+      }
+
+      const maxDayMinutes = Math.max(a.dailyTargetMinutes, ...a.dailyMinutes.map(d => d.minutes), 1);
+      const dow = new Date().getDay();
+      const todayIdx = dow === 0 ? 6 : dow - 1;
+      a.dailyMinutes.forEach((d, i) => {
+        const bar = document.getElementById('bar-' + i);
+        const label = document.getElementById('barlabel-' + i);
+        if (!bar) return;
+        const pct = Math.min(100, Math.round((d.minutes / maxDayMinutes) * 100));
+        bar.style.height = pct + '%';
+        if (i === todayIdx) {
+          bar.style.background = 'var(--gold)';
+          if (label) { label.style.color = 'var(--gold)'; label.classList.add('font-bold'); }
+        }
+      });
+
+      const wrap = document.getElementById('heatmap');
+      if (wrap) {
+        wrap.innerHTML = '';
+        const heat = a.heatmap;
+        for (let w = 0; w < 9; w++){
+          const col = document.createElement('div');
+          col.className = 'flex flex-col gap-1';
+          for (let d = 0; d < 7; d++){
+            const idx = w * 7 + d;
+            const entry = heat[idx];
+            const cell = document.createElement('div');
+            const level = entry ? entry.level : 0;
+            cell.className = 'heat-cell heat-' + level;
+            if (entry) cell.title = entry.date + ' \u00b7 ' + entry.minutes + ' min';
+            col.appendChild(cell);
+          }
+          wrap.appendChild(col);
+        }
+      }
+    } catch (err) {
+      console.error('Failed to load analytics', err);
+    }
   }
 
   // ── Task toggle (persists to backend) ──
@@ -1403,6 +1451,7 @@
     loadStats(token);
     loadMentor(token);
     loadMissions();
+    loadAnalytics();
   })();
 
   // ── Count-up numbers + ring animation on load ──
@@ -1423,22 +1472,6 @@
     });
   });
 
-  // ── Heatmap generation ──
-  (function buildHeatmap(){
-    const wrap = document.getElementById('heatmap');
-    for (let w = 0; w < 9; w++){
-      const col = document.createElement('div');
-      col.className = 'flex flex-col gap-1';
-      for (let d = 0; d < 7; d++){
-        const cell = document.createElement('div');
-        const level = Math.floor(Math.random() * 5);
-        cell.className = 'heat-cell heat-' + level;
-        wrap.appendChild ? null : null;
-        col.appendChild(cell);
-      }
-      wrap.appendChild(col);
-    }
-  })();
 
   // ── Command palette ──
   function openCmdk(){ document.getElementById('cmdkBackdrop').classList.add('open'); document.getElementById('cmdkInput').focus(); }

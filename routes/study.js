@@ -252,4 +252,94 @@ router.patch('/missions', protect, async (req, res) => {
   }
 });
 
+router.get('/analytics', protect, async (req, res) => {
+  try {
+    const user = req.user;
+    const dailyTargetMinutes = parseDailyTargetMinutes(user.onboarding && user.onboarding.hours);
+
+    const now = new Date();
+    const dayOfWeek = now.getDay();
+    const diffToMonday = (dayOfWeek === 0 ? -6 : 1 - dayOfWeek);
+    const monday = new Date(now);
+    monday.setDate(now.getDate() + diffToMonday);
+    monday.setHours(0, 0, 0, 0);
+
+    const dayLabels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    const dailyMinutes = [];
+    for (let i = 0; i < 7; i++) {
+      const dayStart = new Date(monday);
+      dayStart.setDate(monday.getDate() + i);
+      const dayEnd = new Date(dayStart);
+      dayEnd.setDate(dayStart.getDate() + 1);
+      if (dayStart > now) {
+        dailyMinutes.push({ day: dayLabels[i], minutes: 0 });
+        continue;
+      }
+      const sessions = await StudySession.find({
+        user: user._id,
+        completedAt: { $gte: dayStart, $lt: dayEnd },
+      }).lean();
+      const minutes = sessions.reduce((sum, s) => sum + (s.durationMinutes || 0), 0);
+      dailyMinutes.push({ day: dayLabels[i], minutes });
+    }
+
+    const weekMinutesTotal = dailyMinutes.reduce((sum, d) => sum + d.minutes, 0);
+    const weeklyHours = Math.round((weekMinutesTotal / 60) * 10) / 10;
+    const weeklyTargetHours = Math.round((dailyTargetMinutes * 7 / 60) * 10) / 10;
+
+    const daysElapsedThisWeek = dayOfWeek === 0 ? 7 : dayOfWeek;
+    const daysStudied = dailyMinutes.slice(0, daysElapsedThisWeek).filter(d => d.minutes > 0).length;
+    const consistencyPct = daysElapsedThisWeek > 0 ? Math.round((daysStudied / daysElapsedThisWeek) * 100) : 0;
+
+    const allSessions = await StudySession.find({ user: user._id }).select('durationMinutes').lean();
+    const avgSessionMinutes = allSessions.length
+      ? Math.round(allSessions.reduce((sum, s) => sum + (s.durationMinutes || 0), 0) / allSessions.length)
+      : 0;
+
+    const heatmapDays = 63;
+    const heatStart = new Date(now);
+    heatStart.setDate(now.getDate() - (heatmapDays - 1));
+    heatStart.setHours(0, 0, 0, 0);
+
+    const rangeSessions = await StudySession.find({
+      user: user._id,
+      completedAt: { $gte: heatStart },
+    }).select('durationMinutes completedAt').lean();
+
+    const minutesByDate = {};
+    rangeSessions.forEach(s => {
+      const key = new Date(s.completedAt).toISOString().slice(0, 10);
+      minutesByDate[key] = (minutesByDate[key] || 0) + (s.durationMinutes || 0);
+    });
+
+    function levelFor(minutes) {
+      if (minutes <= 0) return 0;
+      if (minutes < 30) return 1;
+      if (minutes < 60) return 2;
+      if (minutes < 120) return 3;
+      return 4;
+    }
+
+    const heatmap = [];
+    for (let i = 0; i < heatmapDays; i++) {
+      const d = new Date(heatStart);
+      d.setDate(heatStart.getDate() + i);
+      const key = d.toISOString().slice(0, 10);
+      const minutes = minutesByDate[key] || 0;
+      heatmap.push({ date: key, minutes, level: levelFor(minutes) });
+    }
+
+    res.json({
+      success: true,
+      analytics: {
+        weeklyHours, weeklyTargetHours, consistencyPct, avgSessionMinutes,
+        dailyMinutes, dailyTargetMinutes, heatmap,
+      },
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: 'Failed to fetch analytics' });
+  }
+});
+
 module.exports = router;
