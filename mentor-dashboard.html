@@ -339,6 +339,10 @@
       <a href="#" class="nav-item" onclick="setNav(this,event)" data-tip="My Mentees">
         <i data-lucide="users"></i><span class="nav-label">My Mentees</span>
       </a>
+      <a href="#" class="nav-item" onclick="setNav(this,event)" data-tip="Requests">
+        <i data-lucide="user-check"></i><span class="nav-label flex-1">Requests</span>
+        <span class="hide-on-collapse chip chip-navy" style="padding:1px 7px;font-size:9.5px">Soon</span>
+      </a>
       <a href="#" class="nav-item" onclick="setNav(this,event)" data-tip="Analytics">
         <i data-lucide="bar-chart-3"></i><span class="nav-label">Analytics</span>
       </a>
@@ -471,6 +475,17 @@
                 <p class="text-white/30 text-[10px] text-center mt-2" id="nextSessionWho">No session scheduled</p>
               </div>
             </div>
+          </div>
+        </section>
+
+        <!-- ═══ MENTEE REQUESTS (coming soon — mentees are currently assigned manually) ═══ -->
+        <section class="reveal" style="animation-delay:.05s">
+          <div class="flex items-center justify-between mb-4">
+            <h2 class="font-display text-[22px] text-ink">Mentee Requests</h2>
+            <span class="chip chip-navy">Coming soon</span>
+          </div>
+          <div class="panel p-6">
+            <p class="text-ink-faint text-sm">Mentees are currently assigned to you by the MedClarivo team. A self-serve request flow will land here once that's built.</p>
           </div>
         </section>
 
@@ -635,7 +650,7 @@
             <section class="reveal" style="animation-delay:.2s">
               <h2 class="font-display text-[20px] text-ink mb-4">Quick Actions</h2>
               <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                <button class="panel panel-lift p-5 flex flex-col items-center gap-3 text-center">
+                <button onclick="openScheduleModal()" class="panel panel-lift p-5 flex flex-col items-center gap-3 text-center">
                   <div class="w-11 h-11 rounded-xl flex items-center justify-center bg-mist">
                     <i data-lucide="calendar-plus" class="w-5 h-5" style="color:var(--navy)"></i>
                   </div>
@@ -647,7 +662,7 @@
                   </div>
                   <span class="text-ink text-[12.5px] font-semibold">Message Mentees</span>
                 </button>
-                <button class="panel panel-lift p-5 flex flex-col items-center gap-3 text-center">
+                <button onclick="document.getElementById('doubtInput').scrollIntoView({behavior:'smooth', block:'center'}); document.getElementById('doubtInput').focus();" class="panel panel-lift p-5 flex flex-col items-center gap-3 text-center">
                   <div class="w-11 h-11 rounded-xl flex items-center justify-center" style="background:var(--gold-soft)">
                     <i data-lucide="message-circle-question" class="w-5 h-5" style="color:var(--gold)"></i>
                   </div>
@@ -837,19 +852,7 @@
   }
   setInterval(updateCountdown, 60000);
 
-  // ── Sessions: real data from /api/mentor/sessions/upcoming ──
-  function adaptSession(s){
-    const mentee = s.mentee || {};
-    return {
-      id: s._id,
-      startsAt: s.startTime,
-      status: s.status,
-      topic: s.topic || '',
-      menteeName: mentee.name || 'Mentee',
-      menteeExam: (mentee.onboarding && mentee.onboarding.exam) || '',
-    };
-  }
-
+  // ── Sessions: now backed by /api/mentor/sessions/upcoming ──
   async function loadSessions(token){
     let weeklyCompleted = 0;
     let weeklyTarget = 8;
@@ -857,7 +860,15 @@
       const res = await fetch(`${API_BASE}/mentor/sessions/upcoming`, { headers: { Authorization: `Bearer ${token}` } });
       const data = await res.json();
       if (!(res.ok && data.success)) throw new Error('bad response');
-      allSessions = [...(data.upcoming || []), ...(data.recent || [])].map(adaptSession);
+      const mapSession = (s) => ({
+        id: s._id,
+        startsAt: s.startTime,
+        status: s.status,
+        type: s.type,
+        topic: s.topic,
+        menteeName: (s.mentee && s.mentee.name) || 'Mentee',
+      });
+      allSessions = [...(data.upcoming || []), ...(data.recent || [])].map(mapSession);
       weeklyCompleted = data.weeklySessionsCompleted || 0;
       weeklyTarget = data.weeklySessionTarget || 8;
     } catch (err) {
@@ -919,8 +930,7 @@
     if (window.lucide) lucide.createIcons();
   }
 
-  // Mentor change requests are reviewed by admins now, not mentors — see
-  // scripts/listChangeRequests.js and scripts/resolveChangeRequest.js.
+  // ── Mentee requests: not built yet — mentees are assigned manually for now.
 
   // ── Mentee progress grid + modal ──
   function menteeCardHTML(m, i){
@@ -1091,29 +1101,118 @@
   // ── Dark mode toggle (visual only placeholder, matches the student dashboard) ──
   function toggleDark(){ document.documentElement.classList.toggle('dark'); }
 
-  // ── Reply Assistant: calls YOUR backend (POST /api/mentor/ai/draft-reply),
-  // which proxies to Claude server-side. Requires ANTHROPIC_API_KEY set on Render. ──
-  async function askDoubt(){
-    const input = document.getElementById('doubtInput');
-    const responseEl = document.getElementById('doubtResponse');
-    const q = input.value.trim();
-    if (!q) return;
-    responseEl.classList.remove('hidden');
-    responseEl.textContent = 'Drafting…';
-    const token = localStorage.getItem('mc_token');
-    try {
-      const res = await fetch(`${API_BASE}/mentor/ai/draft-reply`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-        body: JSON.stringify({ question: q }),
-      });
-      const data = await res.json();
-      responseEl.textContent = (res.ok && data.success && data.draft) ? data.draft : (data.message || 'No draft available. Please try again.');
-    } catch (e) {
-      responseEl.textContent = 'Could not connect. Please check your connection.';
+  // ── Reply Assistant ──
+ async function askDoubt(){
+  const input = document.getElementById('doubtInput');
+  const responseEl = document.getElementById('doubtResponse');
+  const q = input.value.trim();
+  if (!q) return;
+  const token = localStorage.getItem('mc_token');
+  if (!token) return;
+  responseEl.classList.remove('hidden');
+  responseEl.textContent = 'Drafting reply...';
+  try {
+    const res = await fetch(`${API_BASE}/mentor/ai/draft-reply`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`
+      },
+      body: JSON.stringify({ question: q })
+    });
+    const data = await res.json();
+    if (data.success) {
+      responseEl.textContent = data.draft;
+    } else {
+      responseEl.textContent = 'Could not draft a reply: ' + (data.message || 'unknown error');
     }
+  } catch (err) {
+    responseEl.textContent = 'Something went wrong contacting the AI service.';
   }
 }
+
+function openScheduleModal(){
+  const token = localStorage.getItem('mc_token');
+  if (!token) return;
+  const modal = document.createElement('div');
+  modal.id = 'scheduleModalOverlay';
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:9999;';
+  modal.innerHTML = `
+    <div style="background:#fff;border-radius:16px;padding:24px;width:90%;max-width:420px;">
+      <h3 style="font-size:18px;font-weight:700;margin-bottom:12px;">Schedule Session</h3>
+      <label style="font-size:12px;color:#666;">Mentee</label>
+      <select id="scheduleMenteeSelect" style="width:100%;padding:10px;border-radius:8px;border:1px solid #ddd;margin-bottom:12px;margin-top:4px;">
+        <option value="">Loading mentees...</option>
+      </select>
+      <label style="font-size:12px;color:#666;">Date &amp; Time</label>
+      <input type="datetime-local" id="scheduleStartTime" style="width:100%;padding:10px;border-radius:8px;border:1px solid #ddd;margin-bottom:12px;margin-top:4px;"/>
+      <label style="font-size:12px;color:#666;">Topic (optional)</label>
+      <input type="text" id="scheduleTopic" placeholder="e.g. Thermodynamics revision" style="width:100%;padding:10px;border-radius:8px;border:1px solid #ddd;margin-bottom:16px;margin-top:4px;"/>
+      <div id="scheduleError" style="color:#c0392b;font-size:12px;margin-bottom:10px;display:none;"></div>
+      <div style="display:flex;gap:10px;">
+        <button onclick="closeScheduleModal()" style="flex:1;padding:10px;border-radius:8px;border:1px solid #ddd;background:#fff;">Cancel</button>
+        <button onclick="submitScheduleSession()" style="flex:1;padding:10px;border-radius:8px;border:none;background:#0d9488;color:#fff;font-weight:600;">Schedule</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(modal);
+
+  fetch(`${API_BASE}/mentor/mentees`, { headers: { Authorization: `Bearer ${token}` } })
+    .then(res => res.json())
+    .then(data => {
+      const select = document.getElementById('scheduleMenteeSelect');
+      if (!select) return;
+      if (data.success && data.mentees && data.mentees.length) {
+        select.innerHTML = data.mentees.map(m => `<option value="${m.id}">${m.name}</option>`).join('');
+      } else {
+        select.innerHTML = '<option value="">No mentees assigned yet</option>';
+      }
+    })
+    .catch(() => {
+      const select = document.getElementById('scheduleMenteeSelect');
+      if (select) select.innerHTML = '<option value="">Could not load mentees</option>';
+    });
+}
+
+function closeScheduleModal(){
+  const modal = document.getElementById('scheduleModalOverlay');
+  if (modal) modal.remove();
+}
+
+async function submitScheduleSession(){
+  const token = localStorage.getItem('mc_token');
+  const menteeId = document.getElementById('scheduleMenteeSelect').value;
+  const startTime = document.getElementById('scheduleStartTime').value;
+  const topic = document.getElementById('scheduleTopic').value;
+  const errorEl = document.getElementById('scheduleError');
+  errorEl.style.display = 'none';
+
+  if (!menteeId || !startTime) {
+    errorEl.textContent = 'Please choose a mentee and a date/time.';
+    errorEl.style.display = 'block';
+    return;
+  }
+
+  try {
+    const res = await fetch(`${API_BASE}/mentor/sessions`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ menteeId, startTime, topic })
+    });
+    const data = await res.json();
+    if (data.success) {
+      closeScheduleModal();
+      location.reload();
+    } else {
+      errorEl.textContent = data.message || 'Could not schedule session.';
+      errorEl.style.display = 'block';
+    }
+  } catch (err) {
+    errorEl.textContent = 'Something went wrong. Please try again.';
+    errorEl.style.display = 'block';
+  }
+}
+
   document.getElementById('doubtInput').addEventListener('keydown', e => { if (e.key === 'Enter') askDoubt(); });
 
   document.getElementById('signOutBtn').addEventListener('click', () => {
