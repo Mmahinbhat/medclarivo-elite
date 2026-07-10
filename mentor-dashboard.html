@@ -478,14 +478,16 @@
           </div>
         </section>
 
-        <!-- ═══ MENTEE REQUESTS (coming soon — mentees are currently assigned manually) ═══ -->
-        <section class="reveal" style="animation-delay:.05s">
+        <!-- ═══ MENTEE REQUESTS ═══ -->
+        <section class="reveal" id="mentorRequestsSection" style="animation-delay:.05s">
           <div class="flex items-center justify-between mb-4">
             <h2 class="font-display text-[22px] text-ink">Mentee Requests</h2>
-            <span class="chip chip-navy">Coming soon</span>
+            <span class="chip chip-teal" id="requestsCountChip">&hellip;</span>
           </div>
           <div class="panel p-6">
-            <p class="text-ink-faint text-sm">Mentees are currently assigned to you by the MedClarivo team. A self-serve request flow will land here once that's built.</p>
+            <div class="space-y-3" id="requestsList">
+              <p class="text-ink-faint text-sm">Loading requests&hellip;</p>
+            </div>
           </div>
         </section>
 
@@ -656,7 +658,7 @@
                   </div>
                   <span class="text-ink text-[12.5px] font-semibold">Schedule Session</span>
                 </button>
-                <button class="panel panel-lift p-5 flex flex-col items-center gap-3 text-center">
+                <button onclick="openMessageModal()" class="panel panel-lift p-5 flex flex-col items-center gap-3 text-center">
                   <div class="w-11 h-11 rounded-xl flex items-center justify-center" style="background:rgba(124,58,237,0.08)">
                     <i data-lucide="send" class="w-5 h-5" style="color:#7C3AED"></i>
                   </div>
@@ -668,7 +670,7 @@
                   </div>
                   <span class="text-ink text-[12.5px] font-semibold">Answer Doubts</span>
                 </button>
-                <button class="panel panel-lift p-5 flex flex-col items-center gap-3 text-center">
+                <button onclick="document.getElementById('mentorRequestsSection').scrollIntoView({behavior:'smooth', block:'start'});" class="panel panel-lift p-5 flex flex-col items-center gap-3 text-center">
                   <div class="w-11 h-11 rounded-xl flex items-center justify-center" style="background:rgba(15,168,154,0.1)">
                     <i data-lucide="user-check" class="w-5 h-5 text-teal-deep"></i>
                   </div>
@@ -777,6 +779,8 @@
   const API_BASE = 'https://med-clarivo.onrender.com/api';
   let allSessions = [];
   let nextSessionTarget = null;
+  let currentMentorId = null;
+  let messageActiveMenteeId = null;
   const RING_CIRC = 157;
   const RING_COLORS = ['#2563EB', '#0FA89A', '#7C3AED', '#DB2777', '#EA580C', '#65A30D'];
 
@@ -930,8 +934,6 @@
     if (window.lucide) lucide.createIcons();
   }
 
-  // ── Mentee requests: not built yet — mentees are assigned manually for now.
-
   // ── Mentee progress grid + modal ──
   function menteeCardHTML(m, i){
     const color = RING_COLORS[i % RING_COLORS.length];
@@ -1058,6 +1060,8 @@
       return;
     }
 
+    currentMentorId = user._id || user.id || null;
+
     const firstName = (user.name || 'Mentor').split(' ').slice(-1)[0];
     document.getElementById('greetingName').textContent = firstName;
     document.getElementById('sidebarName').textContent = user.name || 'Mentor';
@@ -1072,6 +1076,7 @@
 
     loadMentees(token);
     loadSessions(token);
+    loadRequests(token);
   })();
 
   // ── Heatmap ──
@@ -1205,6 +1210,194 @@ async function submitScheduleSession(){
       location.reload();
     } else {
       errorEl.textContent = data.message || 'Could not schedule session.';
+      errorEl.style.display = 'block';
+    }
+  } catch (err) {
+    errorEl.textContent = 'Something went wrong. Please try again.';
+    errorEl.style.display = 'block';
+  }
+}
+
+// ── Mentee Requests ──
+function requestRowHTML(r){
+  const student = r.student || {};
+  const name = student.name || 'Student';
+  const exam = (student.onboarding && student.onboarding.exam) || '';
+  const initial = (name.charAt(0) || '?').toUpperCase();
+  return `
+    <div class="flex items-center gap-3 p-3 rounded-xl hover:bg-mist transition-colors">
+      <div class="avatar-ring flex-shrink-0">
+        <div class="w-11 h-11 rounded-full flex items-center justify-center text-white font-display text-lg" style="background:var(--navy)">${initial}</div>
+      </div>
+      <div class="flex-1 min-w-0">
+        <p class="text-ink font-semibold text-sm truncate">${name}</p>
+        <p class="text-ink-faint text-xs truncate">${exam}${r.message ? ' &middot; ' + r.message : ''}</p>
+      </div>
+      <div class="flex gap-2 flex-shrink-0">
+        <button onclick="respondToRequest('${r._id}','decline')" class="btn-outline px-3 py-1.5 text-xs font-bold">Decline</button>
+        <button onclick="respondToRequest('${r._id}','accept')" class="btn-primary px-3 py-1.5 text-xs font-bold">Accept</button>
+      </div>
+    </div>`;
+}
+
+async function loadRequests(token){
+  const listEl = document.getElementById('requestsList');
+  const chipEl = document.getElementById('requestsCountChip');
+  try {
+    const res = await fetch(`${API_BASE}/mentor/requests`, { headers: { Authorization: `Bearer ${token}` } });
+    const data = await res.json();
+    if (!(res.ok && data.success)) throw new Error('bad response');
+    const requests = data.requests || [];
+    if (chipEl) chipEl.textContent = `${requests.length} pending`;
+    if (listEl) {
+      listEl.innerHTML = requests.length
+        ? requests.map(requestRowHTML).join('')
+        : '<p class="text-ink-faint text-sm">No pending requests right now.</p>';
+      if (window.lucide) lucide.createIcons();
+    }
+  } catch (err) {
+    console.warn('Could not load requests:', err);
+    if (chipEl) chipEl.textContent = '—';
+    if (listEl) listEl.innerHTML = '<p class="text-ink-faint text-sm">Could not load requests right now.</p>';
+  }
+}
+
+async function respondToRequest(requestId, action){
+  const token = localStorage.getItem('mc_token');
+  if (!token) return;
+  try {
+    const res = await fetch(`${API_BASE}/mentor/requests/${requestId}/${action}`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const data = await res.json();
+    if (res.ok && data.success) {
+      loadRequests(token);
+      if (action === 'accept') loadMentees(token);
+    }
+  } catch (err) {
+    console.warn('Could not respond to request:', err);
+  }
+}
+
+// ── Message Mentees ──
+function openMessageModal(){
+  const token = localStorage.getItem('mc_token');
+  if (!token) return;
+  messageActiveMenteeId = null;
+  const modal = document.createElement('div');
+  modal.id = 'messageModalOverlay';
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:9999;padding:16px;';
+  modal.innerHTML = `
+    <div style="background:#fff;border-radius:16px;padding:24px;width:100%;max-width:480px;max-height:82vh;display:flex;flex-direction:column;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+        <h3 style="font-size:18px;font-weight:700;">Message Mentees</h3>
+        <button onclick="closeMessageModal()" style="border:none;background:none;font-size:22px;line-height:1;cursor:pointer;color:#999;">&times;</button>
+      </div>
+      <select id="messageMenteeSelect" style="width:100%;padding:10px;border-radius:8px;border:1px solid #ddd;margin-bottom:12px;">
+        <option value="">Loading mentees...</option>
+      </select>
+      <div id="messageThread" style="flex:1;overflow-y:auto;border:1px solid #eee;border-radius:8px;padding:12px;margin-bottom:12px;min-height:220px;max-height:320px;">
+        <p style="color:#999;font-size:13px;">Choose a mentee to start messaging.</p>
+      </div>
+      <div id="messageError" style="color:#c0392b;font-size:12px;margin-bottom:8px;display:none;"></div>
+      <div style="display:flex;gap:8px;">
+        <input type="text" id="messageInput" placeholder="Type a message..." style="flex:1;padding:10px;border-radius:8px;border:1px solid #ddd;"/>
+        <button onclick="sendMessage()" style="padding:10px 16px;border-radius:8px;border:none;background:#0d9488;color:#fff;font-weight:600;">Send</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(modal);
+
+  fetch(`${API_BASE}/mentor/mentees`, { headers: { Authorization: `Bearer ${token}` } })
+    .then(res => res.json())
+    .then(data => {
+      const select = document.getElementById('messageMenteeSelect');
+      if (!select) return;
+      if (data.success && data.mentees && data.mentees.length) {
+        select.innerHTML = '<option value="">Choose a mentee&hellip;</option>' +
+          data.mentees.map(m => `<option value="${m.id}">${m.name}</option>`).join('');
+        select.addEventListener('change', () => {
+          messageActiveMenteeId = select.value || null;
+          if (messageActiveMenteeId) loadConversation(messageActiveMenteeId);
+          else document.getElementById('messageThread').innerHTML = '<p style="color:#999;font-size:13px;">Choose a mentee to start messaging.</p>';
+        });
+      } else {
+        select.innerHTML = '<option value="">No mentees assigned yet</option>';
+      }
+    })
+    .catch(() => {
+      const select = document.getElementById('messageMenteeSelect');
+      if (select) select.innerHTML = '<option value="">Could not load mentees</option>';
+    });
+
+  document.getElementById('messageInput').addEventListener('keydown', e => { if (e.key === 'Enter') sendMessage(); });
+}
+
+function closeMessageModal(){
+  const modal = document.getElementById('messageModalOverlay');
+  if (modal) modal.remove();
+  messageActiveMenteeId = null;
+}
+
+function messageBubbleHTML(m){
+  const mine = String(m.sender) === String(currentMentorId);
+  return `
+    <div style="display:flex;justify-content:${mine ? 'flex-end' : 'flex-start'};margin-bottom:8px;">
+      <div style="max-width:75%;padding:8px 12px;border-radius:12px;font-size:13px;line-height:1.4;background:${mine ? '#0d9488' : '#f0f0f0'};color:${mine ? '#fff' : '#111'};">
+        ${m.content}
+      </div>
+    </div>`;
+}
+
+async function loadConversation(menteeId){
+  const token = localStorage.getItem('mc_token');
+  const threadEl = document.getElementById('messageThread');
+  if (!threadEl) return;
+  threadEl.innerHTML = '<p style="color:#999;font-size:13px;">Loading messages&hellip;</p>';
+  try {
+    const res = await fetch(`${API_BASE}/mentor/messages/${menteeId}`, { headers: { Authorization: `Bearer ${token}` } });
+    const data = await res.json();
+    if (res.ok && data.success) {
+      const messages = data.messages || [];
+      threadEl.innerHTML = messages.length
+        ? messages.map(messageBubbleHTML).join('')
+        : '<p style="color:#999;font-size:13px;">No messages yet. Say hello!</p>';
+      threadEl.scrollTop = threadEl.scrollHeight;
+    } else {
+      threadEl.innerHTML = '<p style="color:#999;font-size:13px;">Could not load messages.</p>';
+    }
+  } catch (err) {
+    threadEl.innerHTML = '<p style="color:#999;font-size:13px;">Could not load messages right now.</p>';
+  }
+}
+
+async function sendMessage(){
+  const token = localStorage.getItem('mc_token');
+  const input = document.getElementById('messageInput');
+  const errorEl = document.getElementById('messageError');
+  const content = input.value.trim();
+  errorEl.style.display = 'none';
+
+  if (!messageActiveMenteeId) {
+    errorEl.textContent = 'Please choose a mentee first.';
+    errorEl.style.display = 'block';
+    return;
+  }
+  if (!content) return;
+
+  try {
+    const res = await fetch(`${API_BASE}/mentor/messages`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ menteeId: messageActiveMenteeId, content })
+    });
+    const data = await res.json();
+    if (data.success) {
+      input.value = '';
+      loadConversation(messageActiveMenteeId);
+    } else {
+      errorEl.textContent = data.message || 'Could not send message.';
       errorEl.style.display = 'block';
     }
   } catch (err) {
