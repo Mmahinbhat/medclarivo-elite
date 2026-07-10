@@ -8,6 +8,7 @@ const UserProgress = require('../models/UserProgress');
 const { examGroupFor } = require('./curriculum');
 const MentorRequest = require('../models/MentorRequest');
 const Session = require('../models/Session');
+const Message = require('../models/Message');
 const { draftReply } = require('../services/anthropic.service');
 
 // ════════════════════════════════════════════════════════════════
@@ -299,6 +300,61 @@ router.post('/sessions', protect, restrictTo('mentor', 'admin'), async (req, res
   } catch (err) {
     console.error(err);
     res.status(500).json({ success: false, message: 'Failed to create session.' });
+  }
+});
+
+// ════════════════════════════════════════════════════════════════
+// GET /api/mentor/messages/:menteeId
+// ════════════════════════════════════════════════════════════════
+router.get('/messages/:menteeId', protect, restrictTo('mentor', 'admin'), async (req, res) => {
+  try {
+    const mentee = await User.findOne({ _id: req.params.menteeId, mentorId: req.user._id, role: 'student' });
+    if (!mentee) {
+      return res.status(404).json({ success: false, message: 'Mentee not found or not assigned to you.' });
+    }
+
+    const messages = await Message.find({
+      $or: [
+        { sender: req.user._id, recipient: mentee._id },
+        { sender: mentee._id, recipient: req.user._id },
+      ],
+    }).sort('createdAt').lean();
+
+    res.json({ success: true, messages });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: 'Failed to fetch messages.' });
+  }
+});
+
+// ════════════════════════════════════════════════════════════════
+// POST /api/mentor/messages
+// ════════════════════════════════════════════════════════════════
+router.post('/messages', protect, restrictTo('mentor', 'admin'), async (req, res) => {
+  try {
+    const { menteeId, content } = req.body;
+    if (!menteeId || !content || !content.trim()) {
+      return res.status(400).json({ success: false, message: 'menteeId and content are required.' });
+    }
+    if (content.length > 2000) {
+      return res.status(400).json({ success: false, message: 'Message is too long.' });
+    }
+
+    const mentee = await User.findOne({ _id: menteeId, mentorId: req.user._id, role: 'student' });
+    if (!mentee) {
+      return res.status(404).json({ success: false, message: 'Mentee not found or not assigned to you.' });
+    }
+
+    const message = await Message.create({
+      sender: req.user._id,
+      recipient: menteeId,
+      content: content.trim(),
+    });
+
+    res.status(201).json({ success: true, message });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: 'Failed to send message.' });
   }
 });
 
