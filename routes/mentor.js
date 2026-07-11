@@ -9,6 +9,7 @@ const { examGroupFor } = require('./curriculum');
 const MentorRequest = require('../models/MentorRequest');
 const Session = require('../models/Session');
 const Message = require('../models/Message');
+const MentorAvailability = require('../models/MentorAvailability');
 const { draftReply } = require('../services/anthropic.service');
 
 // ════════════════════════════════════════════════════════════════
@@ -278,7 +279,7 @@ router.post('/requests', protect, restrictTo('student'), async (req, res) => {
 // ════════════════════════════════════════════════════════════════
 router.post('/sessions', protect, restrictTo('mentor', 'admin'), async (req, res) => {
   try {
-    const { menteeId, startTime, type, topic } = req.body;
+    const { menteeId, startTime, type, topic, meetingLink } = req.body;
     if (!menteeId || !startTime) {
       return res.status(400).json({ success: false, message: 'menteeId and startTime are required.' });
     }
@@ -294,6 +295,7 @@ router.post('/sessions', protect, restrictTo('mentor', 'admin'), async (req, res
       type: type || '1:1',
       topic: topic || '',
       startTime: new Date(startTime),
+      meetingLink: meetingLink || '',
     });
 
     res.status(201).json({ success: true, session });
@@ -355,6 +357,55 @@ router.post('/messages', protect, restrictTo('mentor', 'admin'), async (req, res
   } catch (err) {
     console.error(err);
     res.status(500).json({ success: false, message: 'Failed to send message.' });
+  }
+});
+
+// ════════════════════════════════════════════════════════════════
+// GET /api/mentor/availability
+// ════════════════════════════════════════════════════════════════
+router.get('/availability', protect, restrictTo('mentor', 'admin'), async (req, res) => {
+  try {
+    const record = await MentorAvailability.findOne({ mentor: req.user._id }).lean();
+    res.json({ success: true, slots: (record && record.slots) || [] });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: 'Failed to fetch availability.' });
+  }
+});
+
+// ════════════════════════════════════════════════════════════════
+// PUT /api/mentor/availability
+// Body: { slots: [{ day, startTime, endTime }, ...] }
+// ════════════════════════════════════════════════════════════════
+router.put('/availability', protect, restrictTo('mentor', 'admin'), async (req, res) => {
+  try {
+    const { slots } = req.body;
+    if (!Array.isArray(slots)) {
+      return res.status(400).json({ success: false, message: 'slots must be an array.' });
+    }
+    const timeRe = /^([01]\d|2[0-3]):([0-5]\d)$/;
+    for (const s of slots) {
+      if (typeof s.day !== 'number' || s.day < 0 || s.day > 6) {
+        return res.status(400).json({ success: false, message: 'Each slot needs a valid day (0-6).' });
+      }
+      if (!timeRe.test(s.startTime) || !timeRe.test(s.endTime)) {
+        return res.status(400).json({ success: false, message: 'Times must be in HH:MM 24-hour format.' });
+      }
+      if (s.startTime >= s.endTime) {
+        return res.status(400).json({ success: false, message: 'Each slot\'s start time must be before its end time.' });
+      }
+    }
+
+    const record = await MentorAvailability.findOneAndUpdate(
+      { mentor: req.user._id },
+      { mentor: req.user._id, slots },
+      { upsert: true, new: true }
+    );
+
+    res.json({ success: true, slots: record.slots });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: 'Failed to update availability.' });
   }
 });
 
