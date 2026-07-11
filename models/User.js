@@ -67,6 +67,13 @@ const UserSchema = new mongoose.Schema({
     ref: 'User',
     default: null,
   },
+  // Parent-only link -- the student this parent account can view.
+  // Set manually by staff (scripts/assignChild.js), same pattern as mentorId.
+  childId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    default: null,
+  },
   // Mentor-only profile fields (ignored for students)
  mentorProfile: {
     title:               { type: String },  // e.g. "AIIMS Delhi '19 · AIR 7"

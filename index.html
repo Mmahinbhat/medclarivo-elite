@@ -779,6 +779,8 @@ async function redirectToDashboard() {
       localStorage.setItem('mc_user', JSON.stringify(data.user));
       if (data.user.role === 'mentor') {
         window.location.href = 'mentor-dashboard.html';
+      } else if (data.user.role === 'parent') {
+        window.location.href = 'parent-dashboard.html';
       } else if (data.user.role === 'admin') {
         window.location.href = 'mentor-dashboard.html'; // TODO: dedicated admin-dashboard.html later
       } else if (data.user.onboardingComplete) {

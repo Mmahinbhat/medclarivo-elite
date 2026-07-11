@@ -409,4 +409,97 @@ router.put('/availability', protect, restrictTo('mentor', 'admin'), async (req, 
   }
 });
 
+// ════════════════════════════════════════════════════════════════
+// GET /api/mentor/parents  (mentor/admin only)
+// Parents linked to one of this mentor's students.
+// ════════════════════════════════════════════════════════════════
+router.get('/parents', protect, restrictTo('mentor', 'admin'), async (req, res) => {
+  try {
+    const students = await User.find({ mentorId: req.user._id, role: 'student' }).select('_id name').lean();
+    const studentIds = students.map(s => s._id);
+    const studentNameById = {};
+    students.forEach(s => { studentNameById[s._id.toString()] = s.name; });
+
+    const parents = await User.find({ childId: { $in: studentIds }, role: 'parent' })
+      .select('name avatar childId')
+      .lean();
+
+    res.json({
+      success: true,
+      parents: parents.map(p => ({
+        id: p._id,
+        name: p.name,
+        avatar: p.avatar,
+        childName: studentNameById[p.childId.toString()] || null,
+      })),
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: 'Failed to fetch parents.' });
+  }
+});
+
+// ════════════════════════════════════════════════════════════════
+// GET /api/mentor/parent-messages/:parentId
+// ════════════════════════════════════════════════════════════════
+router.get('/parent-messages/:parentId', protect, restrictTo('mentor', 'admin'), async (req, res) => {
+  try {
+    const parent = await User.findOne({ _id: req.params.parentId, role: 'parent' }).lean();
+    if (!parent || !parent.childId) {
+      return res.status(404).json({ success: false, message: 'Parent not found.' });
+    }
+    const linkedStudent = await User.findOne({ _id: parent.childId, mentorId: req.user._id, role: 'student' }).lean();
+    if (!linkedStudent) {
+      return res.status(404).json({ success: false, message: 'This parent is not linked to one of your students.' });
+    }
+
+    const messages = await Message.find({
+      $or: [
+        { sender: req.user._id, recipient: parent._id },
+        { sender: parent._id, recipient: req.user._id },
+      ],
+    }).sort('createdAt').lean();
+
+    res.json({ success: true, messages });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: 'Failed to fetch messages.' });
+  }
+});
+
+// ════════════════════════════════════════════════════════════════
+// POST /api/mentor/parent-messages/:parentId
+// ════════════════════════════════════════════════════════════════
+router.post('/parent-messages/:parentId', protect, restrictTo('mentor', 'admin'), async (req, res) => {
+  try {
+    const { content } = req.body;
+    if (!content || !content.trim()) {
+      return res.status(400).json({ success: false, message: 'content is required.' });
+    }
+    if (content.length > 2000) {
+      return res.status(400).json({ success: false, message: 'Message is too long.' });
+    }
+
+    const parent = await User.findOne({ _id: req.params.parentId, role: 'parent' }).lean();
+    if (!parent || !parent.childId) {
+      return res.status(404).json({ success: false, message: 'Parent not found.' });
+    }
+    const linkedStudent = await User.findOne({ _id: parent.childId, mentorId: req.user._id, role: 'student' }).lean();
+    if (!linkedStudent) {
+      return res.status(404).json({ success: false, message: 'This parent is not linked to one of your students.' });
+    }
+
+    const message = await Message.create({
+      sender: req.user._id,
+      recipient: parent._id,
+      content: content.trim(),
+    });
+
+    res.status(201).json({ success: true, message });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: 'Failed to send message.' });
+  }
+});
+
 module.exports = router;
