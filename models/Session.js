@@ -19,6 +19,7 @@ const SessionSchema = new mongoose.Schema({
     enum: ['scheduled', 'completed', 'cancelled'],
     default: 'scheduled',
   },
+  meetingLink: { type: String, trim: true, default: '' },
   notes: { type: String, trim: true },
 }, { timestamps: true });
 
