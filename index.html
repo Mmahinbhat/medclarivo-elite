@@ -777,11 +777,11 @@ async function redirectToDashboard() {
     const data = await res.json();
     if (res.ok && data.success) {
       localStorage.setItem('mc_user', JSON.stringify(data.user));
-      if (data.user.role === 'mentor') {
+      if (data.user.role === 'mentor' || data.user.role === 'assistant') {
         window.location.href = 'mentor-dashboard.html';
       } else if (data.user.role === 'parent') {
         window.location.href = 'parent-dashboard.html';
-      } else if (data.user.role === 'admin') {
+      } else if (data.user.role === 'admin' || data.user.role === 'super_admin') {
         window.location.href = 'mentor-dashboard.html'; // TODO: dedicated admin-dashboard.html later
       } else if (data.user.onboardingComplete) {
         window.location.href = 'dashboard.html';
