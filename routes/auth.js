@@ -82,6 +82,13 @@ router.post('/login', [
       return res.status(401).json({ success: false, message: 'Invalid credentials.' });
     }
 
+    if (user.isActive === false) {
+      return res.status(403).json({
+        success: false,
+        message: 'This account has been suspended.' + (user.suspendedReason ? ` Reason: ${user.suspendedReason}` : ''),
+      });
+    }
+
     user.lastLogin = new Date();
     await user.save();
 
