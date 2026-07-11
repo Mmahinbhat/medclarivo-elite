@@ -371,7 +371,7 @@
         <span class="text-white font-bold text-[13px]">Weekly Availability</span>
       </div>
       <p class="text-white/45 text-[11px] leading-snug mb-3">Mentees can only book sessions during hours you've set open.</p>
-      <button class="w-full py-2 rounded-xl text-[11.5px] font-bold btn-primary">Set Availability</button>
+      <button onclick="openAvailabilityModal()" class="w-full py-2 rounded-xl text-[11.5px] font-bold btn-primary">Set Availability</button>
     </div>
 
     <button id="signOutBtn" class="nav-item mb-4 text-red-300/70 hover:text-red-300 hover:bg-red-500/10" data-tip="Sign Out" style="background:none;border:none;cursor:pointer;font:inherit;text-align:left;">
@@ -527,10 +527,10 @@
               <p class="text-ink-faint text-xs" id="nextSessionTopic">Organic Chemistry Strategy</p>
             </div>
             <div class="flex gap-2">
-              <button class="btn-primary flex-1 py-2.5 text-[13px] font-bold flex items-center justify-center gap-1.5">
+              <button id="nextSessionJoinBtn" class="btn-primary flex-1 py-2.5 text-[13px] font-bold flex items-center justify-center gap-1.5" disabled style="opacity:.5;cursor:not-allowed">
                 <i data-lucide="video" class="w-3.5 h-3.5"></i>Join
               </button>
-              <button class="btn-outline flex-1 py-2.5 text-[13px] font-bold flex items-center justify-center gap-1.5">
+              <button id="nextSessionMessageBtn" class="btn-outline flex-1 py-2.5 text-[13px] font-bold flex items-center justify-center gap-1.5" disabled style="opacity:.5;cursor:not-allowed">
                 <i data-lucide="message-square" class="w-3.5 h-3.5"></i>Message
               </button>
             </div>
@@ -783,6 +783,7 @@
   let messageActiveMenteeId = null;
   const RING_CIRC = 157;
   const RING_COLORS = ['#2563EB', '#0FA89A', '#7C3AED', '#DB2777', '#EA580C', '#65A30D'];
+  const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
   // ── Today's Schedule row + mark-complete ──
   function typeChipClass(type){
@@ -871,6 +872,8 @@
         type: s.type,
         topic: s.topic,
         menteeName: (s.mentee && s.mentee.name) || 'Mentee',
+        menteeId: (s.mentee && s.mentee._id) || null,
+        meetingLink: s.meetingLink || '',
       });
       allSessions = [...(data.upcoming || []), ...(data.recent || [])].map(mapSession);
       weeklyCompleted = data.weeklySessionsCompleted || 0;
@@ -902,6 +905,8 @@
     updateCountdown();
 
     const statusEl = document.getElementById('nextSessionStatus');
+    const joinBtn = document.getElementById('nextSessionJoinBtn');
+    const msgBtn = document.getElementById('nextSessionMessageBtn');
     if (next) {
       statusEl.style.display = '';
       document.getElementById('nextSessionAvatar').textContent = (next.menteeName || '?').charAt(0).toUpperCase();
@@ -911,6 +916,29 @@
       document.getElementById('nextSessionTime').textContent = d.toLocaleDateString([], { month: 'short', day: 'numeric' }) + ' · ' + d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
       document.getElementById('nextSessionTopic').textContent = next.topic || '';
       document.getElementById('nextSessionWho').textContent = `${next.menteeName} · ${next.topic || ''}`;
+
+      if (next.meetingLink) {
+        joinBtn.disabled = false;
+        joinBtn.style.opacity = '';
+        joinBtn.style.cursor = '';
+        joinBtn.onclick = () => window.open(next.meetingLink, '_blank', 'noopener');
+      } else {
+        joinBtn.disabled = true;
+        joinBtn.style.opacity = '.5';
+        joinBtn.style.cursor = 'not-allowed';
+        joinBtn.onclick = null;
+      }
+      if (next.menteeId) {
+        msgBtn.disabled = false;
+        msgBtn.style.opacity = '';
+        msgBtn.style.cursor = '';
+        msgBtn.onclick = () => openMessageModal(next.menteeId);
+      } else {
+        msgBtn.disabled = true;
+        msgBtn.style.opacity = '.5';
+        msgBtn.style.cursor = 'not-allowed';
+        msgBtn.onclick = null;
+      }
     } else {
       statusEl.style.display = 'none';
       document.getElementById('nextSessionAvatar').textContent = '–';
@@ -919,6 +947,14 @@
       document.getElementById('nextSessionTime').textContent = '—';
       document.getElementById('nextSessionTopic').textContent = 'Set your availability so mentees can book you.';
       document.getElementById('nextSessionWho').textContent = 'No session scheduled';
+      joinBtn.disabled = true;
+      joinBtn.style.opacity = '.5';
+      joinBtn.style.cursor = 'not-allowed';
+      joinBtn.onclick = null;
+      msgBtn.disabled = true;
+      msgBtn.style.opacity = '.5';
+      msgBtn.style.cursor = 'not-allowed';
+      msgBtn.onclick = null;
     }
 
     const weeklyPct = Math.min(100, Math.round((weeklyCompleted / weeklyTarget) * 100));
@@ -985,14 +1021,14 @@
     }
   }
 
-  function subjectRowHTML(subj){
+  function subjectRowHTML(subj, menteeId){
     return `
       <div class="chapter-row">
         <div style="flex:1">
           <p class="text-ink text-[14px] font-semibold">${subj.name}</p>
           <p class="text-ink-faint text-[12px]">${subj.mastery}% mastery</p>
         </div>
-        <button class="chapter-action-btn">Message</button>
+        <button class="chapter-action-btn" onclick="closeMenteeModal(); openMessageModal('${menteeId}');">Message</button>
       </div>`;
   }
   async function openMenteeModal(menteeId, menteeName){
@@ -1008,7 +1044,7 @@
       const res = await fetch(`${API_BASE}/mentor/mentees/${menteeId}/subjects`, { headers: { Authorization: `Bearer ${token}` } });
       const data = await res.json();
       if (res.ok && data.success) {
-        listEl.innerHTML = (data.subjects || []).map(subjectRowHTML).join('') || '<p class="text-ink-faint text-sm">No subject data yet for this mentee.</p>';
+        listEl.innerHTML = (data.subjects || []).map(subj => subjectRowHTML(subj, menteeId)).join('') || '<p class="text-ink-faint text-sm">No subject data yet for this mentee.</p>';
       } else {
         listEl.innerHTML = '<p class="text-ink-faint text-sm">Could not load this mentee\'s subjects.</p>';
       }
@@ -1152,7 +1188,9 @@ function openScheduleModal(){
       <label style="font-size:12px;color:#666;">Date &amp; Time</label>
       <input type="datetime-local" id="scheduleStartTime" style="width:100%;padding:10px;border-radius:8px;border:1px solid #ddd;margin-bottom:12px;margin-top:4px;"/>
       <label style="font-size:12px;color:#666;">Topic (optional)</label>
-      <input type="text" id="scheduleTopic" placeholder="e.g. Thermodynamics revision" style="width:100%;padding:10px;border-radius:8px;border:1px solid #ddd;margin-bottom:16px;margin-top:4px;"/>
+      <input type="text" id="scheduleTopic" placeholder="e.g. Thermodynamics revision" style="width:100%;padding:10px;border-radius:8px;border:1px solid #ddd;margin-bottom:12px;margin-top:4px;"/>
+      <label style="font-size:12px;color:#666;">Meeting Link (optional)</label>
+      <input type="url" id="scheduleMeetingLink" placeholder="e.g. Google Meet or Zoom link" style="width:100%;padding:10px;border-radius:8px;border:1px solid #ddd;margin-bottom:16px;margin-top:4px;"/>
       <div id="scheduleError" style="color:#c0392b;font-size:12px;margin-bottom:10px;display:none;"></div>
       <div style="display:flex;gap:10px;">
         <button onclick="closeScheduleModal()" style="flex:1;padding:10px;border-radius:8px;border:1px solid #ddd;background:#fff;">Cancel</button>
@@ -1189,6 +1227,7 @@ async function submitScheduleSession(){
   const menteeId = document.getElementById('scheduleMenteeSelect').value;
   const startTime = document.getElementById('scheduleStartTime').value;
   const topic = document.getElementById('scheduleTopic').value;
+  const meetingLink = document.getElementById('scheduleMeetingLink').value;
   const errorEl = document.getElementById('scheduleError');
   errorEl.style.display = 'none';
 
@@ -1202,7 +1241,7 @@ async function submitScheduleSession(){
     const res = await fetch(`${API_BASE}/mentor/sessions`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-      body: JSON.stringify({ menteeId, startTime, topic })
+      body: JSON.stringify({ menteeId, startTime, topic, meetingLink })
     });
     const data = await res.json();
     if (data.success) {
@@ -1281,7 +1320,7 @@ async function respondToRequest(requestId, action){
 }
 
 // ── Message Mentees ──
-function openMessageModal(){
+function openMessageModal(preselectMenteeId){
   const token = localStorage.getItem('mc_token');
   if (!token) return;
   messageActiveMenteeId = null;
@@ -1317,6 +1356,11 @@ function openMessageModal(){
       if (data.success && data.mentees && data.mentees.length) {
         select.innerHTML = '<option value="">Choose a mentee&hellip;</option>' +
           data.mentees.map(m => `<option value="${m.id}">${m.name}</option>`).join('');
+        if (preselectMenteeId && data.mentees.some(m => m.id === preselectMenteeId)) {
+          select.value = preselectMenteeId;
+          messageActiveMenteeId = preselectMenteeId;
+          loadConversation(preselectMenteeId);
+        }
         select.addEventListener('change', () => {
           messageActiveMenteeId = select.value || null;
           if (messageActiveMenteeId) loadConversation(messageActiveMenteeId);
@@ -1398,6 +1442,105 @@ async function sendMessage(){
       loadConversation(messageActiveMenteeId);
     } else {
       errorEl.textContent = data.message || 'Could not send message.';
+      errorEl.style.display = 'block';
+    }
+  } catch (err) {
+    errorEl.textContent = 'Something went wrong. Please try again.';
+    errorEl.style.display = 'block';
+  }
+}
+
+// ── Mentor Availability ──
+function openAvailabilityModal(){
+  const token = localStorage.getItem('mc_token');
+  if (!token) return;
+  const modal = document.createElement('div');
+  modal.id = 'availabilityModalOverlay';
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:9999;padding:16px;';
+  const rowsHTML = DAY_NAMES.map((name, i) => `
+    <div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid #eee;">
+      <label style="display:flex;align-items:center;gap:6px;width:64px;flex-shrink:0;font-size:13px;">
+        <input type="checkbox" id="availDay${i}" onchange="document.getElementById('availTimes${i}').style.display = this.checked ? 'flex' : 'none';"/>
+        ${name}
+      </label>
+      <div id="availTimes${i}" style="display:none;gap:6px;align-items:center;flex:1;">
+        <input type="time" id="availStart${i}" value="16:00" style="flex:1;padding:6px;border-radius:6px;border:1px solid #ddd;font-size:12px;min-width:0;"/>
+        <span style="color:#999;font-size:12px;">to</span>
+        <input type="time" id="availEnd${i}" value="19:00" style="flex:1;padding:6px;border-radius:6px;border:1px solid #ddd;font-size:12px;min-width:0;"/>
+      </div>
+    </div>
+  `).join('');
+  modal.innerHTML = `
+    <div style="background:#fff;border-radius:16px;padding:24px;width:100%;max-width:440px;max-height:82vh;overflow-y:auto;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
+        <h3 style="font-size:18px;font-weight:700;">Weekly Availability</h3>
+        <button onclick="closeAvailabilityModal()" style="border:none;background:none;font-size:22px;line-height:1;cursor:pointer;color:#999;">&times;</button>
+      </div>
+      <p style="font-size:12px;color:#888;margin-bottom:12px;">Check the days you're open to mentoring, and set your hours.</p>
+      <div id="availabilityRows">${rowsHTML}</div>
+      <div id="availabilityError" style="color:#c0392b;font-size:12px;margin:10px 0;display:none;"></div>
+      <div style="display:flex;gap:10px;margin-top:14px;">
+        <button onclick="closeAvailabilityModal()" style="flex:1;padding:10px;border-radius:8px;border:1px solid #ddd;background:#fff;">Cancel</button>
+        <button onclick="submitAvailability()" style="flex:1;padding:10px;border-radius:8px;border:none;background:#0d9488;color:#fff;font-weight:600;">Save</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(modal);
+
+  fetch(`${API_BASE}/mentor/availability`, { headers: { Authorization: `Bearer ${token}` } })
+    .then(res => res.json())
+    .then(data => {
+      if (!data.success) return;
+      (data.slots || []).forEach(slot => {
+        const cb = document.getElementById(`availDay${slot.day}`);
+        const timesEl = document.getElementById(`availTimes${slot.day}`);
+        const startEl = document.getElementById(`availStart${slot.day}`);
+        const endEl = document.getElementById(`availEnd${slot.day}`);
+        if (cb) cb.checked = true;
+        if (timesEl) timesEl.style.display = 'flex';
+        if (startEl) startEl.value = slot.startTime;
+        if (endEl) endEl.value = slot.endTime;
+      });
+    })
+    .catch(() => {});
+}
+
+function closeAvailabilityModal(){
+  const modal = document.getElementById('availabilityModalOverlay');
+  if (modal) modal.remove();
+}
+
+async function submitAvailability(){
+  const token = localStorage.getItem('mc_token');
+  const errorEl = document.getElementById('availabilityError');
+  errorEl.style.display = 'none';
+
+  const slots = [];
+  for (let i = 0; i < 7; i++){
+    const cb = document.getElementById(`availDay${i}`);
+    if (cb && cb.checked){
+      const startTime = document.getElementById(`availStart${i}`).value;
+      const endTime = document.getElementById(`availEnd${i}`).value;
+      if (!startTime || !endTime || startTime >= endTime){
+        errorEl.textContent = `${DAY_NAMES[i]}: start time must be before end time.`;
+        errorEl.style.display = 'block';
+        return;
+      }
+      slots.push({ day: i, startTime, endTime });
+    }
+  }
+
+  try {
+    const res = await fetch(`${API_BASE}/mentor/availability`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ slots })
+    });
+    const data = await res.json();
+    if (data.success) {
+      closeAvailabilityModal();
+    } else {
+      errorEl.textContent = data.message || 'Could not save availability.';
       errorEl.style.display = 'block';
     }
   } catch (err) {
