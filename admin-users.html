@@ -4,7 +4,7 @@
 <script src="sessionGuard.js"></script>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title>MedClarivo Elite | Admin Dashboard</title>
+<title>MedClarivo Elite | Admin — Users</title>
 <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://unpkg.com/lucide@latest"></script>
@@ -99,10 +99,13 @@
   .chip-red{ background:rgba(220,38,38,0.1); color:#DC2626; }
   .chip-grey{ background:var(--mist-2); color:var(--ink-soft); }
 
+  .stat-card{ background:#fff; border:1px solid var(--line); border-radius:16px; padding:16px 18px; }
+
   table{ width:100%; border-collapse:collapse; font-size:13px; }
   th{ text-align:left; padding:10px 12px; color:var(--ink-faint); font-size:11px; text-transform:uppercase; letter-spacing:.04em; font-weight:700; border-bottom:1px solid var(--line); }
   td{ padding:12px; border-bottom:1px solid var(--line); vertical-align:middle; }
   tr:last-child td{ border-bottom:none; }
+  tr:hover td{ background:var(--mist); }
   .btn-sm{ padding:5px 12px; border-radius:10px; font-size:12px; font-weight:600; cursor:pointer; transition:all .15s ease; border:1px solid var(--line); background:#fff; }
   .btn-sm:hover{ background:var(--mist-2); }
   .btn-danger{ color:#DC2626; border-color:rgba(220,38,38,0.25); }
@@ -117,6 +120,14 @@
   .field-label{ font-size:12px; font-weight:600; color:var(--ink-soft); margin-bottom:4px; display:block; }
   .field-input{ width:100%; border:1px solid var(--line); border-radius:10px; padding:9px 12px; font-size:13.5px; margin-bottom:14px; }
   .field-input:focus{ outline:none; border-color:var(--teal); }
+
+  .toast{
+    position:fixed; bottom:28px; left:50%; transform:translateX(-50%);
+    background:var(--navy); color:#fff; padding:11px 20px; border-radius:12px;
+    font-size:13px; font-weight:600; z-index:200; box-shadow:0 10px 28px rgba(0,0,0,0.28);
+    opacity:0; pointer-events:none; transition:opacity .25s ease;
+  }
+  .toast.show{ opacity:1; }
 </style>
 </head>
 <body>
@@ -130,10 +141,10 @@
       <p class="text-teal-2 text-[11px] tracking-widest uppercase font-semibold mt-1" id="roleLabel">Admin</p>
     </div>
     <nav class="flex-1 px-0 py-2 space-y-1">
-      <a class="nav-item active" data-target="usersSection">
+      <a class="nav-item active" href="admin-users.html">
         <i data-lucide="users"></i><span>Users</span>
       </a>
-      <a class="nav-item" data-target="auditSection">
+      <a class="nav-item" href="admin-audit.html">
         <i data-lucide="scroll-text"></i><span>Audit Log</span>
       </a>
     </nav>
@@ -149,7 +160,7 @@
     <div class="topbar">
       <div>
         <p class="text-ink font-semibold text-sm" id="adminGreeting">Welcome</p>
-        <p class="text-ink-faint text-xs">User management &amp; audit trail</p>
+        <p class="text-ink-faint text-xs">Create, search, suspend, and reactivate accounts</p>
       </div>
       <button class="lg:hidden" onclick="document.getElementById('sidebar').classList.toggle('open')">
         <i data-lucide="menu"></i>
@@ -158,14 +169,43 @@
 
     <div class="px-4 md:px-6 pb-16 max-w-6xl mx-auto space-y-6">
 
-      <!-- ── Users ── -->
-      <section id="usersSection" class="panel p-6">
+      <!-- ── Stat cards ── -->
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div class="stat-card">
+          <p class="text-ink-faint text-[11px] uppercase tracking-wider font-semibold mb-1">Total Users</p>
+          <p class="font-display text-2xl text-ink" id="statTotal">—</p>
+        </div>
+        <div class="stat-card">
+          <p class="text-ink-faint text-[11px] uppercase tracking-wider font-semibold mb-1">Active</p>
+          <p class="font-display text-2xl text-teal-deep" id="statActive">—</p>
+        </div>
+        <div class="stat-card">
+          <p class="text-ink-faint text-[11px] uppercase tracking-wider font-semibold mb-1">Suspended</p>
+          <p class="font-display text-2xl text-red-600" id="statSuspended">—</p>
+        </div>
+        <div class="stat-card">
+          <p class="text-ink-faint text-[11px] uppercase tracking-wider font-semibold mb-1">Staff Roles</p>
+          <p class="font-display text-2xl text-ink" id="statStaff">—</p>
+        </div>
+      </div>
+
+      <!-- ── Users table ── -->
+      <section class="panel p-6">
         <div class="flex items-center justify-between mb-5 flex-wrap gap-3">
           <div>
-            <h2 class="font-display text-lg text-ink">Users</h2>
+            <h2 class="font-display text-lg text-ink">All Users</h2>
             <p class="text-ink-faint text-xs" id="userCountLabel">Loading…</p>
           </div>
-          <div class="flex gap-2">
+          <div class="flex gap-2 flex-wrap">
+            <select id="roleFilter" class="border border-line rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-teal/30">
+              <option value="">All roles</option>
+              <option value="super_admin">Super Admin</option>
+              <option value="admin">Admin</option>
+              <option value="mentor">Mentor</option>
+              <option value="assistant">Assistant</option>
+              <option value="parent">Parent</option>
+              <option value="student">Student</option>
+            </select>
             <input id="userSearch" type="text" placeholder="Search name or email…"
                    class="border border-line rounded-xl px-3.5 py-2 text-xs w-48 focus:outline-none focus:ring-2 focus:ring-teal/30"/>
             <button class="btn-primary" onclick="openCreateModal()">
@@ -186,25 +226,6 @@
             </tbody>
           </table>
         </div>
-      </section>
-
-      <!-- ── Audit Log ── -->
-      <section id="auditSection" class="panel p-6">
-        <div class="flex items-center justify-between mb-5">
-          <h2 class="font-display text-lg text-ink">Audit Log</h2>
-          <p class="text-ink-faint text-xs" id="auditCountLabel"></p>
-        </div>
-        <div class="overflow-x-auto">
-          <table>
-            <thead>
-              <tr><th>When</th><th>Actor</th><th>Action</th><th>Module</th><th>Result</th></tr>
-            </thead>
-            <tbody id="auditTableBody">
-              <tr><td colspan="5" class="text-ink-faint text-center py-6">Loading…</td></tr>
-            </tbody>
-          </table>
-        </div>
-        <div class="flex justify-center gap-2 mt-4" id="auditPagination"></div>
       </section>
 
     </div>
@@ -246,11 +267,12 @@
   </div>
 </div>
 
+<div class="toast" id="toast"></div>
+
 <script>
   const API_BASE = 'https://med-clarivo.onrender.com/api';
   const token = localStorage.getItem('mc_token');
   let allUsers = [];
-  let auditPage = 1;
 
   if (window.lucide) lucide.createIcons();
 
@@ -261,29 +283,38 @@
     window.location.href = 'index.html';
   });
 
-  document.querySelectorAll('.nav-item[data-target]').forEach(el => {
-    el.addEventListener('click', (e) => {
-      e.preventDefault();
-      document.querySelectorAll('.nav-item[data-target]').forEach(n => n.classList.remove('active'));
-      el.classList.add('active');
-      const target = document.getElementById(el.getAttribute('data-target'));
-      if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      if (el.getAttribute('data-target') === 'auditSection') loadAuditLog(1);
-    });
-  });
+  function showToast(msg, isError) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.style.background = isError ? '#DC2626' : 'var(--navy)';
+    t.classList.add('show');
+    clearTimeout(t._timer);
+    t._timer = setTimeout(() => t.classList.remove('show'), 3000);
+  }
 
   function roleChip(role) {
     const map = {
       super_admin: 'chip-gold', admin: 'chip-gold', mentor: 'chip-teal',
       assistant: 'chip-teal', parent: 'chip-grey', student: 'chip-grey',
     };
-    return `<span class="chip ${map[role] || 'chip-grey'}">${role}</span>`;
+    const labelMap = { super_admin: 'Super Admin' };
+    return `<span class="chip ${map[role] || 'chip-grey'}">${labelMap[role] || role}</span>`;
+  }
+
+  function updateStats(list) {
+    document.getElementById('statTotal').textContent = list.length;
+    document.getElementById('statActive').textContent = list.filter(u => u.isActive).length;
+    document.getElementById('statSuspended').textContent = list.filter(u => !u.isActive).length;
+    document.getElementById('statStaff').textContent = list.filter(u =>
+      ['super_admin', 'admin', 'mentor', 'assistant'].includes(u.role)
+    ).length;
   }
 
   function renderUsers(list) {
     const body = document.getElementById('usersTableBody');
+    document.getElementById('userCountLabel').textContent = `Showing ${list.length} of ${allUsers.length}`;
     if (!list.length) {
-      body.innerHTML = '<tr><td colspan="6" class="text-ink-faint text-center py-6">No users found.</td></tr>';
+      body.innerHTML = '<tr><td colspan="6" class="text-ink-faint text-center py-6">No users match.</td></tr>';
       return;
     }
     body.innerHTML = list.map(u => `
@@ -293,7 +324,7 @@
         <td>${roleChip(u.role)}</td>
         <td>${u.isActive
           ? '<span class="chip chip-teal">Active</span>'
-          : `<span class="chip chip-red" title="${u.suspendedReason || ''}">Suspended</span>`}</td>
+          : `<span class="chip chip-red" title="${(u.suspendedReason || '').replace(/"/g,'')}">Suspended</span>`}</td>
         <td class="text-ink-faint">${new Date(u.createdAt).toLocaleDateString()}</td>
         <td class="text-right">
           ${u.isActive
@@ -304,6 +335,18 @@
     `).join('');
   }
 
+  function applyFilters() {
+    const q = document.getElementById('userSearch').value.trim().toLowerCase();
+    const role = document.getElementById('roleFilter').value;
+    let list = allUsers;
+    if (role) list = list.filter(u => u.role === role);
+    if (q) list = list.filter(u => (u.name || '').toLowerCase().includes(q) || (u.email || '').toLowerCase().includes(q));
+    renderUsers(list);
+  }
+
+  document.getElementById('userSearch').addEventListener('input', applyFilters);
+  document.getElementById('roleFilter').addEventListener('change', applyFilters);
+
   async function loadUsers() {
     try {
       const res = await fetch(`${API_BASE}/admin/users`, {
@@ -313,23 +356,19 @@
       if (!data.success) {
         document.getElementById('usersTableBody').innerHTML =
           `<tr><td colspan="6" class="text-red-600 text-center py-6">${data.message || 'Failed to load users.'}</td></tr>`;
+        showToast(data.message || 'Failed to load users.', true);
         return;
       }
       allUsers = data.users;
-      document.getElementById('userCountLabel').textContent = `${allUsers.length} total`;
-      renderUsers(allUsers);
+      updateStats(allUsers);
+      applyFilters();
     } catch (err) {
       console.error('Failed to load users', err);
+      document.getElementById('usersTableBody').innerHTML =
+        '<tr><td colspan="6" class="text-red-600 text-center py-6">Network error loading users.</td></tr>';
+      showToast('Network error loading users.', true);
     }
   }
-
-  document.getElementById('userSearch').addEventListener('input', (e) => {
-    const q = e.target.value.trim().toLowerCase();
-    if (!q) { renderUsers(allUsers); return; }
-    renderUsers(allUsers.filter(u =>
-      (u.name || '').toLowerCase().includes(q) || (u.email || '').toLowerCase().includes(q)
-    ));
-  });
 
   async function suspendUser(id, name) {
     const reason = prompt(`Reason for suspending ${name || 'this user'}? (optional)`);
@@ -341,10 +380,10 @@
         body: JSON.stringify({ reason: reason || undefined }),
       });
       const data = await res.json();
-      if (data.success) loadUsers();
-      else alert(data.message || 'Failed to suspend user.');
+      if (data.success) { showToast('User suspended.'); loadUsers(); }
+      else showToast(data.message || 'Failed to suspend user.', true);
     } catch (err) {
-      alert('Network error while suspending user.');
+      showToast('Network error while suspending user.', true);
     }
   }
 
@@ -355,10 +394,10 @@
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await res.json();
-      if (data.success) loadUsers();
-      else alert(data.message || 'Failed to reactivate user.');
+      if (data.success) { showToast('User reactivated.'); loadUsers(); }
+      else showToast(data.message || 'Failed to reactivate user.', true);
     } catch (err) {
-      alert('Network error while reactivating user.');
+      showToast('Network error while reactivating user.', true);
     }
   }
 
@@ -412,6 +451,7 @@
       const data = await res.json();
       if (data.success) {
         closeCreateModal();
+        showToast(`Created ${role}: ${data.user.name}`);
         loadUsers();
       } else {
         errEl.textContent = data.message || 'Failed to create user.';
@@ -420,53 +460,6 @@
     } catch (err) {
       errEl.textContent = 'Network error while creating user.';
       errEl.classList.remove('hidden');
-    }
-  }
-
-  function auditChip(entry) {
-    if (entry.wasDenied) return '<span class="chip chip-red">Denied</span>';
-    return '<span class="chip chip-teal">Allowed</span>';
-  }
-
-  async function loadAuditLog(page) {
-    auditPage = page;
-    try {
-      const res = await fetch(`${API_BASE}/audit-logs?page=${page}&limit=25`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const data = await res.json();
-      const body = document.getElementById('auditTableBody');
-      if (!data.success) {
-        body.innerHTML = `<tr><td colspan="5" class="text-red-600 text-center py-6">${data.message || 'Failed to load audit log.'}</td></tr>`;
-        return;
-      }
-      document.getElementById('auditCountLabel').textContent = `${data.total} total entries`;
-      if (!data.items.length) {
-        body.innerHTML = '<tr><td colspan="5" class="text-ink-faint text-center py-6">No audit entries yet.</td></tr>';
-      } else {
-        body.innerHTML = data.items.map(e => `
-          <tr>
-            <td class="text-ink-faint whitespace-nowrap">${new Date(e.createdAt).toLocaleString()}</td>
-            <td class="text-ink-soft">${(e.actor && e.actor.email) || e.actorId || '—'}</td>
-            <td class="font-mono text-ink text-xs">${e.action}</td>
-            <td class="text-ink-soft">${e.module || '—'}</td>
-            <td>${auditChip(e)}</td>
-          </tr>
-        `).join('');
-      }
-
-      const pager = document.getElementById('auditPagination');
-      if (data.pages > 1) {
-        let html = '';
-        for (let i = 1; i <= data.pages; i++) {
-          html += `<button class="btn-sm ${i === page ? 'btn-primary' : ''}" onclick="loadAuditLog(${i})">${i}</button>`;
-        }
-        pager.innerHTML = html;
-      } else {
-        pager.innerHTML = '';
-      }
-    } catch (err) {
-      console.error('Failed to load audit log', err);
     }
   }
 

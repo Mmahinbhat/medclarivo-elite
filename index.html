@@ -782,7 +782,7 @@ async function redirectToDashboard() {
       } else if (data.user.role === 'parent') {
         window.location.href = 'parent-dashboard.html';
       } else if (data.user.role === 'admin' || data.user.role === 'super_admin') {
-        window.location.href = 'admin-dashboard.html';
+        window.location.href = 'admin-users.html';
       } else if (data.user.onboardingComplete) {
         window.location.href = 'dashboard.html';
       } else {
