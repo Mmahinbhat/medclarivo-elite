@@ -4,7 +4,7 @@ const { scopeFilter } = require('../middleware/rbac');
 const { ROLES, MANAGEABLE_ROLES, MODULES } = require('../utils/rbacConstants');
 
 async function createUser(req, res) {
-  const { name, email, password, role, mentorId } = req.body;
+  const { name, email, password, role, mentorId, specialty, availabilityType } = req.body;
 
   const allowedRoles = MANAGEABLE_ROLES[req.user.role] || [];
   if (!allowedRoles.includes(role)) {
@@ -24,6 +24,7 @@ async function createUser(req, res) {
       passwordHash: password,
       role,
       mentorId: role === ROLES.ASSISTANT ? mentorId : null,
+      mentorProfile: role === ROLES.MENTOR ? { specialty: specialty || '', availabilityType: availabilityType || 'full_time' } : undefined,
     });
 
     await auditService.log({

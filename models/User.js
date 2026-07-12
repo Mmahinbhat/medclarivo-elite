@@ -82,6 +82,7 @@ const UserSchema = new mongoose.Schema({
     rating:              { type: Number, default: 5.0 },
     reviewCount:         { type: Number, default: 0 },
     weeklySessionTarget: { type: Number, default: 8 },
+    availabilityType:    { type: String, enum: ['full_time', 'part_time'], default: 'full_time' },
   },
   // Study stats (used by Study Mode / dashboard)
   totalStudyMinutes: { type: Number, default: 0 },
