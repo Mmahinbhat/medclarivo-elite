@@ -176,7 +176,17 @@
             <h2 class="font-display text-lg text-ink">All Mentors</h2>
             <p class="text-ink-faint text-xs mt-0.5" id="mentorCountLabel">Loading…</p>
           </div>
-          <input type="text" id="searchInput" placeholder="Search mentors by name or email…" class="w-full sm:w-72" oninput="renderMentors()">
+          <div class="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+            <input type="text" id="searchInput" placeholder="Search mentors by name or email…" autocomplete="off" name="mentor-search-nofill" class="w-full sm:w-64" oninput="renderMentors()">
+            <select id="subjectFilter" class="w-full sm:w-40" onchange="renderMentors()">
+              <option value="">All Subjects</option>
+            </select>
+            <select id="availabilityFilter" class="w-full sm:w-44" onchange="renderMentors()">
+              <option value="">All Availabilities</option>
+              <option value="full_time">Full-time</option>
+              <option value="part_time">Part-time</option>
+            </select>
+          </div>
         </div>
         <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4" id="mentorGrid">
           <p class="text-ink-faint text-sm col-span-full text-center py-10">Loading mentors…</p>
@@ -197,6 +207,10 @@
       <input type="email" id="newMentorEmail" placeholder="Email" class="w-full">
       <input type="password" id="newMentorPassword" placeholder="Temporary password" class="w-full">
       <input type="text" id="newMentorSpecialty" placeholder="Specialty (e.g. Physics, Chemistry)" class="w-full">
+      <select id="newMentorAvailability" class="w-full">
+        <option value="full_time">Full-time</option>
+        <option value="part_time">Part-time</option>
+      </select>
     </div>
     <div class="flex gap-3 mt-6">
       <button class="btn-secondary flex-1" onclick="closeAddMentorModal()">Cancel</button>
@@ -281,11 +295,36 @@ function renderStats() {
   document.getElementById('statAssigned').textContent = totalAssigned;
 }
 
+function populateSubjectFilter() {
+  const select = document.getElementById('subjectFilter');
+  const current = select.value;
+  const subjects = new Set();
+  getMentors().forEach(m => {
+    ((m.mentorProfile && m.mentorProfile.specialty) || '').split(',').map(s => s.trim()).filter(Boolean).forEach(s => subjects.add(s));
+  });
+  select.innerHTML = '<option value="">All Subjects</option>' +
+    [...subjects].sort().map(s => `<option value="${s}">${s}</option>`).join('');
+  select.value = current;
+}
+
+function availabilityLabel(type) {
+  return type === 'part_time' ? 'Part-time' : 'Full-time';
+}
+
 function renderMentors() {
+  populateSubjectFilter();
   const query = (document.getElementById('searchInput').value || '').toLowerCase();
-  const mentors = getMentors().filter(m =>
-    (m.name || '').toLowerCase().includes(query) || (m.email || '').toLowerCase().includes(query)
-  );
+  const subjectFilter = document.getElementById('subjectFilter').value;
+  const availabilityFilter = document.getElementById('availabilityFilter').value;
+
+  const mentors = getMentors().filter(m => {
+    const matchesQuery = (m.name || '').toLowerCase().includes(query) || (m.email || '').toLowerCase().includes(query);
+    const specialties = ((m.mentorProfile && m.mentorProfile.specialty) || '').split(',').map(s => s.trim());
+    const matchesSubject = !subjectFilter || specialties.includes(subjectFilter);
+    const mentorAvailability = (m.mentorProfile && m.mentorProfile.availabilityType) || 'full_time';
+    const matchesAvailability = !availabilityFilter || mentorAvailability === availabilityFilter;
+    return matchesQuery && matchesSubject && matchesAvailability;
+  });
 
   document.getElementById('mentorCountLabel').textContent = `Showing ${mentors.length} of ${getMentors().length}`;
 
@@ -316,10 +355,13 @@ function renderMentors() {
           <span class="chip ${isActive ? 'chip-teal' : 'chip-red'}">${isActive ? 'Active' : 'Suspended'}</span>
         </div>
 
-        <div class="flex items-center gap-1 mb-3">
-          <i data-lucide="star" class="w-3.5 h-3.5 text-gold fill-gold"></i>
-          <span class="text-sm font-semibold text-ink">${rating}</span>
-          <span class="text-ink-faint text-xs">Rating</span>
+        <div class="flex items-center gap-3 mb-3">
+          <div class="flex items-center gap-1">
+            <i data-lucide="star" class="w-3.5 h-3.5 text-gold fill-gold"></i>
+            <span class="text-sm font-semibold text-ink">${rating}</span>
+            <span class="text-ink-faint text-xs">Rating</span>
+          </div>
+          <span class="chip chip-grey">${availabilityLabel((m.mentorProfile && m.mentorProfile.availabilityType))}</span>
         </div>
 
         ${specialties.length ? `
@@ -397,6 +439,7 @@ async function submitNewMentor() {
   const email = document.getElementById('newMentorEmail').value.trim();
   const password = document.getElementById('newMentorPassword').value;
   const specialty = document.getElementById('newMentorSpecialty').value.trim();
+  const availabilityType = document.getElementById('newMentorAvailability').value;
 
   if (!name || !email || !password) { showToast('Name, email and password are required.'); return; }
 
@@ -405,7 +448,7 @@ async function submitNewMentor() {
     const res = await fetch(`${API}/admin/users`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-      body: JSON.stringify({ name, email, password, role: 'mentor' }),
+      body: JSON.stringify({ name, email, password, role: 'mentor', specialty, availabilityType }),
     });
     const data = await res.json();
     if (res.ok && data.success) {
