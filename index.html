@@ -777,8 +777,10 @@ async function redirectToDashboard() {
     const data = await res.json();
     if (res.ok && data.success) {
       localStorage.setItem('mc_user', JSON.stringify(data.user));
-      if (data.user.role === 'mentor' || data.user.role === 'assistant') {
+      if (data.user.role === 'mentor') {
         window.location.href = 'mentor-dashboard.html';
+      } else if (data.user.role === 'assistant') {
+        window.location.href = 'assistant-dashboard.html';
       } else if (data.user.role === 'parent') {
         window.location.href = 'parent-dashboard.html';
       } else if (data.user.role === 'admin' || data.user.role === 'super_admin') {

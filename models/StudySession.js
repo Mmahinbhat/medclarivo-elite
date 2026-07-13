@@ -26,6 +26,14 @@ const StudySessionSchema = new mongoose.Schema({
   completedAt: {
     type: Date,
   },
+  // Set only when an Assistant logged this session on the student's
+  // behalf (see routes/assistant.js). Null for sessions the student
+  // logged themselves.
+  loggedByAssistant: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    default: null,
+  },
 }, {
   timestamps: true,
 });
