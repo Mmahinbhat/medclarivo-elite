@@ -182,4 +182,54 @@ router.post('/logout', protect, (req, res) => {
   res.json({ success: true, message: 'Logged out successfully.' });
 });
 
+
+// ════════════════════════════════════════════════════════════════
+// PATCH /api/auth/profile  (protected) — update own name/avatar
+// ════════════════════════════════════════════════════════════════
+router.patch('/profile', protect, async (req, res) => {
+  try {
+    const { name, avatar } = req.body;
+    const user = await User.findById(req.user._id);
+    if (!user) return res.status(404).json({ success: false, message: 'User not found.' });
+
+    if (name !== undefined) user.name = name;
+    if (avatar !== undefined) user.avatar = avatar;
+    await user.save();
+
+    res.json({ success: true, user });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: 'Server error.' });
+  }
+});
+
+// ════════════════════════════════════════════════════════════════
+// PATCH /api/auth/change-password  (protected)
+// ════════════════════════════════════════════════════════════════
+router.patch('/change-password', protect, async (req, res) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({ success: false, message: 'Current and new password are required.' });
+    }
+    if (newPassword.length < 8) {
+      return res.status(400).json({ success: false, message: 'New password must be at least 8 characters.' });
+    }
+
+    const user = await User.findById(req.user._id);
+    if (!user) return res.status(404).json({ success: false, message: 'User not found.' });
+
+    const valid = await user.comparePassword(currentPassword);
+    if (!valid) return res.status(401).json({ success: false, message: 'Current password is incorrect.' });
+
+    user.passwordHash = newPassword;
+    user.permissionVersion += 1;
+    await user.save();
+
+    res.json({ success: true, message: 'Password updated. Please log in again.' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: 'Server error.' });
+  }
+});
 module.exports = router;
