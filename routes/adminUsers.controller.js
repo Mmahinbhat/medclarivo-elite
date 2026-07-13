@@ -110,4 +110,34 @@ async function reactivateUser(req, res) {
   res.json({ success: true, message: 'User reactivated.' });
 }
 
-module.exports = { createUser, listUsers, suspendUser, reactivateUser };
+
+async function assignMentor(req, res) {
+  const { studentId } = req.params;
+  const { mentorId } = req.body; // pass null to unassign
+
+  const student = await User.findOne({ _id: studentId, role: ROLES.STUDENT });
+  if (!student) return res.status(404).json({ success: false, message: 'Student not found.' });
+
+  if (mentorId) {
+    const mentor = await User.findOne({ _id: mentorId, role: ROLES.MENTOR });
+    if (!mentor) return res.status(400).json({ success: false, message: 'mentorId does not reference a valid Mentor.' });
+  }
+
+  const before = { mentorId: student.mentorId };
+  student.mentorId = mentorId || null;
+  await student.save();
+
+  await auditService.log({
+    actor: req.user,
+    action: mentorId ? 'mentor_request.assign' : 'mentor_request.unassign',
+    module: MODULES.MENTOR_REQUEST,
+    targetType: 'User',
+    targetId: student._id,
+    before,
+    after: { mentorId: student.mentorId },
+    req,
+  });
+
+  res.json({ success: true, student });
+}
+module.exports = { createUser, listUsers, suspendUser, reactivateUser, assignMentor };
