@@ -123,15 +123,9 @@
 
       <!-- Session selector -->
       <div class="panel p-4 mb-5 flex items-center gap-3 flex-wrap">
-        <div class="flex items-center gap-2 bg-mist rounded-xl px-3 py-2 border border-line cursor-pointer" onclick="showToast('Session picker coming soon')">
+        <div class="flex items-center gap-2 bg-mist rounded-xl px-3 py-2 border border-line">
           <i data-lucide="file-text" class="w-4 h-4 text-teal"></i>
-          <span class="text-sm font-semibold text-ink" id="activeSessionLabel">Select a session…</span>
-          <i data-lucide="chevron-down" class="w-4 h-4 text-ink-faint"></i>
-        </div>
-        <div class="flex gap-2 ml-auto flex-wrap">
-          <button class="chip chip-teal cursor-pointer" onclick="showToast('Filter by student')"><i data-lucide="user" class="w-3 h-3"></i>Student</button>
-          <button class="chip chip-blue cursor-pointer" onclick="showToast('Filter by mentor')"><i data-lucide="graduation-cap" class="w-3 h-3"></i>Mentor</button>
-          <button class="chip chip-grey cursor-pointer" onclick="showToast('Filter by date')"><i data-lucide="calendar" class="w-3 h-3"></i>Date</button>
+          <span class="text-sm font-semibold text-ink" id="activeSessionLabel">Select a session from the list on the right…</span>
         </div>
       </div>
 
@@ -150,7 +144,7 @@
               </div>
               <div class="flex flex-col items-end gap-1">
                 <p class="text-ink-faint text-xs" id="noteDate">—</p>
-                <span class="chip chip-teal" id="noteStatus">Upcoming</span>
+                <span class="chip chip-teal" id="noteStatus">—</span>
               </div>
             </div>
           </div>
@@ -186,14 +180,14 @@
                 <i data-lucide="mic" class="w-4 h-4 text-teal"></i>
                 <div>
                   <p class="font-semibold text-ink text-sm">Voice Dictation</p>
-                  <p class="text-ink-faint text-[11px]">Record live lesson audio for summaries</p>
+                  <p class="text-ink-faint text-[11px]">Records a timer-based entry (no audio storage yet — metadata only)</p>
                 </div>
               </div>
               <div class="observation-box flex flex-col items-center gap-3 py-4">
                 <button class="mic-btn" id="micBtn" onclick="toggleRecording()">
                   <i data-lucide="mic" class="w-6 h-6"></i>
                 </button>
-                <p class="text-ink-soft text-xs font-semibold" id="micStatus">Microphone Ready</p>
+                <p class="text-ink-soft text-xs font-semibold" id="micStatus">Select a session first</p>
                 <p class="text-ink-faint text-[11px]">Click mic to record session summary</p>
                 <div id="recordingsList" class="w-full mt-2 space-y-2"></div>
               </div>
@@ -207,12 +201,12 @@
                     <p class="text-ink-faint text-[11px]">Share curriculum resources</p>
                   </div>
                 </div>
-                <button onclick="showToast('File upload coming soon')" class="p-1.5 rounded-lg bg-mist border border-line hover:bg-mist-2 transition-colors"><i data-lucide="plus" class="w-4 h-4 text-ink-soft"></i></button>
+                <button onclick="showToast('File upload isn\'t wired up yet — no storage bucket configured')" class="p-1.5 rounded-lg bg-mist border border-line hover:bg-mist-2 transition-colors"><i data-lucide="plus" class="w-4 h-4 text-ink-soft"></i></button>
               </div>
               <div class="observation-box flex flex-col items-center justify-center py-8 text-center">
                 <i data-lucide="file-plus" class="w-8 h-8 text-ink-faint mb-2"></i>
                 <p class="text-ink-faint text-sm">No attachments uploaded yet</p>
-                <button onclick="showToast('File upload coming soon')" class="mt-3 btn-secondary text-xs px-4 py-2">Upload File</button>
+                <button onclick="showToast('File upload isn\'t wired up yet — no storage bucket configured')" class="mt-3 btn-secondary text-xs px-4 py-2">Upload File</button>
               </div>
             </div>
           </div>
@@ -248,47 +242,119 @@
 </div>
 <div class="toast" id="toast"></div>
 <script>
-// Illustrative session data
-const sessionData = [
-  {id:1, student:'Test Student', mentor:'Sachin mentor', type:'Academic', date:'8 July 2026', status:'Upcoming', subject:'Physics wala'},
-  {id:2, student:'Atif Aslam', mentor:'Mandeep Singh', type:'Academic', date:'2 July 2026', status:'Completed', subject:'Physics wala'},
-  {id:3, student:'Sachin1, Sachin2, Test Student', mentor:'Sachin mentor', type:'Academic', date:'7 July 2026', status:'Upcoming', subject:'Physics wala'},
-];
+const API='https://med-clarivo.onrender.com/api';
+function getToken(){return localStorage.getItem('mc_token')||localStorage.getItem('admin_token');}
+function authHeaders(){return {Authorization:`Bearer ${getToken()}`,'Content-Type':'application/json'};}
+function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.className='toast show';setTimeout(()=>t.classList.remove('show'),3000);}
 
+let currentSessionId = null;
 let isRecording = false;
 let recordingTimer;
 let recordingSeconds = 0;
 
-function selectSession(session){
-  document.getElementById('activeSessionLabel').textContent = `${session.student} · ${session.type} · ${session.date}`;
-  document.getElementById('noteTitle').textContent = `Student: ${session.student} · ${session.type}`;
-  document.getElementById('noteMentor').textContent = `Mentor: ${session.mentor}`;
-  document.getElementById('noteDate').textContent = `Session: ${session.date}`;
-  document.getElementById('noteStatus').textContent = session.status;
-
-  // Timeline
-  document.getElementById('timelineSubject').textContent = `Other sessions for ${session.subject}`;
-  const others = sessionData.filter(s=>s.id!==session.id&&s.subject===session.subject);
-  document.getElementById('notesTimeline').innerHTML = others.length ? others.map(s=>`
-    <div class="timeline-card">
-      <p class="text-[11px] text-ink-faint mb-0.5">${s.date}</p>
-      <p class="font-semibold text-ink text-sm">${s.student} · ${s.type}</p>
-      <p class="text-ink-soft text-xs">Mentor: ${s.mentor}</p>
-      <span class="chip chip-teal mt-1">${s.status}</span>
-    </div>
-  `).join('') : '<p class="text-ink-faint text-sm">No other sessions found</p>';
+function fmtDate(iso){
+  return new Date(iso).toLocaleString('en',{day:'numeric',month:'long',year:'numeric',hour:'numeric',minute:'2-digit'});
 }
 
-function loadRecentSessions(){
-  document.getElementById('recentSessionsList').innerHTML = sessionData.map(s=>`
-    <div class="p-3 rounded-xl border border-line hover:bg-mist cursor-pointer transition-colors" onclick="selectSession(${JSON.stringify(s).replace(/"/g,'&quot;')})">
-      <p class="font-semibold text-ink text-sm truncate">${s.student}</p>
-      <p class="text-ink-faint text-xs">${s.type} · ${s.date}</p>
+async function loadRecentSessions(){
+  try{
+    const r=await fetch(`${API}/admin/session-notes/recent`,{headers:authHeaders()});
+    const d=await r.json();
+    if(r.ok&&d.success){
+      renderRecentSessions(d.sessions);
+    } else {
+      showToast(d.message||'Could not load sessions');
+      document.getElementById('recentSessionsList').innerHTML='<p class="text-ink-faint text-xs text-center py-4">Could not load sessions</p>';
+    }
+  }catch(e){
+    showToast('Network error loading sessions');
+  }
+}
+
+function renderRecentSessions(sessions){
+  if(!sessions.length){
+    document.getElementById('recentSessionsList').innerHTML='<p class="text-ink-faint text-xs text-center py-4">No sessions yet</p>';
+    return;
+  }
+  document.getElementById('recentSessionsList').innerHTML = sessions.map(s=>`
+    <div class="p-3 rounded-xl border border-line hover:bg-mist cursor-pointer transition-colors ${s._id===currentSessionId?'border-teal':''}" onclick="selectSession('${s._id}')">
+      <div class="flex items-center justify-between gap-2">
+        <p class="font-semibold text-ink text-sm truncate">${(s.mentee&&s.mentee.name)||'Unknown student'}</p>
+        ${s.hasNote?'<span class="chip chip-teal">Noted</span>':''}
+      </div>
+      <p class="text-ink-faint text-xs">${s.category||'academic'} · ${new Date(s.startTime).toLocaleDateString()}</p>
     </div>
   `).join('');
 }
 
+async function selectSession(id){
+  currentSessionId = id;
+  try{
+    const r=await fetch(`${API}/admin/session-notes/${id}`,{headers:authHeaders()});
+    const d=await r.json();
+    if(r.ok&&d.success){
+      const session=d.session, note=d.note;
+      document.getElementById('activeSessionLabel').textContent = `${session.mentee.name} · ${session.category||'academic'} · ${fmtDate(session.startTime)}`;
+      document.getElementById('noteTitle').textContent = `Student: ${session.mentee.name} · ${session.category||'academic'}`;
+      document.getElementById('noteMentor').textContent = `Mentor: ${session.mentor.name}`;
+      document.getElementById('noteDate').textContent = `Session: ${fmtDate(session.startTime)}`;
+      document.getElementById('noteStatus').textContent = session.status;
+      document.getElementById('privateNotes').value = note ? note.privateNotes||'' : '';
+      document.getElementById('sharedNotes').value = note ? note.sharedNotes||'' : '';
+      document.getElementById('micStatus').textContent = 'Microphone Ready';
+      renderRecordings(note && note.recordings ? note.recordings : []);
+      renderTimeline(d.timeline, session.mentee.name);
+    } else {
+      showToast(d.message||'Could not load session');
+    }
+  }catch(e){
+    showToast('Network error loading session');
+  }
+}
+
+function renderTimeline(timeline, studentName){
+  document.getElementById('timelineSubject').textContent = `Other notes for ${studentName}`;
+  if(!timeline || !timeline.length){
+    document.getElementById('notesTimeline').innerHTML = '<p class="text-ink-faint text-sm">No other notes found</p>';
+    return;
+  }
+  document.getElementById('notesTimeline').innerHTML = timeline.map(n=>`
+    <div class="timeline-card">
+      <p class="text-[11px] text-ink-faint mb-0.5">${n.session?fmtDate(n.session.startTime):''}</p>
+      <p class="font-semibold text-ink text-sm">${n.session?(n.session.category||'academic'):''} ${n.session&&n.session.topic?'· '+n.session.topic:''}</p>
+      <p class="text-ink-soft text-xs">${(n.sharedNotes||n.privateNotes||'').slice(0,100)}</p>
+    </div>
+  `).join('');
+}
+
+function renderRecordings(recordings){
+  const list=document.getElementById('recordingsList');
+  if(!recordings.length){list.innerHTML='';return;}
+  list.innerHTML = recordings.map((rec,i)=>{
+    const m=Math.floor(rec.durationSeconds/60), s=rec.durationSeconds%60;
+    return `<div class="flex items-center gap-2 bg-mist rounded-lg p-2"><i data-lucide="play-circle" class="w-4 h-4 text-teal flex-shrink-0"></i><span class="text-xs font-semibold">${rec.label||'Recording '+(i+1)} — ${m}:${String(s).padStart(2,'0')}</span></div>`;
+  }).join('');
+  lucide.createIcons();
+}
+
+async function saveNote(){
+  if(!currentSessionId){showToast('Select a session first');return;}
+  const priv=document.getElementById('privateNotes').value;
+  const shared=document.getElementById('sharedNotes').value;
+  try{
+    const r=await fetch(`${API}/admin/session-notes/${currentSessionId}`,{method:'PUT',headers:authHeaders(),body:JSON.stringify({privateNotes:priv,sharedNotes:shared})});
+    const d=await r.json();
+    if(r.ok&&d.success){
+      showToast('✅ Classnotes saved successfully');
+      loadRecentSessions();
+    } else {
+      showToast(d.message||'Could not save notes');
+    }
+  }catch(e){showToast('Network error saving notes');}
+}
+
 function toggleRecording(){
+  if(!currentSessionId){showToast('Select a session first');return;}
   isRecording = !isRecording;
   const btn = document.getElementById('micBtn');
   const status = document.getElementById('micStatus');
@@ -302,49 +368,54 @@ function toggleRecording(){
       const m=Math.floor(recordingSeconds/60),s=recordingSeconds%60;
       status.textContent=`Recording… ${m}:${String(s).padStart(2,'0')}`;
     },1000);
+    lucide.createIcons();
   } else {
     clearInterval(recordingTimer);
     btn.classList.remove('recording');
     btn.innerHTML='<i data-lucide="mic" class="w-6 h-6"></i>';
-    status.textContent='Recording saved';
-    const list=document.getElementById('recordingsList');
-    const m=Math.floor(recordingSeconds/60),s=recordingSeconds%60;
-    list.innerHTML+=`<div class="flex items-center gap-2 bg-mist rounded-lg p-2"><i data-lucide="play-circle" class="w-4 h-4 text-teal flex-shrink-0"></i><span class="text-xs font-semibold">Recording ${list.children.length+1} — ${m}:${String(s).padStart(2,'0')}</span></div>`;
+    status.textContent='Saving recording…';
+    saveRecording(recordingSeconds);
     lucide.createIcons();
-    setTimeout(()=>{status.textContent='Microphone Ready';},2000);
   }
-  lucide.createIcons();
 }
 
-function saveNote(){
-  const priv=document.getElementById('privateNotes').value;
-  const shared=document.getElementById('sharedNotes').value;
-  if(!priv&&!shared){showToast('Nothing to save — write some notes first');return;}
-  showToast('✅ Classnotes saved successfully');
+async function saveRecording(durationSeconds){
+  try{
+    const r=await fetch(`${API}/admin/session-notes/${currentSessionId}/recordings`,{method:'POST',headers:authHeaders(),body:JSON.stringify({label:'Recording',durationSeconds})});
+    const d=await r.json();
+    if(r.ok&&d.success){
+      renderRecordings(d.note.recordings);
+      document.getElementById('micStatus').textContent='Recording saved';
+      setTimeout(()=>{document.getElementById('micStatus').textContent='Microphone Ready';},2000);
+    } else {
+      showToast(d.message||'Could not save recording');
+      document.getElementById('micStatus').textContent='Microphone Ready';
+    }
+  }catch(e){
+    showToast('Network error saving recording');
+    document.getElementById('micStatus').textContent='Microphone Ready';
+  }
 }
 
-  function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.className='toast show';setTimeout(()=>t.classList.remove('show'),3000);}
-  const API='https://med-clarivo.onrender.com/api';
-  function getToken(){return localStorage.getItem('mc_token')||localStorage.getItem('admin_token');}
-  async function loadAdminUser(){
-    const token=getToken();if(!token)return;
-    try{
-      const r=await fetch(`${API}/auth/me`,{headers:{Authorization:`Bearer ${token}`}});
-      const d=await r.json();
-      if(r.ok&&d.success){
-        const u=d.user,n=u.name||u.email||'Admin';
-        document.getElementById('adminNameSidebar').textContent=n;
-        document.getElementById('adminEmailSidebar').textContent=u.email||'';
-        document.getElementById('adminAvatarInitial').textContent=n[0].toUpperCase();
-        const roles={super_admin:'Super Admin',admin:'Admin',mentor:'Mentor'};
-        document.getElementById('roleLabel').textContent=roles[u.role]||u.role;
-      }
-    }catch(e){}
-  }
-  document.getElementById('signOutLink').addEventListener('click',e=>{
-    e.preventDefault();
-    ['mc_token','admin_token','mc_user'].forEach(k=>localStorage.removeItem(k));
-    window.location.href='index.html';
-  });
-  window.addEventListener('load',()=>{lucide.createIcons();loadAdminUser();loadRecentSessions();});
+async function loadAdminUser(){
+  const token=getToken();if(!token)return;
+  try{
+    const r=await fetch(`${API}/auth/me`,{headers:{Authorization:`Bearer ${token}`}});
+    const d=await r.json();
+    if(r.ok&&d.success){
+      const u=d.user,n=u.name||u.email||'Admin';
+      document.getElementById('adminNameSidebar').textContent=n;
+      document.getElementById('adminEmailSidebar').textContent=u.email||'';
+      document.getElementById('adminAvatarInitial').textContent=n[0].toUpperCase();
+      const roles={super_admin:'Super Admin',admin:'Admin',mentor:'Mentor'};
+      document.getElementById('roleLabel').textContent=roles[u.role]||u.role;
+    }
+  }catch(e){}
+}
+document.getElementById('signOutLink').addEventListener('click',e=>{
+  e.preventDefault();
+  ['mc_token','admin_token','mc_user'].forEach(k=>localStorage.removeItem(k));
+  window.location.href='index.html';
+});
+window.addEventListener('load',()=>{lucide.createIcons();loadAdminUser();loadRecentSessions();});
 </script></body></html>
