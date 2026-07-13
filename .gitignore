@@ -3,3 +3,6 @@ node_modules/
 *.log
 .DS_Store
 dist/
+apply_*.py
+build-pages.py
+fix-sidebars.py

@@ -42,6 +42,7 @@ const MODULES = {
   CURRICULUM: 'curriculum', // models/Subject.js, models/Chapter.js
   PROGRESS: 'progress', // models/UserProgress.js
   DAILY_MISSION: 'daily_mission', // models/DailyMission.js
+  TICKET: 'ticket', // models/Ticket.js — student-raised concern reports (never visible to mentors)
   ROLE_PERMISSION: 'role_permission', // the permission engine itself
   AUDIT_LOG: 'audit_log',
 };
