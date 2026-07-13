@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<script src="sessionGuard.js"></script>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>MedClarivo Elite | Raise a Ticket</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@latest"></script>
+<style>
+  :root{
+    --navy:#0A1424; --navy-2:#0F2038; --navy-3:#16304F;
+    --teal:#0FA89A; --teal-2:#33D9C8; --teal-deep:#0A6E64;
+    --gold:#B9924F; --mist:#F5F7FA; --ink:#0B1220; --ink-soft:#56657B; --ink-faint:#8B97A8;
+    --line:rgba(11,18,32,0.08);
+  }
+  *{box-sizing:border-box;}
+  body{font-family:'DM Sans',sans-serif;background:var(--mist);color:var(--ink);min-height:100dvh;-webkit-font-smoothing:antialiased;}
+  .font-display{font-family:'DM Serif Display',serif;}
+  .panel{background:#fff;border-radius:22px;border:1px solid var(--line);}
+  .btn-primary{background:linear-gradient(135deg,var(--teal),var(--teal-deep));color:#fff;border-radius:12px;transition:opacity .15s;}
+  .btn-primary:hover{opacity:.9;}
+  .btn-primary:disabled{opacity:.5;cursor:not-allowed;}
+  .chip{display:inline-flex;align-items:center;padding:3px 10px;border-radius:999px;font-size:11px;font-weight:700;}
+  .chip-open{background:rgba(185,146,79,0.14);color:var(--gold);}
+  .chip-reviewing{background:rgba(37,99,235,0.1);color:#1D4ED8;}
+  .chip-resolved{background:rgba(15,168,154,0.12);color:var(--teal-deep);}
+</style>
+</head>
+<body>
+
+<div class="max-w-3xl mx-auto px-5 py-8">
+  <a href="dashboard.html" class="inline-flex items-center gap-2 text-ink-faint hover:text-ink text-sm font-semibold mb-6">
+    <i data-lucide="arrow-left" class="w-4 h-4"></i> Back to Dashboard
+  </a>
+
+  <div class="flex items-center gap-3 mb-2">
+    <div class="w-10 h-10 rounded-xl flex items-center justify-center" style="background:rgba(185,146,79,0.14)">
+      <i data-lucide="shield-alert" class="w-5 h-5" style="color:var(--gold)"></i>
+    </div>
+    <h1 class="font-display text-2xl text-ink">Raise a Ticket</h1>
+  </div>
+  <p class="text-ink-faint text-sm mb-7">Report a concern about your mentor directly and privately to the MedClarivo admin team. This never goes to your mentor.</p>
+
+  <div class="panel p-6 md:p-7 mb-8">
+    <label class="block text-ink font-semibold text-sm mb-2">What happened?</label>
+    <select id="ticketCategory" class="w-full px-3.5 py-2.5 rounded-xl bg-mist border border-line text-sm text-ink mb-4 focus:outline-none focus:border-teal focus:ring-1 focus:ring-teal">
+      <option value="">Select a category&hellip;</option>
+      <option value="asked_personal_contact">Asked for my phone number / personal contact info</option>
+      <option value="inappropriate_behavior">Inappropriate or unprofessional behavior</option>
+      <option value="inappropriate_language">Inappropriate language</option>
+      <option value="other">Other concern</option>
+    </select>
+
+    <label class="block text-ink font-semibold text-sm mb-2">Describe what happened</label>
+    <textarea id="ticketDescription" rows="5" placeholder="Please include as much detail as you're comfortable sharing&hellip;"
+      class="w-full px-3.5 py-2.5 rounded-xl bg-mist border border-line text-sm text-ink placeholder-ink-faint mb-4 focus:outline-none focus:border-teal focus:ring-1 focus:ring-teal"></textarea>
+
+    <div class="flex items-start gap-2.5 p-3.5 rounded-xl mb-5" style="background:rgba(185,146,79,0.08);border:1px solid rgba(185,146,79,0.25)">
+      <i data-lucide="alert-triangle" class="w-4 h-4 flex-shrink-0 mt-0.5" style="color:var(--gold)"></i>
+      <p class="text-xs text-ink-soft leading-relaxed">
+        This goes directly and only to the MedClarivo admin team, who will contact you within 24 hours. Please only use this for genuine concerns &mdash;
+        <strong>false or malicious reports may result in action against your account.</strong>
+      </p>
+    </div>
+
+    <button id="submitTicketBtn" onclick="submitTicket()" class="btn-primary w-full py-3 text-sm font-bold">Submit Ticket</button>
+    <p id="ticketFormMsg" class="text-xs mt-2.5 hidden"></p>
+  </div>
+
+  <h2 class="font-display text-lg text-ink mb-4">Your Tickets</h2>
+  <div id="ticketsList" class="space-y-3">
+    <p class="text-ink-faint text-sm">Loading&hellip;</p>
+  </div>
+</div>
+
+<script>
+  lucide.createIcons();
+  const API_BASE = 'https://med-clarivo.onrender.com/api';
+  const token = localStorage.getItem('mc_token');
+
+  const CATEGORY_LABELS = {
+    asked_personal_contact: 'Asked for personal contact info',
+    inappropriate_behavior: 'Inappropriate or unprofessional behavior',
+    inappropriate_language: 'Inappropriate language',
+    other: 'Other concern',
+  };
+
+  function showFormMsg(text, isError){
+    const el = document.getElementById('ticketFormMsg');
+    el.textContent = text;
+    el.className = 'text-xs mt-2.5 ' + (isError ? 'text-red-600' : 'text-teal-deep');
+    el.classList.remove('hidden');
+  }
+
+  async function submitTicket(){
+    const category = document.getElementById('ticketCategory').value;
+    const description = document.getElementById('ticketDescription').value.trim();
+    const btn = document.getElementById('submitTicketBtn');
+
+    if (!category) return showFormMsg('Please select a category.', true);
+    if (!description) return showFormMsg('Please describe what happened.', true);
+
+    btn.disabled = true;
+    btn.textContent = 'Submitting...';
+
+    try {
+      const res = await fetch(`${API_BASE}/tickets`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ category, description }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) throw new Error(data.message || 'Failed to submit');
+
+      showFormMsg('Ticket submitted. Our admin team will contact you within 24 hours.', false);
+      document.getElementById('ticketCategory').value = '';
+      document.getElementById('ticketDescription').value = '';
+      loadTickets();
+    } catch (err) {
+      showFormMsg(err.message || 'Something went wrong. Please try again.', true);
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Submit Ticket';
+    }
+  }
+
+  async function loadTickets(){
+    const wrap = document.getElementById('ticketsList');
+    try {
+      const res = await fetch(`${API_BASE}/tickets`, { headers: { 'Authorization': `Bearer ${token}` } });
+      const data = await res.json();
+      if (!data.success) throw new Error();
+
+      if (!data.tickets.length) {
+        wrap.innerHTML = '<p class="text-ink-faint text-sm">You haven\\'t raised any tickets yet.</p>';
+        return;
+      }
+
+      wrap.innerHTML = data.tickets.map(t => `
+        <div class="panel p-4 flex items-start justify-between gap-3">
+          <div class="min-w-0">
+            <p class="text-ink font-semibold text-sm">${CATEGORY_LABELS[t.category] || t.category}</p>
+            <p class="text-ink-faint text-xs mt-1">${new Date(t.createdAt).toLocaleString()}</p>
+          </div>
+          <span class="chip chip-${t.status} flex-shrink-0">${t.status.charAt(0).toUpperCase() + t.status.slice(1)}</span>
+        </div>
+      `).join('');
+    } catch (err) {
+      wrap.innerHTML = '<p class="text-red-600 text-sm">Could not load your tickets.</p>';
+    }
+  }
+
+  if (!token) {
+    window.location.href = 'index.html';
+  } else {
+    loadTickets();
+  }
+</script>
+</body>
+</html>
