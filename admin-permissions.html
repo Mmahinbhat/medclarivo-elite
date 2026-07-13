@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<script src="sessionGuard.js"></script>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"/>
+<meta http-equiv="Pragma" content="no-cache"/>
+<meta http-equiv="Expires" content="0"/>
+<title>MedClarivo Elite | Admin — Permissions</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@latest"></script>
+<script>
+  tailwind.config = {
+    darkMode: "class",
+    theme: { extend: {
+      colors: {
+        navy: "#0A1424", "navy-2": "#0F2038", "navy-3": "#16304F",
+        teal: "#0FA89A", "teal-2": "#33D9C8", "teal-deep": "#0A6E64",
+        gold: "#B9924F", "gold-soft": "rgba(185,146,79,0.12)",
+        mist: "#F5F7FA", "mist-2": "#EEF2F6",
+        ink: "#0B1220", "ink-soft": "#56657B", "ink-faint": "#8B97A8",
+        line: "rgba(11,18,32,0.08)",
+      },
+      fontFamily: {
+        display: ["DM Serif Display", "serif"], sans: ["DM Sans", "sans-serif"], mono: ["JetBrains Mono", "monospace"],
+      },
+    }}
+  }
+</script>
+<style>
+  :root{ --navy:#0A1424; --navy-2:#0F2038; --teal:#0FA89A; --teal-2:#33D9C8; --teal-deep:#0A6E64; --gold:#B9924F; --mist:#F5F7FA; --ink:#0B1220; --ink-soft:#56657B; }
+  *{box-sizing:border-box;}
+  body{font-family:'DM Sans',sans-serif;background:var(--mist);color:var(--ink);-webkit-font-smoothing:antialiased;min-height:100dvh;}
+  .font-display{font-family:'DM Serif Display',serif;}
+  .app-shell{display:flex;min-height:100dvh;}
+  .sidebar{position:fixed;left:16px;top:16px;bottom:16px;width:240px;border-radius:24px;background:linear-gradient(174deg,var(--navy-2) 0%,var(--navy) 78%);box-shadow:0 20px 50px -20px rgba(10,20,36,0.55),0 0 0 1px rgba(255,255,255,0.04) inset;display:flex;flex-direction:column;z-index:60;}
+  @media(max-width:1023px){.sidebar{transform:translateX(-130%);transition:transform .3s ease;}.sidebar.open{transform:translateX(0);}}
+  .main-content{margin-left:272px;flex:1;min-width:0;}
+  @media(max-width:1023px){.main-content{margin-left:0;}}
+  .nav-item{display:flex;align-items:center;gap:12px;padding:10px 16px;border-radius:14px;color:rgba(255,255,255,0.52);font-size:13.5px;font-weight:500;cursor:pointer;transition:all .2s ease;margin:1px 12px;text-decoration:none;}
+  .nav-item:hover{background:rgba(255,255,255,0.06);color:#fff;}
+  .nav-item.active{background:rgba(15,168,154,0.16);color:#7FE9DD;}
+  .nav-item svg{width:18px;height:18px;flex-shrink:0;}
+  .panel{background:#fff;border:1px solid var(--line);border-radius:20px;box-shadow:0 1px 2px rgba(11,18,32,0.03);}
+  .topbar{position:sticky;top:16px;z-index:50;margin:0 16px 24px 16px;border-radius:20px;background:rgba(255,255,255,0.85);backdrop-filter:blur(18px) saturate(160%);border:1px solid rgba(255,255,255,0.7);box-shadow:0 8px 28px -16px rgba(11,18,32,0.18);padding:14px 22px;display:flex;align-items:center;justify-content:space-between;}
+  .btn-primary{background:var(--navy);color:#fff;border:none;border-radius:12px;padding:9px 18px;font-size:13px;font-weight:600;cursor:pointer;transition:background .15s;}
+  .btn-primary:hover{background:var(--navy-2);}
+  .btn-primary:disabled{opacity:0.4;cursor:not-allowed;}
+  .toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%);background:var(--navy);color:#fff;padding:11px 20px;border-radius:12px;font-size:13px;font-weight:600;z-index:200;box-shadow:0 10px 28px rgba(0,0,0,0.28);opacity:0;pointer-events:none;transition:opacity .25s ease;}
+  .toast.show{opacity:1;}
+  .perm-table{width:100%;border-collapse:collapse;}
+  .perm-table th{padding:10px 12px;text-align:center;font-size:11px;text-transform:uppercase;letter-spacing:0.05em;color:var(--ink-soft);font-weight:700;border-bottom:1px solid var(--line);}
+  .perm-table th.row-label-head{text-align:left;}
+  .perm-table td{padding:10px 12px;text-align:center;border-bottom:1px solid var(--line);}
+  .perm-table td.row-label{text-align:left;font-size:13px;font-weight:600;color:var(--ink);}
+  .perm-table .module-group{background:var(--mist-2);}
+  .perm-table .module-group td{font-size:11px;text-transform:uppercase;letter-spacing:0.05em;color:var(--ink-faint);font-weight:700;padding:8px 12px;}
+  .cb-fixed{width:18px;height:18px;accent-color:var(--ink-faint);opacity:0.5;}
+  .cb-editable{width:18px;height:18px;accent-color:var(--teal);cursor:pointer;}
+  .legend-dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;}
+</style>
+</head>
+<body>
+<div class="app-shell">
+  <aside class="sidebar" id="sidebar">
+    <div class="px-6 pt-7 pb-5">
+      <p class="font-display text-white text-xl leading-none">MedClarivo</p>
+      <p class="text-teal-2 text-[11px] tracking-widest uppercase font-semibold mt-1" id="roleLabel">Super Admin</p>
+    </div>
+    <nav class="flex-1 px-0 py-2 space-y-1 overflow-y-auto">
+      <a class="nav-item" href="admin-dashboard.html"><i data-lucide="layout-dashboard"></i><span>Dashboard</span></a>
+      <a class="nav-item" href="admin-users.html"><i data-lucide="users"></i><span>Users</span></a>
+      <a class="nav-item" href="admin-mentors.html"><i data-lucide="graduation-cap"></i><span>Mentors</span></a>
+      <a class="nav-item" href="#" onclick="return false;"><i data-lucide="user-check"></i><span>Students</span></a>
+      <a class="nav-item" href="#" onclick="return false;"><i data-lucide="clipboard-list"></i><span>Assignments</span></a>
+      <a class="nav-item" href="#" onclick="return false;"><i data-lucide="calendar"></i><span>Calendar</span></a>
+      <a class="nav-item" href="#" onclick="return false;"><i data-lucide="notebook-pen"></i><span>Session Notes</span></a>
+      <a class="nav-item" href="#" onclick="return false;"><i data-lucide="star"></i><span>Evaluations</span></a>
+      <a class="nav-item" href="#" onclick="return false;"><i data-lucide="library"></i><span>Content Library</span></a>
+      <a class="nav-item" href="#" onclick="return false;"><i data-lucide="message-circle"></i><span>Messaging</span></a>
+      <a class="nav-item" href="#" onclick="return false;"><i data-lucide="credit-card"></i><span>Payments</span></a>
+      <a class="nav-item" href="#" onclick="return false;"><i data-lucide="bar-chart-3"></i><span>Reports</span></a>
+      <a class="nav-item active" href="admin-permissions.html"><i data-lucide="shield"></i><span>Permissions</span></a>
+      <a class="nav-item" href="admin-audit.html"><i data-lucide="scroll-text"></i><span>Audit Log</span></a>
+    </nav>
+    <div class="px-5 py-4 border-t border-white/5">
+      <div class="flex items-center gap-3 mb-4">
+        <div class="w-8 h-8 rounded-full bg-teal/20 flex items-center justify-center text-teal-2 font-bold text-sm" id="adminAvatarInitial">—</div>
+        <div class="min-w-0">
+          <p class="text-white text-sm font-semibold truncate" id="adminNameSidebar">—</p>
+          <p class="text-white/40 text-[11px] truncate" id="adminEmailSidebar">—</p>
+        </div>
+      </div>
+    </div>
+    <div class="px-3 pb-6">
+      <a href="#" id="signOutLink" class="nav-item text-red-300/70 hover:text-red-300 hover:bg-red-500/10">
+        <i data-lucide="log-out"></i><span>Sign Out</span>
+      </a>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    <div class="topbar">
+      <div class="flex items-center gap-3">
+        <button class="lg:hidden mr-1" onclick="document.getElementById('sidebar').classList.toggle('open')"><i data-lucide="menu"></i></button>
+        <div>
+          <p class="text-ink font-semibold text-sm">Access Control (RBAC)</p>
+          <p class="text-ink-faint text-xs">Mentor and Assistant permissions — editable. Others are fixed platform defaults.</p>
+        </div>
+      </div>
+      <button class="btn-primary flex items-center gap-2" id="saveBtn" onclick="savePolicyMatrix()" disabled>
+        <i data-lucide="save" class="w-4 h-4"></i> Save Changes (<span id="changeCount">0</span>)
+      </button>
+    </div>
+
+    <div class="px-4 md:px-6 pb-16 max-w-6xl mx-auto space-y-6">
+      <div class="panel p-4 flex items-center gap-6 text-xs text-ink-soft">
+        <span><span class="legend-dot" style="background:var(--teal)"></span>Editable (Mentor / Assistant)</span>
+        <span><span class="legend-dot" style="background:var(--ink-faint)"></span>Fixed platform default (Super Admin / Admin / Student)</span>
+      </div>
+
+      <div class="panel p-6 overflow-x-auto">
+        <table class="perm-table" id="permTable">
+          <thead>
+            <tr>
+              <th class="row-label-head">Capability</th>
+              <th>Super Admin</th>
+              <th>Admin</th>
+              <th>Mentor</th>
+              <th>Assistant</th>
+              <th>Student</th>
+            </tr>
+          </thead>
+          <tbody id="permTableBody">
+            <tr><td colspan="6" class="text-center py-10 text-ink-faint text-sm">Loading permissions…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const API = 'https://med-clarivo.onrender.com/api';
+const ROLES = ['admin', 'mentor', 'assistant', 'student'];
+const EDITABLE_ROLES = ['mentor', 'assistant'];
+
+const MODULE_LABELS = {
+  user: 'User Management',
+  mentor_request: 'Mentor Matching',
+  study_session: 'Session Scheduling',
+  curriculum: 'Curriculum',
+  progress: 'Student Progress',
+  daily_mission: 'Daily Missions',
+  role_permission: 'Permissions',
+  audit_log: 'Audit Log',
+};
+const ACTION_LABELS = { create: 'Create', read: 'View', update: 'Edit', delete: 'Delete', approve: 'Approve', export: 'Export' };
+
+let permissionsByRole = {};   // { role: [{module, action, allowed, scope}, ...] }
+let pendingChanges = {};      // key `${role}:${module}:${action}` -> new allowed value
+
+function getToken() { return localStorage.getItem('mc_token') || localStorage.getItem('admin_token'); }
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.className = 'toast show';
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+async function loadCurrentUser() {
+  const token = getToken();
+  try {
+    const res = await fetch(`${API}/auth/me`, { headers: { Authorization: `Bearer ${token}` } });
+    const data = await res.json();
+    if (res.ok && data.success) {
+      const u = data.user;
+      document.getElementById('adminNameSidebar').textContent = u.name || u.email;
+      document.getElementById('adminEmailSidebar').textContent = u.email || '';
+      document.getElementById('adminAvatarInitial').textContent = (u.name || u.email)[0].toUpperCase();
+      document.getElementById('roleLabel').textContent = u.role === 'super_admin' ? 'Super Admin' : (u.role.charAt(0).toUpperCase() + u.role.slice(1));
+    }
+  } catch(e) {}
+}
+
+async function loadPermissions() {
+  const token = getToken();
+  if (!token) { window.location.href = 'index.html'; return; }
+
+  try {
+    for (const role of ROLES) {
+      const res = await fetch(`${API}/permissions/${role}`, { headers: { Authorization: `Bearer ${token}` } });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        permissionsByRole[role] = data.permissions || [];
+      } else if (res.status === 403) {
+        document.getElementById('permTableBody').innerHTML = `<tr><td colspan="6" class="text-center py-10 text-red-500 text-sm">You do not have permission to view this page.</td></tr>`;
+        return;
+      }
+    }
+    renderTable();
+  } catch (e) {
+    document.getElementById('permTableBody').innerHTML = `<tr><td colspan="6" class="text-center py-10 text-red-500 text-sm">Network error loading permissions.</td></tr>`;
+  }
+}
+
+function isAllowed(role, module, action) {
+  const rows = permissionsByRole[role] || [];
+  const row = rows.find(r => r.module === module && r.action === action);
+  return row ? !!row.allowed : false;
+}
+
+function renderTable() {
+  // Build the union of (module, action) pairs across all fetched roles — grounded in
+  // what's actually seeded, not a fabricated full cross-product.
+  const pairSet = new Map(); // key -> {module, action}
+  ROLES.forEach(role => (permissionsByRole[role] || []).forEach(r => {
+    pairSet.set(`${r.module}:${r.action}`, { module: r.module, action: r.action });
+  }));
+
+  const pairs = [...pairSet.values()].sort((a, b) =>
+    a.module === b.module ? a.action.localeCompare(b.action) : a.module.localeCompare(b.module)
+  );
+
+  let currentModule = null;
+  let rowsHtml = '';
+
+  pairs.forEach(({ module, action }) => {
+    if (module !== currentModule) {
+      currentModule = module;
+      rowsHtml += `<tr class="module-group"><td colspan="6">${MODULE_LABELS[module] || module}</td></tr>`;
+    }
+
+    const label = ACTION_LABELS[action] || action;
+    const superAdminChecked = 'checked disabled';
+    const adminChecked = isAllowed('admin', module, action) ? 'checked' : '';
+    const studentChecked = isAllowed('student', module, action) ? 'checked' : '';
+
+    const mentorKey = `mentor:${module}:${action}`;
+    const assistantKey = `assistant:${module}:${action}`;
+    const mentorChecked = (pendingChanges[mentorKey] !== undefined ? pendingChanges[mentorKey] : isAllowed('mentor', module, action)) ? 'checked' : '';
+    const assistantChecked = (pendingChanges[assistantKey] !== undefined ? pendingChanges[assistantKey] : isAllowed('assistant', module, action)) ? 'checked' : '';
+
+    rowsHtml += `
+      <tr>
+        <td class="row-label">${label}</td>
+        <td><input type="checkbox" class="cb-fixed" ${superAdminChecked} disabled></td>
+        <td><input type="checkbox" class="cb-fixed" ${adminChecked} disabled></td>
+        <td><input type="checkbox" class="cb-editable" ${mentorChecked} onchange="toggleChange('mentor','${module}','${action}',this.checked)"></td>
+        <td><input type="checkbox" class="cb-editable" ${assistantChecked} onchange="toggleChange('assistant','${module}','${action}',this.checked)"></td>
+        <td><input type="checkbox" class="cb-fixed" ${studentChecked} disabled></td>
+      </tr>
+    `;
+  });
+
+  document.getElementById('permTableBody').innerHTML = rowsHtml || `<tr><td colspan="6" class="text-center py-10 text-ink-faint text-sm">No permissions configured yet.</td></tr>`;
+}
+
+function toggleChange(role, module, action, checked) {
+  const key = `${role}:${module}:${action}`;
+  const originalValue = isAllowed(role, module, action);
+  if (checked === originalValue) {
+    delete pendingChanges[key];
+  } else {
+    pendingChanges[key] = checked;
+  }
+  const count = Object.keys(pendingChanges).length;
+  document.getElementById('changeCount').textContent = count;
+  document.getElementById('saveBtn').disabled = count === 0;
+}
+
+async function savePolicyMatrix() {
+  const token = getToken();
+  const entries = Object.entries(pendingChanges);
+  if (entries.length === 0) return;
+
+  let successCount = 0;
+  let failCount = 0;
+
+  for (const [key, allowed] of entries) {
+    const [role, module, action] = key.split(':');
+    // Preserve the existing scope for this row if we have one, otherwise default to 'assigned'
+    // (the correct default scope for Mentor/Assistant capabilities in this app).
+    const existing = (permissionsByRole[role] || []).find(r => r.module === module && r.action === action);
+    const scope = existing ? existing.scope : 'assigned';
+
+    try {
+      const res = await fetch(`${API}/permissions`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ role, module, action, allowed, scope }),
+      });
+      const data = await res.json();
+      if (res.ok && data.success) successCount++; else failCount++;
+    } catch (e) { failCount++; }
+  }
+
+  showToast(`${successCount} permission(s) updated${failCount ? `, ${failCount} failed` : ''}.`);
+  pendingChanges = {};
+  document.getElementById('changeCount').textContent = '0';
+  document.getElementById('saveBtn').disabled = true;
+  await loadPermissions();
+}
+
+document.getElementById('signOutLink').addEventListener('click', e => {
+  e.preventDefault();
+  localStorage.removeItem('mc_token'); localStorage.removeItem('admin_token'); localStorage.removeItem('mc_user');
+  window.location.href = 'index.html';
+});
+
+window.addEventListener('load', () => {
+  lucide.createIcons();
+  loadCurrentUser();
+  loadPermissions();
+});
+</script>
+</body>
+</html>
