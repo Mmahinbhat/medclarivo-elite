@@ -148,31 +148,22 @@
       <p class="font-display text-white text-xl leading-none">MedClarivo</p>
       <p class="text-teal-2 text-[11px] tracking-widest uppercase font-semibold mt-1" id="roleLabel">Admin</p>
     </div>
-    <nav class="flex-1 px-0 py-2 space-y-1">
-      <a class="nav-item" href="admin-dashboard.html">
-        <i data-lucide="layout-dashboard"></i><span>Dashboard</span>
-      </a>
-      <a class="nav-item" href="admin-users.html">
-        <i data-lucide="users"></i><span>Users</span>
-      </a>
-      <a class="nav-item" href="admin-mentors.html">
-        <i data-lucide="graduation-cap"></i><span>Mentors</span>
-      </a>
-      <a class="nav-item" href="admin-students.html">
-        <i data-lucide="user-check"></i><span>Students</span>
-      </a>
-      <a class="nav-item" href="admin-assignments.html">
-        <i data-lucide="clipboard-list"></i><span>Assignments</span>
-      </a>
-      <a class="nav-item active" href="admin-permissions.html">
-        <i data-lucide="key-round"></i><span>Permissions</span>
-      </a>
-      <a class="nav-item" href="admin-audit.html">
-        <i data-lucide="scroll-text"></i><span>Audit Log</span>
-      </a>
-      <a class="nav-item" href="admin-profile.html">
-        <i data-lucide="user-circle"></i><span>Profile</span>
-      </a>
+    <nav class="flex-1 px-0 py-2 space-y-1 overflow-y-auto">
+      <a class="nav-item" href="admin-dashboard.html"><i data-lucide="layout-dashboard"></i><span>Dashboard</span></a>
+      <a class="nav-item" href="admin-users.html"><i data-lucide="users"></i><span>Users</span></a>
+      <a class="nav-item" href="admin-mentors.html"><i data-lucide="graduation-cap"></i><span>Mentors</span></a>
+      <a class="nav-item" href="admin-students.html"><i data-lucide="user-check"></i><span>Students</span></a>
+      <a class="nav-item" href="admin-assignments.html"><i data-lucide="clipboard-list"></i><span>Assignments</span></a>
+      <a class="nav-item" href="admin-calendar.html"><i data-lucide="calendar"></i><span>Calendar</span></a>
+      <a class="nav-item" href="admin-session-notes.html"><i data-lucide="notebook-pen"></i><span>Session Notes</span></a>
+      <a class="nav-item" href="admin-evaluations.html"><i data-lucide="star"></i><span>Evaluations</span></a>
+      <a class="nav-item" href="#" onclick="showToast('Content Library coming soon')"><i data-lucide="library"></i><span>Content Library</span></a>
+      <a class="nav-item" href="#" onclick="showToast('Messaging coming soon')"><i data-lucide="message-circle"></i><span>Messaging</span></a>
+      <a class="nav-item" href="#" onclick="showToast('Payments coming soon')"><i data-lucide="credit-card"></i><span>Payments</span></a>
+      <a class="nav-item" href="#" onclick="showToast('Reports coming soon')"><i data-lucide="bar-chart-3"></i><span>Reports</span></a>
+      <a class="nav-item active" href="admin-permissions.html"><i data-lucide="shield"></i><span>Permissions</span></a>
+      <a class="nav-item" href="admin-audit.html"><i data-lucide="scroll-text"></i><span>Audit Log</span></a>
+      <a class="nav-item" href="admin-profile.html"><i data-lucide="user-circle"></i><span>Profile</span></a>
     </nav>
     <div class="px-3 pb-6">
       <a href="#" id="signOutLink" class="nav-item text-red-300/70 hover:text-red-300 hover:bg-red-500/10">
