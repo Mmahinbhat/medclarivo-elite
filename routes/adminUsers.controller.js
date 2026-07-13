@@ -1,4 +1,6 @@
 const User = require('../models/User');
+const UserProgress = require('../models/UserProgress');
+const Session = require('../models/Session');
 const auditService = require('../services/auditService');
 const { scopeFilter } = require('../middleware/rbac');
 const { ROLES, MANAGEABLE_ROLES, MODULES } = require('../utils/rbacConstants');
@@ -140,4 +142,52 @@ async function assignMentor(req, res) {
 
   res.json({ success: true, student });
 }
-module.exports = { createUser, listUsers, suspendUser, reactivateUser, assignMentor };
+
+async function listStudents(req, res) {
+  const filter = scopeFilter(req, { assignedField: 'assignedMentors' });
+  filter.role = ROLES.STUDENT;
+
+  const students = await User.find(filter).select('-passwordHash').lean();
+  const studentIds = students.map((s) => s._id);
+
+  const [progressRows, sessions, mentors] = await Promise.all([
+    UserProgress.find({ user: { $in: studentIds } }).lean(),
+    Session.find({ mentee: { $in: studentIds } }).lean(),
+    User.find({ role: ROLES.MENTOR }).select('name').lean(),
+  ]);
+
+  const mentorNameById = {};
+  mentors.forEach((m) => { mentorNameById[m._id.toString()] = m.name; });
+
+  const now = new Date();
+
+  const result = students.map((student) => {
+    const sid = student._id.toString();
+
+    const ownProgress = progressRows.filter((p) => p.user.toString() === sid);
+    const avgProgress = ownProgress.length
+      ? Math.round(ownProgress.reduce((sum, p) => sum + (p.percentComplete || 0), 0) / ownProgress.length)
+      : null;
+
+    const ownSessions = sessions.filter((s) => s.mentee.toString() === sid);
+    const completedCount = ownSessions.filter((s) => s.status === 'completed').length;
+    const cancelledCount = ownSessions.filter((s) => s.status === 'cancelled').length;
+    const attendedTotal = completedCount + cancelledCount;
+    const attendanceRate = attendedTotal > 0 ? Math.round((completedCount / attendedTotal) * 100) : null;
+
+    const nextSession = ownSessions
+      .filter((s) => s.status === 'scheduled' && new Date(s.startTime) >= now)
+      .sort((a, b) => new Date(a.startTime) - new Date(b.startTime))[0] || null;
+
+    return {
+      ...student,
+      mentorName: student.mentorId ? mentorNameById[student.mentorId.toString()] || null : null,
+      syllabusProgress: avgProgress,
+      attendanceRate,
+      nextSession: nextSession ? { startTime: nextSession.startTime, topic: nextSession.topic } : null,
+    };
+  });
+
+  res.json({ success: true, students: result });
+}
+module.exports = { createUser, listUsers, suspendUser, reactivateUser, assignMentor, listStudents };

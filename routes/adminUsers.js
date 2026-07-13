@@ -12,5 +12,6 @@ router.get('/', authorize(MODULES.USER, ACTIONS.READ), controller.listUsers);
 router.patch('/:id/suspend', authorize(MODULES.USER, ACTIONS.DELETE), controller.suspendUser);
 router.patch('/:id/reactivate', authorize(MODULES.USER, ACTIONS.UPDATE), controller.reactivateUser);
 router.patch('/:studentId/assign-mentor', authorize(MODULES.MENTOR_REQUEST, ACTIONS.UPDATE), controller.assignMentor);
+router.get('/students', authorize(MODULES.PROGRESS, ACTIONS.READ), controller.listStudents);
 
 module.exports = router;
