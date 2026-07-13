@@ -19,9 +19,10 @@ const { examGroupFor } = require('./curriculum');
 router.get('/students', protect, restrictTo('assistant'), async (req, res) => {
   try {
     if (!req.user.mentorId) {
-      return res.json({ success: true, count: 0, students: [], linked: false });
+      return res.json({ success: true, count: 0, students: [], linked: false, mentor: null });
     }
 
+    const mentor = await User.findById(req.user.mentorId).select('name mentorProfile').lean();
     const students = await User.find({ mentorId: req.user.mentorId, role: 'student' })
       .select('name email avatar onboarding streak xp level')
       .lean();
@@ -56,7 +57,13 @@ router.get('/students', protect, restrictTo('assistant'), async (req, res) => {
       };
     }));
 
-    res.json({ success: true, count: result.length, students: result, linked: true });
+    res.json({
+      success: true,
+      count: result.length,
+      students: result,
+      linked: true,
+      mentor: mentor ? { name: mentor.name, title: mentor.mentorProfile && mentor.mentorProfile.title } : null,
+    });
   } catch (err) {
     console.error(err);
     res.status(500).json({ success: false, message: 'Failed to fetch students.' });
@@ -129,6 +136,43 @@ router.get('/students/:id/chapters', protect, restrictTo('assistant'), async (re
   } catch (err) {
     console.error(err);
     res.status(500).json({ success: false, message: 'Failed to fetch chapters.' });
+  }
+});
+
+// ════════════════════════════════════════════════════════════════
+// GET /api/assistant/students/:id/sessions
+// Recent session history (most recent 15), so the Assistant can see
+// what's already been logged rather than just current totals.
+// ════════════════════════════════════════════════════════════════
+router.get('/students/:id/sessions', protect, restrictTo('assistant'), async (req, res) => {
+  try {
+    const student = await User.findOne({ _id: req.params.id, mentorId: req.user.mentorId, role: 'student' })
+      .select('_id')
+      .lean();
+    if (!student) {
+      return res.status(404).json({ success: false, message: 'Student not found or not under your mentor.' });
+    }
+
+    const sessions = await StudySession.find({ user: student._id })
+      .sort('-completedAt')
+      .limit(15)
+      .populate('chapter', 'name')
+      .lean();
+
+    res.json({
+      success: true,
+      sessions: sessions.map(s => ({
+        id: s._id,
+        chapterName: (s.chapter && s.chapter.name) || 'Unknown chapter',
+        durationMinutes: s.durationMinutes,
+        xpEarned: s.xpEarned,
+        completedAt: s.completedAt,
+        loggedByAssistant: !!s.loggedByAssistant,
+      })),
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: 'Failed to fetch session history.' });
   }
 });
 

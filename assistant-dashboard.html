@@ -119,6 +119,25 @@
     opacity:0; pointer-events:none; transition:opacity .25s ease;
   }
   .toast.show{ opacity:1; }
+  .hero{
+    background:linear-gradient(135deg, var(--navy) 0%, var(--navy-3) 100%);
+    border-radius:24px; padding:32px 36px; color:#fff; margin:0 16px 24px 16px;
+    position:relative; overflow:hidden;
+  }
+  .hero-stat{ text-align:center; }
+  .hero-stat-value{ font-family:'DM Serif Display', serif; font-size:26px; line-height:1; }
+  .hero-stat-label{ font-size:10.5px; text-transform:uppercase; letter-spacing:.06em; color:rgba(255,255,255,0.5); margin-top:4px; font-weight:600; }
+  .hero-divider{ width:1px; background:rgba(255,255,255,0.12); }
+
+  .session-row{
+    display:flex; align-items:center; gap:12px; padding:10px 0;
+    border-bottom:1px solid var(--line);
+  }
+  .session-row:last-child{ border-bottom:none; }
+  .session-icon{
+    width:34px; height:34px; border-radius:10px; background:var(--mist-2);
+    display:flex; align-items:center; justify-content:center; flex-shrink:0;
+  }
 </style>
 </head>
 <body>
@@ -145,13 +164,27 @@
 
   <!-- ── Main content ── -->
   <main class="main-content">
-    <div class="topbar">
-      <div>
-        <p class="text-ink font-semibold text-sm" id="greeting">Welcome</p>
-        <p class="text-ink-faint text-xs">View your mentor's students and log study sessions for them</p>
+    <div class="hero" id="heroBanner">
+      <div class="flex items-center justify-between flex-wrap gap-6">
+        <div>
+          <p class="text-teal-2 text-[11px] tracking-widest uppercase font-semibold mb-2">Assistant View</p>
+          <h1 class="font-display text-2xl md:text-3xl mb-1" id="greeting">Welcome</h1>
+          <p class="text-white/60 text-sm" id="mentorSubtitle">Loading…</p>
+        </div>
+        <div class="flex items-center gap-5">
+          <div class="hero-stat">
+            <p class="hero-stat-value" id="heroStudentCount">—</p>
+            <p class="hero-stat-label">Students</p>
+          </div>
+          <div class="hero-divider h-10"></div>
+          <div class="hero-stat">
+            <p class="hero-stat-value" id="heroAvgMastery">—</p>
+            <p class="hero-stat-label">Avg Mastery</p>
+          </div>
+        </div>
       </div>
-      <button class="lg:hidden" onclick="document.getElementById('sidebar').classList.toggle('open')">
-        <i data-lucide="menu"></i>
+      <button class="lg:hidden absolute top-6 right-6" onclick="document.getElementById('sidebar').classList.toggle('open')">
+        <i data-lucide="menu" class="text-white"></i>
       </button>
     </div>
 
@@ -199,6 +232,13 @@
                 </div>
               </div>
               <div id="subjectList" class="space-y-3"></div>
+            </div>
+
+            <div class="panel p-6">
+              <h3 class="font-display text-lg text-ink mb-4">Recent Sessions</h3>
+              <div id="sessionHistory">
+                <p class="text-ink-faint text-sm">Loading…</p>
+              </div>
             </div>
 
             <div class="panel p-6">
@@ -268,6 +308,17 @@
       students = data.students;
       document.getElementById('studentCount').textContent = `(${students.length})`;
 
+      // Hero banner
+      document.getElementById('heroStudentCount').textContent = students.length;
+      const avgMastery = students.length
+        ? Math.round(students.reduce((sum, s) => sum + s.overallMastery, 0) / students.length)
+        : 0;
+      document.getElementById('heroAvgMastery').textContent = students.length ? `${avgMastery}%` : '—';
+      if (data.mentor) {
+        document.getElementById('mentorSubtitle').textContent =
+          `Assisting ${data.mentor.name}${data.mentor.title ? ' · ' + data.mentor.title : ''}`;
+      }
+
       const list = document.getElementById('studentList');
       if (!students.length) {
         list.innerHTML = '<p class="text-ink-faint text-sm">Your mentor has no students assigned yet.</p>';
@@ -303,6 +354,49 @@
     document.getElementById('detailXp').textContent = student.xp;
 
     await loadSubjectsFor(id);
+    await loadSessionHistory(id);
+  }
+
+  function timeAgo(dateStr) {
+    const diffMs = Date.now() - new Date(dateStr).getTime();
+    const mins = Math.floor(diffMs / 60000);
+    if (mins < 60) return `${mins}m ago`;
+    const hrs = Math.floor(mins / 60);
+    if (hrs < 24) return `${hrs}h ago`;
+    const days = Math.floor(hrs / 24);
+    return `${days}d ago`;
+  }
+
+  async function loadSessionHistory(studentId) {
+    const container = document.getElementById('sessionHistory');
+    container.innerHTML = '<p class="text-ink-faint text-sm">Loading…</p>';
+    try {
+      const res = await fetch(`${API_BASE}/assistant/students/${studentId}/sessions`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (!data.success) {
+        container.innerHTML = '<p class="text-ink-faint text-sm">Could not load session history.</p>';
+        return;
+      }
+      if (!data.sessions.length) {
+        container.innerHTML = '<p class="text-ink-faint text-sm">No sessions logged yet for this student.</p>';
+        return;
+      }
+      container.innerHTML = data.sessions.map(s => `
+        <div class="session-row">
+          <div class="session-icon"><i data-lucide="${s.loggedByAssistant ? 'user-check' : 'graduation-cap'}" class="w-4 h-4 text-ink-soft"></i></div>
+          <div class="flex-1 min-w-0">
+            <p class="text-ink text-sm font-semibold truncate">${s.chapterName}</p>
+            <p class="text-ink-faint text-xs">${s.durationMinutes} min · +${s.xpEarned} XP · ${timeAgo(s.completedAt)}${s.loggedByAssistant ? ' · logged by assistant' : ''}</p>
+          </div>
+        </div>
+      `).join('');
+      if (window.lucide) lucide.createIcons();
+    } catch (err) {
+      console.error('Failed to load session history', err);
+      container.innerHTML = '<p class="text-ink-faint text-sm">Network error loading history.</p>';
+    }
   }
 
   let subjectsCache = [];
