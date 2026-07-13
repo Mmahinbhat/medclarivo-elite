@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<script src="sessionGuard.js"></script>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"/>
+<meta http-equiv="Pragma" content="no-cache"/>
+<meta http-equiv="Expires" content="0"/>
+<title>MedClarivo Elite | Admin — Evaluations</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@latest"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+  tailwind.config={darkMode:"class",theme:{extend:{colors:{navy:"#0A1424","navy-2":"#0F2038","navy-3":"#16304F",teal:"#0FA89A","teal-2":"#33D9C8","teal-deep":"#0A6E64",gold:"#B9924F","gold-soft":"rgba(185,146,79,0.12)",mist:"#F5F7FA","mist-2":"#EEF2F6",ink:"#0B1220","ink-soft":"#56657B","ink-faint":"#8B97A8",line:"rgba(11,18,32,0.08)"},fontFamily:{display:["DM Serif Display","serif"],sans:["DM Sans","sans-serif"]}}}}
+</script>
+<style>
+  :root{--navy:#0A1424;--navy-2:#0F2038;--navy-3:#16304F;--teal:#0FA89A;--teal-2:#33D9C8;--teal-deep:#0A6E64;--gold:#B9924F;--mist:#F5F7FA;--ink:#0B1220;--ink-soft:#56657B;}
+  *{box-sizing:border-box;}html{scroll-behavior:smooth;}
+  body{font-family:"DM Sans",sans-serif;background:var(--mist);color:var(--ink);-webkit-font-smoothing:antialiased;min-height:100dvh;}
+  .font-display{font-family:"DM Serif Display",serif;}
+  .app-shell{display:flex;min-height:100dvh;}
+  .sidebar{position:fixed;left:16px;top:16px;bottom:16px;width:240px;border-radius:24px;background:linear-gradient(174deg,var(--navy-2) 0%,var(--navy) 78%);box-shadow:0 20px 50px -20px rgba(10,20,36,0.55),0 0 0 1px rgba(255,255,255,0.04) inset;display:flex;flex-direction:column;z-index:60;}
+  @media(max-width:1023px){.sidebar{transform:translateX(-130%);transition:transform .3s ease;}.sidebar.open{transform:translateX(0);}}
+  .main-content{margin-left:272px;flex:1;min-width:0;}
+  @media(max-width:1023px){.main-content{margin-left:0;}}
+  .nav-item{display:flex;align-items:center;gap:12px;padding:10px 16px;border-radius:14px;color:rgba(255,255,255,0.52);font-size:13.5px;font-weight:500;cursor:pointer;transition:all .2s ease;margin:1px 12px;text-decoration:none;}
+  .nav-item:hover{background:rgba(255,255,255,0.06);color:#fff;}
+  .nav-item.active{background:rgba(15,168,154,0.16);color:#7FE9DD;}
+  .nav-item svg{width:18px;height:18px;flex-shrink:0;}
+  .panel{background:#fff;border:1px solid rgba(11,18,32,0.08);border-radius:20px;box-shadow:0 1px 2px rgba(11,18,32,0.03);}
+  .topbar{position:sticky;top:16px;z-index:50;margin:0 16px 24px 16px;border-radius:20px;background:rgba(255,255,255,0.85);backdrop-filter:blur(18px) saturate(160%);border:1px solid rgba(255,255,255,0.7);box-shadow:0 8px 28px -16px rgba(11,18,32,0.18);padding:14px 22px;display:flex;align-items:center;justify-content:space-between;}
+  .chip{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:999px;font-size:11px;font-weight:700;}
+  .chip-teal{background:rgba(15,168,154,0.12);color:var(--teal-deep);}
+  .chip-gold{background:rgba(185,146,79,0.12);color:var(--gold);}
+  .chip-red{background:rgba(220,38,38,0.1);color:#DC2626;}
+  .chip-blue{background:rgba(59,130,246,0.1);color:#2563EB;}
+  .chip-purple{background:rgba(124,58,237,0.1);color:#7C3AED;}
+  .chip-grey{background:#EEF2F6;color:#56657B;}
+  .chip-green{background:rgba(22,163,74,0.1);color:#16A34A;}
+  .btn-primary{background:var(--navy);color:#fff;border:none;border-radius:12px;padding:9px 16px;font-size:13px;font-weight:600;cursor:pointer;transition:background .15s;display:inline-flex;align-items:center;gap:6px;}
+  .btn-primary:hover{background:var(--navy-2);}
+  .btn-secondary{background:#EEF2F6;color:var(--ink);border:none;border-radius:12px;padding:9px 14px;font-size:13px;font-weight:600;cursor:pointer;transition:background .15s;}
+  .btn-secondary:hover{background:#E2E8F0;}
+  .btn-teal{background:var(--teal);color:#fff;border:none;border-radius:12px;padding:9px 16px;font-size:13px;font-weight:600;cursor:pointer;transition:opacity .15s;display:inline-flex;align-items:center;gap:6px;}
+  .btn-teal:hover{opacity:0.9;}
+  input,select,textarea{border:1px solid rgba(11,18,32,0.1);border-radius:12px;padding:10px 14px;font-size:13.5px;font-family:"DM Sans",sans-serif;background:#fff;outline:none;transition:border-color .15s;width:100%;}
+  input:focus,select:focus,textarea:focus{border-color:var(--teal);}
+  textarea{resize:vertical;}
+  .modal-backdrop{position:fixed;inset:0;background:rgba(10,20,36,0.5);backdrop-filter:blur(4px);z-index:150;display:none;align-items:center;justify-content:center;}
+  .modal-backdrop.show{display:flex;}
+  .modal-box{background:#fff;border-radius:20px;padding:28px;width:480px;max-width:92vw;box-shadow:0 30px 60px -20px rgba(11,18,32,0.35);max-height:90vh;overflow-y:auto;}
+  .toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%);background:var(--navy);color:#fff;padding:11px 20px;border-radius:12px;font-size:13px;font-weight:600;z-index:200;box-shadow:0 10px 28px rgba(0,0,0,0.28);opacity:0;pointer-events:none;transition:opacity .25s ease;}
+  .toast.show{opacity:1;}
+  
+  .range-slider{-webkit-appearance:none;appearance:none;height:6px;border-radius:4px;outline:none;cursor:pointer;}
+  .range-slider::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;border-radius:50%;background:#fff;border:2.5px solid var(--teal);cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,0.15);}
+  .diagnostic-row{display:flex;flex-direction:column;gap:8px;padding:14px 0;border-bottom:1px solid rgba(11,18,32,0.06);}
+  .diagnostic-row:last-child{border-bottom:none;}
+  .eval-student-card{border:1.5px solid rgba(11,18,32,0.08);border-radius:14px;padding:14px 16px;cursor:pointer;transition:all .15s;}
+  .eval-student-card:hover{border-color:var(--teal);background:rgba(15,168,154,0.03);}
+  .eval-student-card.active{border-color:var(--teal);background:rgba(15,168,154,0.06);}
+  .guardian-card{border:1.5px solid rgba(15,168,154,0.25);border-radius:14px;padding:16px;background:rgba(15,168,154,0.03);}
+
+</style>
+</head>
+<body>
+<div class="app-shell">
+  <aside class="sidebar" id="sidebar">
+    <div class="px-6 pt-7 pb-5">
+      <p class="font-display text-white text-xl leading-none">MedClarivo</p>
+      <p class="text-teal-2 text-[11px] tracking-widest uppercase font-semibold mt-1" id="roleLabel">Super Admin</p>
+    </div>
+    <nav class="flex-1 px-0 py-2 space-y-1 overflow-y-auto">
+      <a class="nav-item" href="admin-dashboard.html"><i data-lucide="layout-dashboard"></i><span>Dashboard</span></a>
+      <a class="nav-item" href="admin-users.html"><i data-lucide="users"></i><span>Users</span></a>
+      <a class="nav-item" href="admin-mentors.html"><i data-lucide="graduation-cap"></i><span>Mentors</span></a>
+      <a class="nav-item" href="admin-students.html"><i data-lucide="user-check"></i><span>Students</span></a>
+      <a class="nav-item" href="admin-assignments.html"><i data-lucide="clipboard-list"></i><span>Assignments</span></a>
+      <a class="nav-item " href="admin-calendar.html"><i data-lucide="calendar"></i><span>Calendar</span></a>
+      <a class="nav-item " href="admin-session-notes.html"><i data-lucide="notebook-pen"></i><span>Session Notes</span></a>
+      <a class="nav-item active" href="admin-evaluations.html"><i data-lucide="star"></i><span>Evaluations</span></a>
+      <a class="nav-item" href="#" onclick="showToast('Content Library coming soon')"><i data-lucide="library"></i><span>Content Library</span></a>
+      <a class="nav-item" href="#" onclick="showToast('Messaging coming soon')"><i data-lucide="message-circle"></i><span>Messaging</span></a>
+      <a class="nav-item" href="#" onclick="showToast('Payments coming soon')"><i data-lucide="credit-card"></i><span>Payments</span></a>
+      <a class="nav-item" href="#" onclick="showToast('Reports coming soon')"><i data-lucide="bar-chart-3"></i><span>Reports</span></a>
+      <a class="nav-item" href="admin-permissions.html"><i data-lucide="shield"></i><span>Permissions</span></a>
+      <a class="nav-item" href="admin-audit.html"><i data-lucide="scroll-text"></i><span>Audit Log</span></a>
+      <a class="nav-item" href="admin-profile.html"><i data-lucide="user-circle"></i><span>Profile</span></a>
+    </nav>
+    <div class="px-5 py-4 border-t border-white/5">
+      <div class="flex items-center gap-3 mb-4">
+        <div class="w-8 h-8 rounded-full bg-teal/20 flex items-center justify-center text-teal-2 font-bold text-sm" id="adminAvatarInitial">—</div>
+        <div class="min-w-0">
+          <p class="text-white text-sm font-semibold truncate" id="adminNameSidebar">—</p>
+          <p class="text-white/40 text-[11px] truncate" id="adminEmailSidebar">—</p>
+        </div>
+      </div>
+    </div>
+    <div class="px-3 pb-6">
+      <a href="#" id="signOutLink" class="nav-item text-red-300/70 hover:text-red-300 hover:bg-red-500/10">
+        <i data-lucide="log-out"></i><span>Sign Out</span>
+      </a>
+    </div>
+  </aside>
+  <main class="main-content">
+    <div class="topbar">
+      <div class="flex items-center gap-3">
+        <button class="lg:hidden mr-1" onclick="document.getElementById('sidebar').classList.toggle('open')"><i data-lucide="menu"></i></button>
+        <div>
+          <p class="text-ink font-semibold text-sm">Student Evaluations</p>
+          <p class="text-ink-faint text-xs">Build diagnostic score cards, adjust academic and behavioral performance factors</p>
+        </div>
+      </div>
+      <button class="btn-teal" onclick="publishEval()"><i data-lucide="send" class="w-4 h-4"></i>Publish & Dispatch</button>
+    </div>
+
+    <div class="px-4 md:px-6 pb-16 max-w-7xl mx-auto">
+
+      <!-- Student selector -->
+      <div class="panel p-4 mb-5">
+        <div class="flex flex-col sm:flex-row gap-3 sm:items-center">
+          <input type="text" placeholder="Search student…" id="evalSearch" class="sm:w-64" oninput="filterStudents()">
+          <select id="evalMentorFilter" class="sm:w-48" onchange="filterStudents()">
+            <option value="">All Mentors</option>
+          </select>
+          <p class="text-ink-faint text-xs ml-auto" id="evalCountLabel">Loading students…</p>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-4 gap-5">
+
+        <!-- Student list -->
+        <div class="space-y-2" id="studentList">
+          <p class="text-ink-faint text-sm text-center py-8">Loading…</p>
+        </div>
+
+        <!-- Main eval panel -->
+        <div class="lg:col-span-3 space-y-5">
+
+          <!-- Diagnostic + Radar + Milestones row -->
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+
+            <!-- Diagnostic sliders -->
+            <div class="panel p-5">
+              <p class="text-ink-faint text-[11px] uppercase tracking-wider font-semibold mb-4">Diagnostic Parameters</p>
+              <p class="text-ink-faint text-xs mb-4">Slide or input factors to recalculate average scores</p>
+              <div id="sliderContainer">
+                <div class="diagnostic-row">
+                  <div class="flex items-center justify-between"><span class="text-sm font-semibold text-ink">Academic Score</span><span class="text-teal font-bold text-sm" id="val-academic">85%</span></div>
+                  <input type="range" class="range-slider w-full" min="0" max="100" value="85" id="sl-academic" oninput="updateSlider('academic')" style="background:linear-gradient(to right,#0FA89A 85%,#EEF2F6 85%)">
+                </div>
+                <div class="diagnostic-row">
+                  <div class="flex items-center justify-between"><span class="text-sm font-semibold text-ink">Behaviour & Conduct</span><span class="text-blue-500 font-bold text-sm" id="val-behaviour">96%</span></div>
+                  <input type="range" class="range-slider w-full" min="0" max="100" value="96" id="sl-behaviour" oninput="updateSlider('behaviour')" style="background:linear-gradient(to right,#3B82F6 96%,#EEF2F6 96%)">
+                </div>
+                <div class="diagnostic-row">
+                  <div class="flex items-center justify-between"><span class="text-sm font-semibold text-ink">Attendance Ratio</span><span class="text-purple-500 font-bold text-sm" id="val-attendance">95%</span></div>
+                  <input type="range" class="range-slider w-full" min="0" max="100" value="95" id="sl-attendance" oninput="updateSlider('attendance')" style="background:linear-gradient(to right,#8B5CF6 95%,#EEF2F6 95%)">
+                </div>
+                <div class="diagnostic-row">
+                  <div class="flex items-center justify-between"><span class="text-sm font-semibold text-ink">Communication Index</span><span class="text-gold font-bold text-sm" id="val-communication">82%</span></div>
+                  <input type="range" class="range-slider w-full" min="0" max="100" value="82" id="sl-communication" oninput="updateSlider('communication')" style="background:linear-gradient(to right,#B9924F 82%,#EEF2F6 82%)">
+                </div>
+              </div>
+              <div class="mt-5 pt-4 border-t border-line text-center">
+                <p class="text-ink-faint text-[10px] uppercase tracking-widest font-semibold mb-1">Calculated Diagnostic Rating</p>
+                <p class="font-display text-4xl text-ink" id="diagnosticRating">88%</p>
+                <p class="text-teal-deep text-xs font-semibold mt-1" id="diagnosticGrade">Grade Achievement: Grade A</p>
+              </div>
+            </div>
+
+            <!-- Radar chart -->
+            <div class="panel p-5">
+              <p class="text-ink-faint text-[11px] uppercase tracking-wider font-semibold mb-1">Evaluation Profile</p>
+              <div style="height:220px;position:relative;">
+                <canvas id="radarChart"></canvas>
+              </div>
+              <div class="flex items-center justify-center gap-4 mt-3">
+                <span class="flex items-center gap-1.5 text-xs text-ink-soft"><span class="w-3 h-3 rounded-full bg-blue-500 inline-block"></span>Academic Metrics</span>
+                <span class="flex items-center gap-1.5 text-xs text-ink-soft"><span class="w-3 h-3 rounded-full bg-teal inline-block"></span>Average: <span id="radarAvg">87.6%</span></span>
+              </div>
+            </div>
+
+            <!-- Milestones -->
+            <div class="panel p-5">
+              <div class="flex items-center gap-2 mb-3">
+                <i data-lucide="target" class="w-4 h-4 text-teal"></i>
+                <p class="font-semibold text-ink text-sm">Next Term Milestones</p>
+              </div>
+              <p class="text-ink-faint text-[11px] mb-3">Automated and custom milestones</p>
+              <textarea id="milestonesText" rows="6" class="text-sm" placeholder="1. Solve 10 calculus problems weekly.&#10;2. Read pre-class literature topics ahead.&#10;3. Achieve 90% or above in upcoming mock evaluation.">1. Solve 10 calculus section C problems weekly.
+2. Read pre-class literature topics ahead.
+3. Achieve 90% or above in upcoming mid-term mock evaluation.</textarea>
+              <button class="btn-secondary w-full mt-3 text-xs" onclick="showToast('Milestones auto-generated!')">
+                <i data-lucide="wand-2" class="w-3 h-3 inline mr-1"></i>Auto-Generate
+              </button>
+            </div>
+          </div>
+
+          <!-- Mentor remarks + Guardian endorsement -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <div class="panel p-5">
+              <div class="flex items-center justify-between mb-3">
+                <div class="flex items-center gap-2">
+                  <i data-lucide="pencil-line" class="w-4 h-4 text-teal"></i>
+                  <p class="font-semibold text-ink text-sm">Mentor Remarks</p>
+                </div>
+                <span class="text-ink-faint text-xs" id="mentorRemarksBy">By —</span>
+              </div>
+              <p class="text-ink-faint text-[11px] uppercase tracking-wider font-semibold mb-2">Qualitative Comments</p>
+              <textarea id="qualitativeComments" rows="5" class="text-sm mb-3" placeholder="Write qualitative observations about the student's performance…">The student remains outstanding in their core module. They exhibit fantastic analytical speed but sometimes rush through boundary questions. In social sessions, they have started leading group reviews, which is excellent.</textarea>
+              <p class="text-ink-faint text-[11px] uppercase tracking-wider font-semibold mb-2">Top Improvement Areas</p>
+              <textarea id="improvementAreas" rows="3" class="text-sm" placeholder="Areas to focus on this term…">Needs to focus on slowing down during complex steps. High accuracy but pacing needs calibration.</textarea>
+            </div>
+
+            <div class="guardian-card">
+              <div class="flex items-center justify-between mb-3">
+                <div class="flex items-center gap-2">
+                  <i data-lucide="heart-handshake" class="w-4 h-4 text-teal"></i>
+                  <p class="font-semibold text-ink text-sm">Guardians Endorsement</p>
+                </div>
+                <span class="chip chip-green" id="guardianStatus">Pending</span>
+              </div>
+              <p class="text-ink-faint text-[11px] uppercase tracking-wider font-semibold mb-2" id="guardianReplyLabel">Awaiting Guardian Response</p>
+              <p class="text-ink text-sm leading-relaxed" id="guardianReply">No guardian response yet. The evaluation will be dispatched once you click Publish & Dispatch.</p>
+              <div class="flex gap-2 mt-4">
+                <button class="btn-secondary flex-1 text-xs" onclick="showToast('Guardian notified!')">Notify Guardian</button>
+                <button class="btn-secondary text-xs text-red-500" id="removeSignatureBtn" onclick="removeSignature()" style="display:none">Remove Signature</button>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+const API = 'https://med-clarivo.onrender.com/api';
+function getToken(){return localStorage.getItem('mc_token')||localStorage.getItem('admin_token');}
+
+// Illustrative students
+const students = [
+  {id:1,name:'Basit Bedar',email:'bedarbasit@gmail.com',mentor:'Owais',grade:'A'},
+  {id:2,name:'Dr Shahid Rashid',email:'drshahid@gmail.com',mentor:'Test Admin',grade:'B+'},
+  {id:3,name:'Itachi Uchiha',email:'itachi@gmail.com',mentor:'Owais',grade:'A+'},
+  {id:4,name:'Mmahin Bhat',email:'bhatmmahin13@gmail.com',mentor:'Test Admin',grade:'A'},
+  {id:5,name:'Atif Aslam',email:'atif@gmail.com',mentor:'Mandeep Singh',grade:'B'},
+];
+
+let radarChart;
+const sliderColors = {academic:'#0FA89A',behaviour:'#3B82F6',attendance:'#8B5CF6',communication:'#B9924F'};
+
+function updateSlider(key){
+  const val=parseInt(document.getElementById(`sl-${key}`).value);
+  document.getElementById(`val-${key}`).textContent=val+'%';
+  document.getElementById(`sl-${key}`).style.background=`linear-gradient(to right,${sliderColors[key]} ${val}%,#EEF2F6 ${val}%)`;
+  recalcDiagnostic();
+  updateRadar();
+}
+
+function recalcDiagnostic(){
+  const keys=['academic','behaviour','attendance','communication'];
+  const avg=Math.round(keys.reduce((s,k)=>s+parseInt(document.getElementById(`sl-${k}`).value),0)/keys.length);
+  document.getElementById('diagnosticRating').textContent=avg+'%';
+  const grade=avg>=90?'Grade A+':avg>=80?'Grade A':avg>=70?'Grade B+':avg>=60?'Grade B':'Grade C';
+  document.getElementById('diagnosticGrade').textContent='Grade Achievement: '+grade;
+  document.getElementById('radarAvg').textContent=avg+'%';
+}
+
+function updateRadar(){
+  if(!radarChart)return;
+  radarChart.data.datasets[0].data=[
+    parseInt(document.getElementById('sl-academic').value),
+    parseInt(document.getElementById('sl-behaviour').value),
+    parseInt(document.getElementById('sl-attendance').value),
+    parseInt(document.getElementById('sl-communication').value),
+    Math.round((parseInt(document.getElementById('sl-academic').value)+parseInt(document.getElementById('sl-communication').value))/2),
+    parseInt(document.getElementById('sl-attendance').value),
+  ];
+  radarChart.update();
+}
+
+function buildRadar(){
+  const ctx=document.getElementById('radarChart').getContext('2d');
+  radarChart=new Chart(ctx,{
+    type:'radar',
+    data:{
+      labels:['Academics','Attention','Focus','Homework','Participation','Attendance'],
+      datasets:[
+        {label:'Student',data:[85,96,82,78,88,95],borderColor:'#3B82F6',backgroundColor:'rgba(59,130,246,0.1)',pointBackgroundColor:'#3B82F6',borderWidth:2},
+        {label:'Average',data:[80,80,80,80,80,80],borderColor:'#0FA89A',backgroundColor:'rgba(15,168,154,0.05)',pointBackgroundColor:'#0FA89A',borderWidth:1.5,borderDash:[4,4]},
+      ]
+    },
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{r:{min:0,max:100,ticks:{display:false},grid:{color:'rgba(11,18,32,0.08)'},pointLabels:{font:{family:'DM Sans',size:10}}}}}
+  });
+}
+
+function filterStudents(){
+  const q=document.getElementById('evalSearch').value.toLowerCase();
+  const m=document.getElementById('evalMentorFilter').value;
+  const filtered=students.filter(s=>(!q||s.name.toLowerCase().includes(q)||s.email.includes(q))&&(!m||s.mentor===m));
+  renderStudentList(filtered);
+}
+
+function renderStudentList(list){
+  document.getElementById('evalCountLabel').textContent=`${list.length} student${list.length!==1?'s':''}`;
+  document.getElementById('studentList').innerHTML=list.map(s=>`
+    <div class="eval-student-card" onclick="selectStudent(${s.id})">
+      <div class="flex items-center gap-2 mb-1">
+        <div class="w-8 h-8 rounded-xl bg-teal/10 flex items-center justify-center text-teal-deep font-bold text-sm flex-shrink-0">${s.name[0]}</div>
+        <div class="min-w-0">
+          <p class="font-semibold text-ink text-sm truncate">${s.name}</p>
+          <p class="text-ink-faint text-[11px] truncate">${s.email}</p>
+        </div>
+      </div>
+      <div class="flex items-center justify-between mt-2">
+        <span class="text-ink-faint text-[11px]">${s.mentor}</span>
+        <span class="chip chip-teal">${s.grade}</span>
+      </div>
+    </div>
+  `).join('');
+}
+
+function selectStudent(id){
+  const s=students.find(st=>st.id===id);
+  if(!s)return;
+  document.querySelectorAll('.eval-student-card').forEach(c=>c.classList.remove('active'));
+  event.currentTarget.classList.add('active');
+  document.getElementById('mentorRemarksBy').textContent=`By ${s.mentor}`;
+  showToast(`Viewing evaluation for ${s.name}`);
+}
+
+function populateMentorFilter(){
+  const mentors=[...new Set(students.map(s=>s.mentor))];
+  const sel=document.getElementById('evalMentorFilter');
+  mentors.forEach(m=>{const o=document.createElement('option');o.value=m;o.textContent=m;sel.appendChild(o);});
+}
+
+function publishEval(){showToast('✅ Evaluation published and dispatched to guardian');}
+function removeSignature(){document.getElementById('guardianStatus').className='chip chip-grey';document.getElementById('guardianStatus').textContent='Pending';showToast('Guardian signature removed');}
+
+  function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.className='toast show';setTimeout(()=>t.classList.remove('show'),3000);}
+  const API='https://med-clarivo.onrender.com/api';
+  function getToken(){return localStorage.getItem('mc_token')||localStorage.getItem('admin_token');}
+  async function loadAdminUser(){
+    const token=getToken();if(!token)return;
+    try{
+      const r=await fetch(`${API}/auth/me`,{headers:{Authorization:`Bearer ${token}`}});
+      const d=await r.json();
+      if(r.ok&&d.success){
+        const u=d.user,n=u.name||u.email||'Admin';
+        document.getElementById('adminNameSidebar').textContent=n;
+        document.getElementById('adminEmailSidebar').textContent=u.email||'';
+        document.getElementById('adminAvatarInitial').textContent=n[0].toUpperCase();
+        const roles={super_admin:'Super Admin',admin:'Admin',mentor:'Mentor'};
+        document.getElementById('roleLabel').textContent=roles[u.role]||u.role;
+      }
+    }catch(e){}
+  }
+  document.getElementById('signOutLink').addEventListener('click',e=>{
+    e.preventDefault();
+    ['mc_token','admin_token','mc_user'].forEach(k=>localStorage.removeItem(k));
+    window.location.href='index.html';
+  });
+  window.addEventListener('load',()=>{lucide.createIcons();loadAdminUser();buildRadar();renderStudentList(students);populateMentorFilter();});
+</script></body></html>
