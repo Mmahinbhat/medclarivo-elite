@@ -405,7 +405,6 @@ async function loadDashboard() {
       document.getElementById('statMentors').textContent   = mentors.length;
       document.getElementById('statSuspended').textContent = suspended.length;
       document.getElementById('statSessions').textContent  = '—';
-      document.getElementById('studentCountBadge').textContent = students.length;
 
       const recent = [...users].sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt)).slice(0,5);
       const tbody = document.getElementById('recentUsersTable');
