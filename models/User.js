@@ -57,6 +57,18 @@ const UserSchema = new mongoose.Schema({
   suspendedAt: { type: Date, default: null },
   suspendedReason: { type: String, default: null },
 
+  // Password reset — store only a hash of the token (like a password),
+  // never the raw token, so a DB read alone can't be used to reset an
+  // account. Raw token is emailed to the user and never persisted.
+  resetPasswordTokenHash: { type: String, default: null, select: false },
+  resetPasswordExpires:   { type: Date, default: null, select: false },
+
+  // Basic brute-force throttle on top of the IP rate limiter — locks
+  // the *account* after repeated bad passwords, independent of which
+  // IP the attempts came from.
+  failedLoginAttempts: { type: Number, default: 0 },
+  lockUntil:           { type: Date, default: null },
+
   // Mentorship — meaning depends on role:
   //   role: 'student'   -> the mentor this student is assigned to
   //   role: 'assistant' -> the mentor this assistant is delegated from
@@ -132,6 +144,34 @@ UserSchema.methods.comparePassword = async function (candidate) {
 
 UserSchema.methods.bumpPermissionVersion = function () {
   this.permissionVersion += 1;
+  return this.save();
+};
+
+// ── Login lockout ──────────────────────────────────────────────
+const MAX_FAILED_ATTEMPTS = 10;
+const LOCK_DURATION_MS = 15 * 60 * 1000; // 15 minutes
+
+UserSchema.methods.isLocked = function () {
+  return !!(this.lockUntil && this.lockUntil > Date.now());
+};
+
+UserSchema.methods.registerFailedLogin = function () {
+  // If a previous lock already expired, start counting fresh.
+  if (this.lockUntil && this.lockUntil <= Date.now()) {
+    this.failedLoginAttempts = 0;
+    this.lockUntil = null;
+  }
+  this.failedLoginAttempts += 1;
+  if (this.failedLoginAttempts >= MAX_FAILED_ATTEMPTS) {
+    this.lockUntil = new Date(Date.now() + LOCK_DURATION_MS);
+  }
+  return this.save();
+};
+
+UserSchema.methods.registerSuccessfulLogin = function () {
+  this.failedLoginAttempts = 0;
+  this.lockUntil = null;
+  this.lastLogin = new Date();
   return this.save();
 };
 

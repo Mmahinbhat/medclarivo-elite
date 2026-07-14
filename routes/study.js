@@ -44,12 +44,26 @@ router.get('/in-progress', protect, async (req, res) => {
 // ════════════════════════════════════════════════════════════════
 router.post('/sessions', protect, async (req, res) => {
   try {
-    const { chapterId, durationMinutes } = req.body;
+    const { chapterId } = req.body;
+    let { durationMinutes } = req.body;
+    durationMinutes = Number(durationMinutes);
 
-    if (!chapterId || !durationMinutes || durationMinutes <= 0) {
+    // Server-side sanity cap — durationMinutes is client-reported (the
+    // client can't be trusted to enforce this itself), so without a
+    // ceiling a single request can hand out unlimited XP/level/streak.
+    // 480 min = 8 hours, generous for one sitting.
+    const MAX_SESSION_MINUTES = 480;
+
+    if (!chapterId || !Number.isFinite(durationMinutes) || durationMinutes <= 0) {
       return res.status(400).json({
         success: false,
         message: 'chapterId and durationMinutes (> 0) are required',
+      });
+    }
+    if (durationMinutes > MAX_SESSION_MINUTES) {
+      return res.status(400).json({
+        success: false,
+        message: `A single session can't exceed ${MAX_SESSION_MINUTES} minutes. Log it as multiple sessions instead.`,
       });
     }
 
