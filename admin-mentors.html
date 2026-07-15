@@ -463,6 +463,43 @@ async function submitNewMentor() {
   } catch(e) { showToast('Network error.'); }
 }
 
+function openMentorProfileModal(id) {
+  const m = getMentors().find(x => x._id === id);
+  if (!m) { showToast('Mentor not found.'); return; }
+
+  const profile = m.mentorProfile || {};
+  const rating = typeof profile.rating === 'number' ? profile.rating.toFixed(1) : '—';
+  const specialties = (profile.specialty || '').split(',').map(s => s.trim()).filter(Boolean);
+  const assignedCount = assignedStudentCount(m._id);
+  const isActive = m.isActive !== false;
+
+  document.getElementById('mentorProfileModalBody').innerHTML = `
+    <div class="flex items-center gap-4 mb-5">
+      <div class="avatar-circle" style="width:56px;height:56px;font-size:20px">${initials(m.name)}</div>
+      <div>
+        <p class="font-display text-lg text-ink">${m.name || '—'}</p>
+        <p class="text-ink-faint text-sm">${m.email}</p>
+      </div>
+      <span class="chip ${isActive ? 'chip-teal' : 'chip-red'} ml-auto">${isActive ? 'Active' : 'Suspended'}</span>
+    </div>
+    ${profile.title ? `<p class="text-ink-soft text-sm mb-3">${profile.title}</p>` : ''}
+    ${profile.bio ? `<p class="text-ink-faint text-sm mb-4 leading-relaxed">${profile.bio}</p>` : ''}
+    <div class="grid grid-cols-2 gap-3 mb-4">
+      <div class="stat-box"><span class="text-ink-faint text-xs block mb-1">Rating</span><span class="font-semibold text-ink text-sm">★ ${rating} (${profile.reviewCount || 0} reviews)</span></div>
+      <div class="stat-box"><span class="text-ink-faint text-xs block mb-1">Availability</span><span class="font-semibold text-ink text-sm">${availabilityLabel(profile.availabilityType)}</span></div>
+      <div class="stat-box"><span class="text-ink-faint text-xs block mb-1">Assigned Students</span><span class="font-semibold text-ink text-sm">${assignedCount}</span></div>
+      <div class="stat-box"><span class="text-ink-faint text-xs block mb-1">Weekly Target</span><span class="font-semibold text-ink text-sm">${profile.weeklySessionTarget || 8} sessions</span></div>
+    </div>
+    ${specialties.length ? `<div class="flex flex-wrap gap-1.5 mb-2">${specialties.map(s => `<span class="chip chip-grey">${s}</span>`).join('')}</div>` : ''}
+    <p class="text-ink-faint text-[11px] font-mono mt-4">ID: ${m._id}</p>
+  `;
+  document.getElementById('mentorProfileModal').classList.remove('hidden');
+  lucide.createIcons();
+}
+function closeMentorProfileModal() {
+  document.getElementById('mentorProfileModal').classList.add('hidden');
+}
+
 document.getElementById('signOutLink').addEventListener('click', e => {
   e.preventDefault();
   localStorage.removeItem('mc_token');
@@ -477,5 +514,16 @@ window.addEventListener('load', () => {
   loadMentors();
 });
 </script>
+
+<!-- ═══════════════════ MENTOR PROFILE MODAL ═══════════════════ -->
+<div id="mentorProfileModal" class="hidden fixed inset-0 z-50 flex items-center justify-center px-4" style="background:rgba(12,27,46,0.5)">
+  <div class="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 max-h-[85vh] overflow-y-auto">
+    <div class="flex items-center justify-between mb-4">
+      <h3 class="font-display text-lg text-ink">Mentor Profile</h3>
+      <button onclick="closeMentorProfileModal()" class="text-ink-faint hover:text-ink"><i data-lucide="x" class="w-5 h-5"></i></button>
+    </div>
+    <div id="mentorProfileModalBody"></div>
+  </div>
+</div>
 </body>
 </html>
