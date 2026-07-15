@@ -460,26 +460,57 @@ function buildMentorChart(names, sessions) {
   });
 }
 
-function buildUpcomingSessions() {
-  const sessions = [
-    { month:'JUL', day:'12', student:'Basit Bedar', type:'Academic', mentor:'Dr. Shahid Rashid', time:'11:00 AM' },
-    { month:'JUL', day:'13', student:'Itachi Uchiha', type:'Doubt Clearing', mentor:'Mmahin Bhat', time:'12:00 PM' },
-    { month:'JUL', day:'14', student:'Dr Shahid Rashid', type:'Exam Prep', mentor:'Owais', time:'1:00 PM' },
-    { month:'JUL', day:'15', student:'Mmahin Bhat', type:'Revision', mentor:'Test Mentor', time:'2:00 PM' },
-  ];
+async function buildUpcomingSessions() {
+  const container = document.getElementById('upcomingSessions');
   const typeColors = { 'Academic':'chip-teal','Doubt Clearing':'chip-blue','Exam Prep':'chip-gold','Revision':'chip-grey' };
-  document.getElementById('upcomingSessions').innerHTML = sessions.map(s => `
+  const monthNames = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+
+  try {
+    const res = await fetch(`${API}/mentor/sessions/upcoming`, { headers: { Authorization: `Bearer ${getToken()}` } });
+    const data = await res.json();
+
+    if (!res.ok || !data.success) {
+      container.innerHTML = '<p class="text-ink-faint text-sm text-center py-6">Couldn\'t load sessions.</p>';
+      return;
+    }
+
+    const sessions = data.upcoming || [];
+    document.getElementById('statSessions').textContent = data.weeklySessionsCompleted ?? '—';
+
+    if (sessions.length === 0) {
+      container.innerHTML = '<p class="text-ink-faint text-sm text-center py-6">No upcoming sessions scheduled.</p>';
+      return;
+    }
+
+    container.innerHTML = sessions.map(s => {
+      const d = new Date(s.startTime);
+      const month = monthNames[d.getMonth()];
+      const day = String(d.getDate()).padStart(2, '0');
+      const time = d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+      const studentName = s.mentee?.name || 'Unknown student';
+      const mentorName  = s.mentor?.name || 'Unknown mentor';
+      const type = s.topic || s.type || 'Session';
+      const joinAttr = s.meetingLink
+        ? `onclick="window.open('${s.meetingLink}','_blank')"`
+        : `onclick="showToast('No meeting link has been added for this session yet.')" style="opacity:.5"`;
+
+      return `
     <div class="session-card">
-      <div class="date-badge"><span class="text-[10px] opacity-60">${s.month}</span><span class="day">${s.day}</span></div>
+      <div class="date-badge"><span class="text-[10px] opacity-60">${month}</span><span class="day">${day}</span></div>
       <div class="flex-1 min-w-0">
         <div class="flex items-center gap-2 mb-0.5">
-          <p class="font-semibold text-ink text-sm truncate">${s.student}</p>
-          <span class="chip ${typeColors[s.type]||'chip-grey'} text-[10px]">${s.type}</span>
+          <p class="font-semibold text-ink text-sm truncate">${studentName}</p>
+          <span class="chip ${typeColors[type]||'chip-grey'} text-[10px]">${type}</span>
         </div>
-        <p class="text-ink-faint text-xs">Mentor: ${s.mentor} · ${s.time}</p>
+        <p class="text-ink-faint text-xs">Mentor: ${mentorName} · ${time}</p>
       </div>
-      <button class="btn-join" onclick="showToast('Join meeting — coming soon')">Join</button>
-    </div>`).join('');
+      <button class="btn-join" ${joinAttr}>Join</button>
+    </div>`;
+    }).join('');
+  } catch (e) {
+    console.error(e);
+    container.innerHTML = '<p class="text-ink-faint text-sm text-center py-6">Couldn\'t load sessions.</p>';
+  }
 }
 
 function buildActivityFeed() {
