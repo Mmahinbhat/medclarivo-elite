@@ -338,6 +338,39 @@ router.get('/messages/:menteeId', protect, restrictTo('mentor', 'admin'), async 
   }
 });
 
+
+// ════════════════════════════════════════════════════════════════
+// GET /api/mentor/availability
+// ════════════════════════════════════════════════════════════════
+router.get('/messages/:menteeId', protect, restrictTo('mentor', 'admin'), async (req, res) => {
+  try {
+    // Same fix as /sessions/upcoming and the student-list bug: an admin's
+    // _id never equals a student's mentorId, so the mentor-only filter
+    // silently 404'd for every admin request. Admins can message any
+    // student; mentors are still restricted to their own mentees.
+    const menteeQuery = req.user.role === 'admin'
+      ? { _id: req.params.menteeId, role: 'student' }
+      : { _id: req.params.menteeId, mentorId: req.user._id, role: 'student' };
+
+    const mentee = await User.findOne(menteeQuery);
+    if (!mentee) {
+      return res.status(404).json({ success: false, message: 'Student not found.' });
+    }
+
+    const messages = await Message.find({
+      $or: [
+        { sender: req.user._id, recipient: mentee._id },
+        { sender: mentee._id, recipient: req.user._id },
+      ],
+    }).sort('createdAt').lean();
+
+    res.json({ success: true, messages });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: 'Failed to fetch messages.' });
+  }
+});
+
 // ════════════════════════════════════════════════════════════════
 // POST /api/mentor/messages
 // ════════════════════════════════════════════════════════════════
@@ -351,9 +384,13 @@ router.post('/messages', protect, restrictTo('mentor', 'admin'), async (req, res
       return res.status(400).json({ success: false, message: 'Message is too long.' });
     }
 
-    const mentee = await User.findOne({ _id: menteeId, mentorId: req.user._id, role: 'student' });
+    const menteeQuery = req.user.role === 'admin'
+      ? { _id: menteeId, role: 'student' }
+      : { _id: menteeId, mentorId: req.user._id, role: 'student' };
+
+    const mentee = await User.findOne(menteeQuery);
     if (!mentee) {
-      return res.status(404).json({ success: false, message: 'Mentee not found or not assigned to you.' });
+      return res.status(404).json({ success: false, message: 'Student not found.' });
     }
 
     const message = await Message.create({
@@ -368,20 +405,6 @@ router.post('/messages', protect, restrictTo('mentor', 'admin'), async (req, res
     res.status(500).json({ success: false, message: 'Failed to send message.' });
   }
 });
-
-// ════════════════════════════════════════════════════════════════
-// GET /api/mentor/availability
-// ════════════════════════════════════════════════════════════════
-router.get('/availability', protect, restrictTo('mentor', 'admin'), async (req, res) => {
-  try {
-    const record = await MentorAvailability.findOne({ mentor: req.user._id }).lean();
-    res.json({ success: true, slots: (record && record.slots) || [] });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ success: false, message: 'Failed to fetch availability.' });
-  }
-});
-
 // ════════════════════════════════════════════════════════════════
 // PUT /api/mentor/availability
 // Body: { slots: [{ day, startTime, endTime }, ...] }
