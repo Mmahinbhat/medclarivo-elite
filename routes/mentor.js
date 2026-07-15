@@ -153,19 +153,28 @@ router.get('/sessions/upcoming', protect, restrictTo('mentor', 'admin'), async (
     startOfWeek.setDate(now.getDate() - now.getDay());
     startOfWeek.setHours(0, 0, 0, 0);
 
-    const upcoming = await Session.find({ mentor: req.user._id, startTime: { $gte: now }, status: 'scheduled' })
+    // Admins see sessions across every mentor (their own _id is never a
+    // session's `mentor` field, so filtering by req.user._id here — same
+    // as the mentor path — silently returned zero rows for admins).
+    // Mentors keep the original "just mine" behavior.
+    const mentorFilter = req.user.role === 'admin' ? {} : { mentor: req.user._id };
+
+    const upcoming = await Session.find({ ...mentorFilter, startTime: { $gte: now }, status: 'scheduled' })
       .populate('mentee', 'name avatar')
+      .populate('mentor', 'name avatar')
       .sort('startTime')
+      .limit(req.user.role === 'admin' ? 20 : undefined)
       .lean();
 
-    const recent = await Session.find({ mentor: req.user._id, status: 'completed' })
+    const recent = await Session.find({ ...mentorFilter, status: 'completed' })
       .populate('mentee', 'name avatar')
+      .populate('mentor', 'name avatar')
       .sort('-startTime')
       .limit(10)
       .lean();
 
     const weeklyCount = await Session.countDocuments({
-      mentor: req.user._id,
+      ...mentorFilter,
       status: 'completed',
       startTime: { $gte: startOfWeek },
     });
