@@ -53,7 +53,7 @@
   .modal-box{background:#fff;border-radius:20px;padding:28px;width:480px;max-width:92vw;box-shadow:0 30px 60px -20px rgba(11,18,32,0.35);max-height:90vh;overflow-y:auto;}
   .toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%);background:var(--navy);color:#fff;padding:11px 20px;border-radius:12px;font-size:13px;font-weight:600;z-index:200;box-shadow:0 10px 28px rgba(0,0,0,0.28);opacity:0;pointer-events:none;transition:opacity .25s ease;}
   .toast.show{opacity:1;}
-  
+
   .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:1px;background:rgba(11,18,32,0.06);border-radius:12px;overflow:hidden;}
   .cal-header{background:#F5F7FA;padding:10px 0;text-align:center;font-size:11px;font-weight:700;color:#8B97A8;text-transform:uppercase;letter-spacing:.05em;}
   .cal-cell{background:#fff;min-height:110px;padding:8px;position:relative;transition:background .12s;}
@@ -71,6 +71,23 @@
   .filter-btn.active{background:var(--navy);color:#fff;border-color:var(--navy);}
   .filter-btn:not(.active){background:#fff;color:var(--ink-soft);border-color:rgba(11,18,32,0.1);}
   .filter-btn:not(.active):hover{border-color:var(--teal);color:var(--teal-deep);}
+
+  .week-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:1px;background:rgba(11,18,32,0.06);border-radius:12px;overflow:hidden;}
+  .week-col{background:#fff;min-height:320px;display:flex;flex-direction:column;}
+  .week-col-header{background:#F5F7FA;padding:10px 8px;text-align:center;border-bottom:1px solid rgba(11,18,32,0.06);}
+  .week-col-header .wd{font-size:11px;font-weight:700;color:#8B97A8;text-transform:uppercase;letter-spacing:.05em;}
+  .week-col-header .dn{font-size:16px;font-weight:700;color:var(--ink);margin-top:2px;}
+  .week-col.today .week-col-header{background:rgba(15,168,154,0.08);}
+  .week-col.today .dn{color:var(--teal-deep);}
+  .week-col-body{flex:1;padding:8px;display:flex;flex-direction:column;gap:6px;}
+  .week-event{border-radius:8px;padding:6px 8px;cursor:pointer;font-size:11px;line-height:1.35;}
+  .week-event .we-time{font-weight:700;display:block;}
+  .week-event .we-student{font-weight:600;}
+  .week-event.academic{background:rgba(15,168,154,0.12);color:var(--teal-deep);}
+  .week-event.behavioral{background:rgba(59,130,246,0.1);color:#1D4ED8;}
+  .week-event.doubt{background:rgba(124,58,237,0.1);color:#6D28D9;}
+  .week-event.exam{background:rgba(185,146,79,0.12);color:var(--gold);}
+  .week-empty{color:#C5CDD8;font-size:11px;text-align:center;padding:12px 0;}
 
 </style>
 </head>
@@ -125,7 +142,7 @@
       </div>
       <div class="flex items-center gap-2">
         <button class="btn-secondary flex items-center gap-2" onclick="changeView('week')" id="btnWeek"><i data-lucide="layout-list" class="w-4 h-4"></i>Weekly</button>
-        <button class="btn-primary flex items-center gap-2" id="btnMonth"><i data-lucide="calendar-days" class="w-4 h-4"></i>Monthly</button>
+        <button class="btn-primary flex items-center gap-2" onclick="changeView('month')" id="btnMonth"><i data-lucide="calendar-days" class="w-4 h-4"></i>Monthly</button>
         <button class="btn-teal" onclick="openBookModal()"><i data-lucide="plus" class="w-4 h-4"></i>Book Slot</button>
       </div>
     </div>
@@ -135,9 +152,9 @@
       <!-- Controls -->
       <div class="panel p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div class="flex items-center gap-3">
-          <button onclick="prevMonth()" class="p-2 rounded-xl hover:bg-mist transition-colors border border-line"><i data-lucide="chevron-left" class="w-4 h-4"></i></button>
+          <button onclick="prevPeriod()" class="p-2 rounded-xl hover:bg-mist transition-colors border border-line"><i data-lucide="chevron-left" class="w-4 h-4"></i></button>
           <h2 class="font-display text-xl text-ink min-w-[140px] text-center" id="calTitle">July 2026</h2>
-          <button onclick="nextMonth()" class="p-2 rounded-xl hover:bg-mist transition-colors border border-line"><i data-lucide="chevron-right" class="w-4 h-4"></i></button>
+          <button onclick="nextPeriod()" class="p-2 rounded-xl hover:bg-mist transition-colors border border-line"><i data-lucide="chevron-right" class="w-4 h-4"></i></button>
         </div>
         <div class="flex items-center gap-2 flex-wrap">
           <span class="text-ink-faint text-xs font-semibold uppercase tracking-wider mr-1">Filter:</span>
@@ -149,8 +166,8 @@
         </div>
       </div>
 
-      <!-- Calendar -->
-      <div class="panel p-5">
+      <!-- Monthly Calendar -->
+      <div class="panel p-5" id="monthPanel">
         <div class="cal-grid" id="calGrid">
           <div class="cal-header">Mon</div>
           <div class="cal-header">Tue</div>
@@ -160,6 +177,11 @@
           <div class="cal-header">Sat</div>
           <div class="cal-header">Sun</div>
         </div>
+      </div>
+
+      <!-- Weekly Calendar -->
+      <div class="panel p-5" id="weekPanel" style="display:none">
+        <div class="week-grid" id="weekGrid"></div>
       </div>
 
     </div>
@@ -198,7 +220,8 @@
 
 <div class="toast" id="toast"></div>
 <script>
-let currentDate = new Date();
+let viewMode = 'month'; // 'month' | 'week'
+let currentDate = new Date(); // anchor date — day-of-month used for month view, day-of-week used to derive week start
 let activeFilter = 'all';
 let sessions = [];
 let studentsCache = [];
@@ -209,16 +232,33 @@ function getToken(){return localStorage.getItem('mc_token')||localStorage.getIte
 function authHeaders(){return {Authorization:`Bearer ${getToken()}`,'Content-Type':'application/json'};}
 function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.className='toast show';setTimeout(()=>t.classList.remove('show'),3000);}
 
+function getWeekStart(d){
+  const copy=new Date(d);
+  const day=(copy.getDay()+6)%7; // Mon=0
+  copy.setDate(copy.getDate()-day);
+  copy.setHours(0,0,0,0);
+  return copy;
+}
+
 async function loadSessions(){
-  const year=currentDate.getFullYear(), month=String(currentDate.getMonth()+1).padStart(2,'0');
+  let url;
+  if(viewMode==='week'){
+    const from=getWeekStart(currentDate);
+    const to=new Date(from); to.setDate(to.getDate()+7);
+    url=`${API}/admin/sessions?from=${from.toISOString()}&to=${to.toISOString()}`;
+  } else {
+    const year=currentDate.getFullYear(), month=String(currentDate.getMonth()+1).padStart(2,'0');
+    url=`${API}/admin/sessions?month=${year}-${month}`;
+  }
   try{
-    const r=await fetch(`${API}/admin/sessions?month=${year}-${month}`,{headers:authHeaders()});
+    const r=await fetch(url,{headers:authHeaders()});
     const d=await r.json();
     if(r.ok&&d.success){
       sessions=d.sessions.map(s=>({
         id:s._id,
         date:new Date(s.startTime).toISOString().slice(0,10),
         time:new Date(s.startTime).toLocaleTimeString('en',{hour:'numeric',minute:'2-digit'}),
+        rawStart:s.startTime,
         student:s.mentee?.name||'Unknown',
         mentor:s.mentor?.name||'Unknown',
         type:s.category||'academic',
@@ -254,7 +294,21 @@ async function loadPeopleForBooking(){
     : '<option value="">No mentors found</option>';
 }
 
+function changeView(mode){
+  viewMode=mode;
+  document.getElementById('btnWeek').className = mode==='week' ? 'btn-primary flex items-center gap-2' : 'btn-secondary flex items-center gap-2';
+  document.getElementById('btnMonth').className = mode==='month' ? 'btn-primary flex items-center gap-2' : 'btn-secondary flex items-center gap-2';
+  document.getElementById('monthPanel').style.display = mode==='month' ? '' : 'none';
+  document.getElementById('weekPanel').style.display = mode==='week' ? '' : 'none';
+  loadSessions();
+}
+
 function renderCalendar(){
+  if(viewMode==='week') renderWeekView();
+  else renderMonthView();
+}
+
+function renderMonthView(){
   const year=currentDate.getFullYear(), month=currentDate.getMonth();
   document.getElementById('calTitle').textContent=new Date(year,month,1).toLocaleString('en',{month:'long',year:'numeric'});
   const grid=document.getElementById('calGrid');
@@ -301,6 +355,53 @@ function renderCalendar(){
   }
 }
 
+function renderWeekView(){
+  const weekStart=getWeekStart(currentDate);
+  const weekEnd=new Date(weekStart); weekEnd.setDate(weekEnd.getDate()+6);
+  const sameMonth=weekStart.getMonth()===weekEnd.getMonth();
+  const titleFmt=(d)=>d.toLocaleString('en',{month:'short',day:'numeric'});
+  document.getElementById('calTitle').textContent = sameMonth
+    ? `${weekStart.toLocaleString('en',{month:'long'})} ${weekStart.getDate()}–${weekEnd.getDate()}, ${weekEnd.getFullYear()}`
+    : `${titleFmt(weekStart)} – ${titleFmt(weekEnd)}, ${weekEnd.getFullYear()}`;
+
+  const today=new Date();
+  const filtered=sessions.filter(s=>(activeFilter==='all'||s.type===activeFilter)&&s.status!=='cancelled');
+  const dayNames=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+
+  const grid=document.getElementById('weekGrid');
+  grid.innerHTML='';
+
+  for(let i=0;i<7;i++){
+    const day=new Date(weekStart); day.setDate(day.getDate()+i);
+    const dateStr=`${day.getFullYear()}-${String(day.getMonth()+1).padStart(2,'0')}-${String(day.getDate()).padStart(2,'0')}`;
+    const isToday=day.getDate()===today.getDate()&&day.getMonth()===today.getMonth()&&day.getFullYear()===today.getFullYear();
+    const daySessions=filtered.filter(s=>s.date===dateStr).sort((a,b)=>new Date(a.rawStart)-new Date(b.rawStart));
+
+    const col=document.createElement('div');
+    col.className='week-col'+(isToday?' today':'');
+    let body='';
+    if(daySessions.length){
+      body=daySessions.map(s=>`
+        <div class="week-event ${s.type}" onclick="showSessionDetail('${s.id}')">
+          <span class="we-time">${s.time}</span>
+          <span class="we-student">${s.student}</span><br>
+          <span>${s.mentor}</span>
+        </div>
+      `).join('');
+    } else {
+      body='<div class="week-empty">No sessions</div>';
+    }
+    col.innerHTML=`
+      <div class="week-col-header">
+        <div class="wd">${dayNames[i]}</div>
+        <div class="dn">${day.getDate()}</div>
+      </div>
+      <div class="week-col-body">${body}</div>
+    `;
+    grid.appendChild(col);
+  }
+}
+
 function showSessionDetail(id){
   const s=sessions.find(x=>x.id===id);
   if(!s)return;
@@ -322,8 +423,17 @@ async function cancelSession(id){
   }catch(e){showToast('Network error');}
 }
 
-function prevMonth(){currentDate.setMonth(currentDate.getMonth()-1);loadSessions();}
-function nextMonth(){currentDate.setMonth(currentDate.getMonth()+1);loadSessions();}
+function prevPeriod(){
+  if(viewMode==='week') currentDate.setDate(currentDate.getDate()-7);
+  else currentDate.setMonth(currentDate.getMonth()-1);
+  loadSessions();
+}
+function nextPeriod(){
+  if(viewMode==='week') currentDate.setDate(currentDate.getDate()+7);
+  else currentDate.setMonth(currentDate.getMonth()+1);
+  loadSessions();
+}
+
 function setFilter(btn,f){activeFilter=f;document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');renderCalendar();}
 function openBookModal(){document.getElementById('bookModal').classList.add('show');if(!studentsCache.length)loadPeopleForBooking();}
 function closeBookModal(){document.getElementById('bookModal').classList.remove('show');}
