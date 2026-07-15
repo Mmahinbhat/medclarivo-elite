@@ -380,7 +380,7 @@ function renderMentors() {
         <div class="flex items-center justify-between">
           <span class="text-ink-faint text-[11px] font-mono">ID: ${shortId}</span>
           <div class="flex gap-2">
-            <button class="btn-secondary" onclick="showToast('Full profile view coming soon')">Profile</button>
+           <button class="btn-secondary" onclick="openMentorProfileModal('${m._id}')">Profile</button>
             ${isActive
               ? `<button class="btn-danger" onclick="suspendMentor('${m._id}')">Suspend</button>`
               : `<button class="btn-secondary" onclick="reactivateMentor('${m._id}')">Reactivate</button>`
