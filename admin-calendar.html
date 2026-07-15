@@ -174,8 +174,8 @@
       <button onclick="closeBookModal()" class="p-1 rounded-lg hover:bg-mist"><i data-lucide="x" class="w-5 h-5 text-ink-soft"></i></button>
     </div>
     <div class="space-y-4">
-      <div><label class="block text-xs font-semibold text-ink-soft mb-1.5 uppercase tracking-wider">Student</label><input type="text" id="bookStudent" placeholder="Student name or email"></div>
-      <div><label class="block text-xs font-semibold text-ink-soft mb-1.5 uppercase tracking-wider">Mentor</label><input type="text" id="bookMentor" placeholder="Mentor name"></div>
+      <div><label class="block text-xs font-semibold text-ink-soft mb-1.5 uppercase tracking-wider">Student</label><select id="bookStudent"><option value="">Loading students…</option></select></div>
+      <div><label class="block text-xs font-semibold text-ink-soft mb-1.5 uppercase tracking-wider">Mentor</label><select id="bookMentor"><option value="">Loading mentors…</option></select></div>
       <div class="grid grid-cols-2 gap-3">
         <div><label class="block text-xs font-semibold text-ink-soft mb-1.5 uppercase tracking-wider">Date</label><input type="date" id="bookDate"></div>
         <div><label class="block text-xs font-semibold text-ink-soft mb-1.5 uppercase tracking-wider">Time</label><input type="time" id="bookTime"></div>
@@ -200,32 +200,73 @@
 <script>
 let currentDate = new Date();
 let activeFilter = 'all';
+let sessions = [];
+let studentsCache = [];
+let mentorsCache = [];
 
-// Illustrative session data — replace with real API call
-const sessions = [
-  {date:'2026-07-02',student:'Atif Aslam',mentor:'Dr. Shahid',type:'academic',time:'11:00 AM'},
-  {date:'2026-07-07',student:'Sachin1',mentor:'Test Mentor',type:'behavioral',time:'12:00 PM'},
-  {date:'2026-07-08',student:'Test Student',mentor:'Owais',type:'doubt',time:'1:00 PM'},
-  {date:'2026-07-13',student:'Basit Bedar',mentor:'Mmahin Bhat',type:'exam',time:'2:00 PM'},
-  {date:'2026-07-15',student:'Itachi Uchiha',mentor:'Dr. Shahid',type:'academic',time:'10:00 AM'},
-  {date:'2026-07-20',student:'Atif Aslam',mentor:'Test Mentor',type:'doubt',time:'3:00 PM'},
-];
+const API='https://med-clarivo.onrender.com/api';
+function getToken(){return localStorage.getItem('mc_token')||localStorage.getItem('admin_token');}
+function authHeaders(){return {Authorization:`Bearer ${getToken()}`,'Content-Type':'application/json'};}
+function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.className='toast show';setTimeout(()=>t.classList.remove('show'),3000);}
+
+async function loadSessions(){
+  const year=currentDate.getFullYear(), month=String(currentDate.getMonth()+1).padStart(2,'0');
+  try{
+    const r=await fetch(`${API}/admin/sessions?month=${year}-${month}`,{headers:authHeaders()});
+    const d=await r.json();
+    if(r.ok&&d.success){
+      sessions=d.sessions.map(s=>({
+        id:s._id,
+        date:new Date(s.startTime).toISOString().slice(0,10),
+        time:new Date(s.startTime).toLocaleTimeString('en',{hour:'numeric',minute:'2-digit'}),
+        student:s.mentee?.name||'Unknown',
+        mentor:s.mentor?.name||'Unknown',
+        type:s.category||'academic',
+        status:s.status,
+      }));
+    } else {
+      showToast(d.message||'Could not load sessions');
+      sessions=[];
+    }
+  }catch(e){
+    showToast('Network error loading sessions');
+    sessions=[];
+  }
+  renderCalendar();
+}
+
+async function loadPeopleForBooking(){
+  try{
+    const r=await fetch(`${API}/admin/users`,{headers:authHeaders()});
+    const d=await r.json();
+    if(r.ok&&d.success){
+      studentsCache=d.users.filter(u=>u.role==='student');
+      mentorsCache=d.users.filter(u=>u.role==='mentor');
+    }
+  }catch(e){}
+  const studentSel=document.getElementById('bookStudent');
+  const mentorSel=document.getElementById('bookMentor');
+  studentSel.innerHTML=studentsCache.length
+    ? studentsCache.map(s=>`<option value="${s._id}">${s.name||s.email}</option>`).join('')
+    : '<option value="">No students found</option>';
+  mentorSel.innerHTML=mentorsCache.length
+    ? mentorsCache.map(m=>`<option value="${m._id}">${m.name||m.email}</option>`).join('')
+    : '<option value="">No mentors found</option>';
+}
 
 function renderCalendar(){
   const year=currentDate.getFullYear(), month=currentDate.getMonth();
   document.getElementById('calTitle').textContent=new Date(year,month,1).toLocaleString('en',{month:'long',year:'numeric'});
   const grid=document.getElementById('calGrid');
-  // Keep headers
   const headers=Array.from(grid.children).slice(0,7);
   grid.innerHTML='';
   headers.forEach(h=>grid.appendChild(h));
 
-  const firstDay=(new Date(year,month,1).getDay()+6)%7; // Mon=0
+  const firstDay=(new Date(year,month,1).getDay()+6)%7;
   const daysInMonth=new Date(year,month+1,0).getDate();
   const daysInPrev=new Date(year,month,0).getDate();
   const today=new Date();
 
-  // Prev month padding
   for(let i=firstDay-1;i>=0;i--){
     const cell=document.createElement('div');
     cell.className='cal-cell other-month';
@@ -233,7 +274,7 @@ function renderCalendar(){
     grid.appendChild(cell);
   }
 
-  const filtered=sessions.filter(s=>activeFilter==='all'||s.type===activeFilter);
+  const filtered=sessions.filter(s=>(activeFilter==='all'||s.type===activeFilter)&&s.status!=='cancelled');
 
   for(let d=1;d<=daysInMonth;d++){
     const cell=document.createElement('div');
@@ -242,15 +283,14 @@ function renderCalendar(){
     const dateStr=`${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
     const daySessions=filtered.filter(s=>s.date===dateStr);
     let html=`<div class="cal-day">${d}</div>`;
-    daySessions.forEach(s=>{
-      html+=`<div class="cal-event ${s.type}" title="${s.student} · ${s.time}" onclick="showToast('${s.student} · ${s.type} · ${s.time}')">${s.student}</div>`;
+    daySessions.slice(0,2).forEach(s=>{
+      html+=`<div class="cal-event ${s.type}" title="${s.student} · ${s.time}" onclick="showSessionDetail('${s.id}')">${s.student}</div>`;
     });
     if(daySessions.length>2) html+=`<div class="text-[10px] text-ink-faint mt-1 pl-1">+${daySessions.length-2} more</div>`;
     cell.innerHTML=html;
     grid.appendChild(cell);
   }
 
-  // Next month padding
   const total=firstDay+daysInMonth;
   const remaining=total%7===0?0:7-(total%7);
   for(let d=1;d<=remaining;d++){
@@ -261,45 +301,78 @@ function renderCalendar(){
   }
 }
 
-function prevMonth(){currentDate.setMonth(currentDate.getMonth()-1);renderCalendar();}
-function nextMonth(){currentDate.setMonth(currentDate.getMonth()+1);renderCalendar();}
-function setFilter(btn,f){activeFilter=f;document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');renderCalendar();}
-function openBookModal(){document.getElementById('bookModal').classList.add('show');}
-function closeBookModal(){document.getElementById('bookModal').classList.remove('show');}
-function saveSlot(){
-  const student=document.getElementById('bookStudent').value;
-  const date=document.getElementById('bookDate').value;
-  const time=document.getElementById('bookTime').value;
-  const type=document.getElementById('bookType').value;
-  if(!student||!date||!time){showToast('Please fill in all fields');return;}
-  sessions.push({date,student,mentor:document.getElementById('bookMentor').value||'TBD',type,time});
-  closeBookModal();
-  renderCalendar();
-  showToast('✅ Session slot booked!');
+function showSessionDetail(id){
+  const s=sessions.find(x=>x.id===id);
+  if(!s)return;
+  if(confirm(`${s.student} · ${s.mentor} · ${s.type} · ${s.time}\n\nCancel this session?`)){
+    cancelSession(id);
+  }
 }
 
-  function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.className='toast show';setTimeout(()=>t.classList.remove('show'),3000);}
-  const API='https://med-clarivo.onrender.com/api';
-  function getToken(){return localStorage.getItem('mc_token')||localStorage.getItem('admin_token');}
-  async function loadAdminUser(){
-    const token=getToken();if(!token)return;
-    try{
-      const r=await fetch(`${API}/auth/me`,{headers:{Authorization:`Bearer ${token}`}});
-      const d=await r.json();
-      if(r.ok&&d.success){
-        const u=d.user,n=u.name||u.email||'Admin';
-        document.getElementById('adminNameSidebar').textContent=n;
-        document.getElementById('adminEmailSidebar').textContent=u.email||'';
-        document.getElementById('adminAvatarInitial').textContent=n[0].toUpperCase();
-        const roles={super_admin:'Super Admin',admin:'Admin',mentor:'Mentor'};
-        document.getElementById('roleLabel').textContent=roles[u.role]||u.role;
-      }
-    }catch(e){}
-  }
-  document.getElementById('signOutLink').addEventListener('click',e=>{
-    e.preventDefault();
-    ['mc_token','admin_token','mc_user'].forEach(k=>localStorage.removeItem(k));
-    window.location.href='index.html';
-  });
-  window.addEventListener('load',()=>{lucide.createIcons();loadAdminUser();renderCalendar();});
+async function cancelSession(id){
+  try{
+    const r=await fetch(`${API}/admin/sessions/${id}`,{method:'DELETE',headers:authHeaders()});
+    const d=await r.json();
+    if(r.ok&&d.success){
+      showToast('Session cancelled');
+      loadSessions();
+    } else {
+      showToast(d.message||'Could not cancel session');
+    }
+  }catch(e){showToast('Network error');}
+}
+
+function prevMonth(){currentDate.setMonth(currentDate.getMonth()-1);loadSessions();}
+function nextMonth(){currentDate.setMonth(currentDate.getMonth()+1);loadSessions();}
+function setFilter(btn,f){activeFilter=f;document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');renderCalendar();}
+function openBookModal(){document.getElementById('bookModal').classList.add('show');if(!studentsCache.length)loadPeopleForBooking();}
+function closeBookModal(){document.getElementById('bookModal').classList.remove('show');}
+
+async function saveSlot(){
+  const menteeId=document.getElementById('bookStudent').value;
+  const mentorId=document.getElementById('bookMentor').value;
+  const date=document.getElementById('bookDate').value;
+  const time=document.getElementById('bookTime').value;
+  const category=document.getElementById('bookType').value;
+  if(!menteeId||!mentorId||!date||!time){showToast('Please fill in all fields');return;}
+
+  const startTime=new Date(`${date}T${time}:00`).toISOString();
+  try{
+    const r=await fetch(`${API}/admin/sessions`,{
+      method:'POST',
+      headers:authHeaders(),
+      body:JSON.stringify({mentorId,menteeId,startTime,category}),
+    });
+    const d=await r.json();
+    if(r.ok&&d.success){
+      closeBookModal();
+      loadSessions();
+      showToast('✅ Session slot booked!');
+    } else {
+      showToast(d.message||'Could not book slot');
+    }
+  }catch(e){showToast('Network error booking slot');}
+}
+
+async function loadAdminUser(){
+  const token=getToken();if(!token)return;
+  try{
+    const r=await fetch(`${API}/auth/me`,{headers:{Authorization:`Bearer ${token}`}});
+    const d=await r.json();
+    if(r.ok&&d.success){
+      const u=d.user,n=u.name||u.email||'Admin';
+      document.getElementById('adminNameSidebar').textContent=n;
+      document.getElementById('adminEmailSidebar').textContent=u.email||'';
+      document.getElementById('adminAvatarInitial').textContent=n[0].toUpperCase();
+      const roles={super_admin:'Super Admin',admin:'Admin',mentor:'Mentor'};
+      document.getElementById('roleLabel').textContent=roles[u.role]||u.role;
+    }
+  }catch(e){}
+}
+document.getElementById('signOutLink').addEventListener('click',e=>{
+  e.preventDefault();
+  ['mc_token','admin_token','mc_user'].forEach(k=>localStorage.removeItem(k));
+  window.location.href='index.html';
+});
+window.addEventListener('load',()=>{lucide.createIcons();loadAdminUser();loadSessions();loadPeopleForBooking();});
 </script></body></html>

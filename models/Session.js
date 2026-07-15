@@ -12,6 +12,13 @@ const SessionSchema = new mongoose.Schema({
     required: true,
   },
   type: { type: String, default: '1:1' },
+  // Calendar category shown in the admin Calendar UI. Separate from `type`
+  // (which describes 1:1 vs group format) — this describes session intent.
+  category: {
+    type: String,
+    enum: ['academic', 'behavioral', 'doubt', 'exam'],
+    default: 'academic',
+  },
   topic: { type: String, trim: true },
   startTime: { type: Date, required: true },
   status: {

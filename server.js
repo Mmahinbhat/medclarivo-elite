@@ -17,6 +17,9 @@ const adminUserRoutes  = require('./routes/adminUsers');
 const permissionRoutes = require('./routes/permissions');
 const auditLogRoutes   = require('./routes/auditLogs');
 const ticketRoutes = require('./routes/tickets');
+const sessionRoutes = require('./routes/sessions');
+const sessionNoteRoutes = require('./routes/sessionNotes');
+const evaluationRoutes = require('./routes/evaluations');
 
 const app  = express();
 const PORT = process.env.PORT || 5000;
@@ -72,6 +75,9 @@ app.use('/api/admin/users', adminUserRoutes);
 app.use('/api/permissions', permissionRoutes);
 app.use('/api/audit-logs', auditLogRoutes);
 app.use('/api/tickets',    ticketRoutes);
+app.use('/api/admin/sessions', sessionRoutes);
+app.use('/api/admin/session-notes', sessionNoteRoutes);
+app.use('/api/admin/evaluations', evaluationRoutes);
 
 // Health check
 app.get('/health', (req, res) => {

@@ -43,6 +43,8 @@ const MODULES = {
   PROGRESS: 'progress', // models/UserProgress.js
   DAILY_MISSION: 'daily_mission', // models/DailyMission.js
   TICKET: 'ticket', // models/Ticket.js — student-raised concern reports (never visible to mentors)
+  SESSION_NOTE: 'session_note', // models/SessionNote.js
+  EVALUATION: 'evaluation', // models/Evaluation.js
   ROLE_PERMISSION: 'role_permission', // the permission engine itself
   AUDIT_LOG: 'audit_log',
 };
