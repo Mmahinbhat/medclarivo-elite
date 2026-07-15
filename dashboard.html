@@ -885,11 +885,11 @@
     <i data-lucide="layout-dashboard" class="w-5 h-5"></i>
     <span class="text-[9px] font-bold">Home</span>
   </button>
-  <button class="flex flex-col items-center gap-1 p-2 text-ink-faint" onclick="showToast('Progress coming soon')">
+  <button class="flex flex-col items-center gap-1 p-2 text-ink-faint" onclick="document.getElementById('analyticsSection')?.scrollIntoView({behavior:'smooth',block:'start'})">
     <i data-lucide="trending-up" class="w-5 h-5"></i>
     <span class="text-[9px] font-semibold">Progress</span>
   </button>
-  <button class="flex flex-col items-center gap-1 p-2 text-ink-faint" onclick="showToast('Content Library coming soon')">
+  <button class="flex flex-col items-center gap-1 p-2 text-ink-faint" onclick="window.location.href='study.html'">
     <i data-lucide="library" class="w-5 h-5"></i>
     <span class="text-[9px] font-semibold">Library</span>
   </button>
@@ -898,11 +898,75 @@
     <span class="text-[9px] font-semibold">Mentor</span>
     <span class="absolute top-1 right-2.5 w-1.5 h-1.5 bg-teal rounded-full"></span>
   </button>
-  <button class="flex flex-col items-center gap-1 p-2 text-ink-faint" onclick="showToast('Profile settings are coming soon')">
+ <button class="flex flex-col items-center gap-1 p-2 text-ink-faint" onclick="openProfileModal()">
     <i data-lucide="user" class="w-5 h-5"></i>
     <span class="text-[9px] font-semibold">Profile</span>
   </button>
 </nav>
+
+<!-- ═══════════════════ PROFILE SETTINGS MODAL ═══════════════════ -->
+<div id="profileModal" class="hidden fixed inset-0 z-50 flex items-center justify-center px-4" style="background:rgba(12,27,46,0.5)">
+  <div class="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6">
+    <div class="flex items-center justify-between mb-5">
+      <h3 class="font-display text-lg text-ink">Profile Settings</h3>
+      <button onclick="closeProfileModal()" class="text-ink-faint hover:text-ink"><i data-lucide="x" class="w-5 h-5"></i></button>
+    </div>
+    <div class="space-y-4">
+      <div>
+        <label class="block text-xs font-semibold uppercase tracking-wider text-ink-faint mb-1.5">Name</label>
+        <input id="profileNameInput" type="text" class="w-full px-3 py-2.5 border border-line rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal/30" />
+      </div>
+      <div>
+        <label class="block text-xs font-semibold uppercase tracking-wider text-ink-faint mb-1.5">Avatar URL</label>
+        <input id="profileAvatarInput" type="text" placeholder="https://..." class="w-full px-3 py-2.5 border border-line rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal/30" />
+      </div>
+      <button id="profileSaveBtn" onclick="saveProfile()" class="w-full py-3 bg-ink text-white text-sm font-semibold rounded-xl hover:bg-teal-deep transition-colors">Save changes</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  function openProfileModal() {
+    const stored = JSON.parse(localStorage.getItem('mc_user') || '{}');
+    document.getElementById('profileNameInput').value = stored.name || '';
+    document.getElementById('profileAvatarInput').value = stored.avatar || '';
+    document.getElementById('profileModal').classList.remove('hidden');
+  }
+  function closeProfileModal() {
+    document.getElementById('profileModal').classList.add('hidden');
+  }
+  async function saveProfile() {
+    const name   = document.getElementById('profileNameInput').value.trim();
+    const avatar = document.getElementById('profileAvatarInput').value.trim();
+    if (!name) { showToast('Name cannot be empty.'); return; }
+
+    const btn = document.getElementById('profileSaveBtn');
+    btn.disabled = true;
+    btn.textContent = 'Saving...';
+
+    try {
+      const token = localStorage.getItem('mc_token');
+      const res = await fetch(`https://med-clarivo.onrender.com/api/auth/profile`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ name, avatar }),
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        localStorage.setItem('mc_user', JSON.stringify(data.user));
+        showToast('Profile updated.');
+        closeProfileModal();
+      } else {
+        showToast(data.message || 'Could not update profile.');
+      }
+    } catch (e) {
+      showToast('Could not reach the server. Please try again.');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Save changes';
+    }
+  }
+</script>
 
 <script>
   lucide.createIcons();
