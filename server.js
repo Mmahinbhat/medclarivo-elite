@@ -22,6 +22,7 @@ const sessionNoteRoutes = require('./routes/sessionNotes');
 const evaluationRoutes = require('./routes/evaluations');
 const messageRoutes = require('./routes/messages');
 const studentMessageRoutes = require('./routes/studentMessages');
+const settingsRoutes = require('./routes/settings');
 
 const app  = express();
 const PORT = process.env.PORT || 5000;
@@ -82,7 +83,7 @@ app.use('/api/admin/session-notes', sessionNoteRoutes);
 app.use('/api/admin/evaluations', evaluationRoutes);
 app.use('/api/admin/messages',   messageRoutes);
 app.use('/api/student/messages', studentMessageRoutes);
-
+app.use('/api/settings',         settingsRoutes);
 // Health check
 app.get('/health', (req, res) => {
   res.json({
