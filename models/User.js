@@ -116,6 +116,12 @@ const UserSchema = new mongoose.Schema({
     prevScore:   { type: Number },
     targetScore: { type: Number },
   },
+  // Notification preferences (Settings page)
+  notificationPrefs: {
+    emailUpdates:     { type: Boolean, default: true },
+    sessionReminders: { type: Boolean, default: true },
+    forumReplies:     { type: Boolean, default: true },
+  },
 }, {
   timestamps: true,
 });
