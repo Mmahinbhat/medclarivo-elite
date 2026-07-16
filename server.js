@@ -121,3 +121,6 @@ mongoose.connect(process.env.MONGO_URI)
   });
 
 module.exports = app;
+
+const myMentorRoutes = require('./routes/myMentor');
+app.use('/api/mentor', myMentorRoutes);
