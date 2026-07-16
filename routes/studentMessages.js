@@ -93,9 +93,9 @@ router.post('/', async (req, res) => {
     if (!recipient) return res.status(404).json({ success: false, message: 'Recipient not found.' });
 
     // Students can only message mentors, admins, super_admins
-    const allowed = ['mentor', 'admin', 'super_admin'];
-    if (!allowed.includes(recipient.role)) {
-      return res.status(403).json({ success: false, message: 'You can only message mentors and admins.' });
+   // Students can only message their own assigned mentor.
+    if (recipient.role !== 'mentor' || String(req.user.mentorId) !== String(recipientId)) {
+      return res.status(403).json({ success: false, message: 'You can only message your assigned mentor.' });
     }
 
     const message = await Message.create({
@@ -115,12 +115,14 @@ router.post('/', async (req, res) => {
 // Returns their assigned mentor + all admins/super_admins
 router.get('/contacts', async (req, res) => {
   try {
+    // Students can only message their assigned mentor — no direct admin contact.
+    if (!req.user.mentorId) {
+      return res.json({ success: true, contacts: [] });
+    }
+
     const contacts = await User.find({
-      $or: [
-        { _id: req.user.mentorId || null, role: 'mentor' },
-        { role: { $in: ['admin', 'super_admin'] } },
-      ],
-      _id: { $ne: req.user._id },
+      _id: req.user.mentorId,
+      role: 'mentor',
     }).select('name email role avatar').sort('name').lean();
 
     res.json({ success: true, contacts });
