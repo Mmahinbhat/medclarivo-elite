@@ -21,6 +21,7 @@ const sessionRoutes = require('./routes/sessions');
 const sessionNoteRoutes = require('./routes/sessionNotes');
 const evaluationRoutes = require('./routes/evaluations');
 const messageRoutes = require('./routes/messages');
+const studentMessageRoutes = require('./routes/studentMessages');
 
 const app  = express();
 const PORT = process.env.PORT || 5000;
@@ -79,7 +80,8 @@ app.use('/api/tickets',    ticketRoutes);
 app.use('/api/admin/sessions', sessionRoutes);
 app.use('/api/admin/session-notes', sessionNoteRoutes);
 app.use('/api/admin/evaluations', evaluationRoutes);
-app.use('/api/admin/messages', messageRoutes);
+app.use('/api/admin/messages',   messageRoutes);
+app.use('/api/student/messages', studentMessageRoutes);
 
 // Health check
 app.get('/health', (req, res) => {
