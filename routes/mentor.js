@@ -534,4 +534,57 @@ router.post('/parent-messages/:parentId', protect, restrictTo('mentor', 'admin')
   }
 });
 
+// ════════════════════════════════════════════════════════════════
+// GET /api/mentor/admin-messages  — unified thread of every message
+// exchanged between the logged-in mentor and any Admin/Super Admin.
+// Backs the "Admin Messages" panel on the mentor dashboard.
+// ════════════════════════════════════════════════════════════════
+router.get('/admin-messages', protect, restrictTo('mentor'), async (req, res) => {
+  try {
+    const admins = await User.find({ role: { $in: ['admin', 'super_admin'] } }).select('name email role').lean();
+    const adminIds = admins.map((a) => a._id);
+
+    const messages = await Message.find({
+      $or: [
+        { sender: req.user._id, recipient: { $in: adminIds } },
+        { sender: { $in: adminIds }, recipient: req.user._id },
+      ],
+    }).sort('createdAt').lean();
+
+    res.json({ success: true, admins, messages });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: 'Failed to load messages.' });
+  }
+});
+
+// ════════════════════════════════════════════════════════════════
+// POST /api/mentor/admin-messages  — mentor replies to a specific admin
+// ════════════════════════════════════════════════════════════════
+router.post('/admin-messages', protect, restrictTo('mentor'), async (req, res) => {
+  try {
+    const { adminId, content } = req.body;
+    if (!adminId || !content || !content.trim()) {
+      return res.status(400).json({ success: false, message: 'adminId and content are required.' });
+    }
+    if (content.length > 2000) {
+      return res.status(400).json({ success: false, message: 'Message is too long.' });
+    }
+
+    const admin = await User.findOne({ _id: adminId, role: { $in: ['admin', 'super_admin'] } });
+    if (!admin) return res.status(404).json({ success: false, message: 'Admin not found.' });
+
+    const message = await Message.create({
+      sender: req.user._id,
+      recipient: adminId,
+      content: content.trim(),
+    });
+
+    res.status(201).json({ success: true, message });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: 'Failed to send message.' });
+  }
+});
+
 module.exports = router;

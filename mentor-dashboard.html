@@ -355,6 +355,10 @@
         <i data-lucide="message-circle"></i><span class="nav-label flex-1">Doubt Forum</span>
         <span class="hide-on-collapse w-1.5 h-1.5 bg-teal-2 rounded-full pulse-dot"></span>
       </a>
+      <a href="#" class="nav-item" onclick="setNav(this,event);openAdminMessagesModal();" data-tip="Admin Messages">
+        <i data-lucide="megaphone"></i><span class="nav-label flex-1">Admin Messages</span>
+        <span id="adminMsgBadge" class="hide-on-collapse chip chip-navy" style="padding:1px 7px;font-size:9.5px;display:none"></span>
+      </a>
 
       <p class="hide-on-collapse px-6 py-2 mt-3 text-[10px] text-white/25 uppercase tracking-[0.16em] font-bold">Account</p>
       <a href="#" class="nav-item" onclick="setNav(this,event)" data-tip="Recognition">
@@ -1113,6 +1117,7 @@
     loadMentees(token);
     loadSessions(token);
     loadRequests(token);
+    checkAdminMessagesUnread();
   })();
 
   // ── Heatmap ──
@@ -1450,7 +1455,147 @@ async function sendMessage(){
   }
 }
 
-// ── Mentor Availability ──
+// ── Admin Messages: read insights/messages from admin, reply if needed ──
+let adminMessagesActiveAdminId = null;
+let adminMessagesCache = [];
+let adminsCache = [];
+
+async function checkAdminMessagesUnread(){
+  const token = localStorage.getItem('mc_token');
+  if (!token) return;
+  try {
+    const res = await fetch(`${API_BASE}/mentor/admin-messages`, { headers: { Authorization: `Bearer ${token}` } });
+    const data = await res.json();
+    if (res.ok && data.success) {
+      const unread = (data.messages || []).filter(m => String(m.sender) !== String(currentMentorId) && !m.readAt).length;
+      const badge = document.getElementById('adminMsgBadge');
+      if (badge) {
+        if (unread > 0) { badge.textContent = unread; badge.style.display = 'inline-block'; }
+        else { badge.style.display = 'none'; }
+      }
+    }
+  } catch (err) { /* silent — badge just won't show */ }
+}
+
+function openAdminMessagesModal(){
+  const token = localStorage.getItem('mc_token');
+  if (!token) return;
+  adminMessagesActiveAdminId = null;
+  const modal = document.createElement('div');
+  modal.id = 'adminMessagesModalOverlay';
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:9999;padding:16px;';
+  modal.innerHTML = `
+    <div style="background:#fff;border-radius:16px;padding:24px;width:100%;max-width:520px;max-height:82vh;display:flex;flex-direction:column;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
+        <h3 style="font-size:18px;font-weight:700;">Admin Messages</h3>
+        <button onclick="closeAdminMessagesModal()" style="border:none;background:none;font-size:22px;line-height:1;cursor:pointer;color:#999;">&times;</button>
+      </div>
+      <p style="font-size:12px;color:#8B97A8;margin-bottom:12px;">Messages and insights sent to you by the admin team.</p>
+      <div id="adminMessagesThread" style="flex:1;overflow-y:auto;border:1px solid #eee;border-radius:8px;padding:12px;margin-bottom:12px;min-height:220px;max-height:320px;">
+        <p style="color:#999;font-size:13px;">Loading&hellip;</p>
+      </div>
+      <div id="adminMessageError" style="color:#c0392b;font-size:12px;margin-bottom:8px;display:none;"></div>
+      <select id="adminMessageRecipient" style="width:100%;padding:9px;border-radius:8px;border:1px solid #ddd;margin-bottom:8px;font-size:13px;">
+        <option value="">Loading admins…</option>
+      </select>
+      <div style="display:flex;gap:8px;">
+        <input type="text" id="adminMessageInput" placeholder="Reply to admin…" style="flex:1;padding:10px;border-radius:8px;border:1px solid #ddd;"/>
+        <button onclick="sendAdminReply()" style="padding:10px 16px;border-radius:8px;border:none;background:#0d9488;color:#fff;font-weight:600;">Send</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(modal);
+  document.getElementById('adminMessageInput').addEventListener('keydown', e => { if (e.key === 'Enter') sendAdminReply(); });
+  loadAdminMessagesThread();
+}
+
+function closeAdminMessagesModal(){
+  const modal = document.getElementById('adminMessagesModalOverlay');
+  if (modal) modal.remove();
+}
+
+function adminMessageBubbleHTML(m){
+  const mine = String(m.sender) === String(currentMentorId);
+  const senderAdmin = adminsCache.find(a => String(a._id) === String(m.sender));
+  const label = mine ? '' : `<div style="font-size:10.5px;color:#8B97A8;margin-bottom:2px;">${senderAdmin ? senderAdmin.name : 'Admin'}</div>`;
+  return `
+    <div style="display:flex;flex-direction:column;align-items:${mine ? 'flex-end' : 'flex-start'};margin-bottom:10px;">
+      ${label}
+      <div style="max-width:75%;padding:8px 12px;border-radius:12px;font-size:13px;line-height:1.4;background:${mine ? '#0d9488' : '#f0f0f0'};color:${mine ? '#fff' : '#111'};">
+        ${m.content}
+      </div>
+    </div>`;
+}
+
+async function loadAdminMessagesThread(){
+  const token = localStorage.getItem('mc_token');
+  const threadEl = document.getElementById('adminMessagesThread');
+  if (!threadEl) return;
+  try {
+    const res = await fetch(`${API_BASE}/mentor/admin-messages`, { headers: { Authorization: `Bearer ${token}` } });
+    const data = await res.json();
+    if (res.ok && data.success) {
+      adminsCache = data.admins || [];
+      adminMessagesCache = data.messages || [];
+
+      const sel = document.getElementById('adminMessageRecipient');
+      if (sel) {
+        sel.innerHTML = adminsCache.length
+          ? adminsCache.map(a => `<option value="${a._id}">${a.name} (${a.role === 'super_admin' ? 'Super Admin' : 'Admin'})</option>`).join('')
+          : '<option value="">No admins found</option>';
+        adminMessagesActiveAdminId = sel.value || null;
+        sel.addEventListener('change', () => { adminMessagesActiveAdminId = sel.value || null; });
+      }
+
+      threadEl.innerHTML = adminMessagesCache.length
+        ? adminMessagesCache.map(adminMessageBubbleHTML).join('')
+        : '<p style="color:#999;font-size:13px;">No messages from admin yet.</p>';
+      threadEl.scrollTop = threadEl.scrollHeight;
+
+      checkAdminMessagesUnread();
+    } else {
+      threadEl.innerHTML = '<p style="color:#999;font-size:13px;">Could not load messages.</p>';
+    }
+  } catch (err) {
+    threadEl.innerHTML = '<p style="color:#999;font-size:13px;">Could not load messages right now.</p>';
+  }
+}
+
+async function sendAdminReply(){
+  const token = localStorage.getItem('mc_token');
+  const input = document.getElementById('adminMessageInput');
+  const errorEl = document.getElementById('adminMessageError');
+  const content = input.value.trim();
+  errorEl.style.display = 'none';
+
+  if (!adminMessagesActiveAdminId) {
+    errorEl.textContent = 'No admin selected to reply to.';
+    errorEl.style.display = 'block';
+    return;
+  }
+  if (!content) return;
+
+  try {
+    const res = await fetch(`${API_BASE}/mentor/admin-messages`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ adminId: adminMessagesActiveAdminId, content })
+    });
+    const data = await res.json();
+    if (data.success) {
+      input.value = '';
+      loadAdminMessagesThread();
+    } else {
+      errorEl.textContent = data.message || 'Could not send message.';
+      errorEl.style.display = 'block';
+    }
+  } catch (err) {
+    errorEl.textContent = 'Something went wrong. Please try again.';
+    errorEl.style.display = 'block';
+  }
+}
+
+
 function openAvailabilityModal(){
   const token = localStorage.getItem('mc_token');
   if (!token) return;
