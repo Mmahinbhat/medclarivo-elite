@@ -17,8 +17,8 @@ router.get('/conversations', authorize(MODULES.MESSAGE, ACTIONS.READ), async (re
   try {
     const messages = await Message.find({})
       .sort({ createdAt: -1 })
-      .populate('sender', 'name role')
-      .populate('recipient', 'name role')
+      .populate('sender', 'name role lastLogin')
+      .populate('recipient', 'name role lastLogin')
       .lean();
 
     const byPair = new Map();
@@ -67,13 +67,16 @@ router.get('/thread/:userAId/:userBId', authorize(MODULES.MESSAGE, ACTIONS.READ)
 // and a specific user (backs the admin's own DM composer).
 router.get('/with/:userId', authorize(MODULES.MESSAGE, ACTIONS.READ), async (req, res) => {
   try {
+    const otherUser = await User.findById(req.params.userId).select('name email role lastLogin').lean();
+    if (!otherUser) return res.status(404).json({ success: false, message: 'User not found.' });
+
     const messages = await Message.find({
       $or: [
         { sender: req.user._id, recipient: req.params.userId },
         { sender: req.params.userId, recipient: req.user._id },
       ],
     }).sort('createdAt').lean();
-    res.json({ success: true, messages });
+    res.json({ success: true, messages, otherUser });
   } catch (err) {
     console.error(err);
     res.status(500).json({ success: false, message: 'Server error.' });

@@ -244,11 +244,24 @@ function renderConversations(){
 
 async function openOversightThread(i){
   const c=conversations[i];
+
+  // If the logged-in admin is actually one side of this conversation
+  // (e.g. Owais messaging Dr. Mehta), this isn't oversight of someone
+  // else's chat -- it's the admin's own conversation. Treat it as a
+  // normal, editable DM instead of read-only oversight.
+  const isParticipantA = c.userA._id === currentUserId;
+  const isParticipantB = c.userB._id === currentUserId;
+  if (isParticipantA || isParticipantB) {
+    const other = isParticipantA ? c.userB : c.userA;
+    document.querySelectorAll('.conv-row').forEach((el,idx)=>el.classList.toggle('active',idx===i));
+    return openDmThread(other._id, other.name);
+  }
+
   activeThread={mode:'oversight',userA:c.userA,userB:c.userB};
   document.getElementById('threadHeader').style.display='flex';
   document.getElementById('threadAvatarA').textContent=(c.userA.name||'?')[0].toUpperCase();
   document.getElementById('threadTitle').textContent=`${c.userA.name} ↔ ${c.userB.name}`;
-  document.getElementById('threadSubtitle').textContent=`${c.userA.role} · ${c.userB.role}`;
+  document.getElementById('threadSubtitle').textContent=`${c.userA.role} · ${c.userB.role} · ${timeAgo(c.userA.lastLogin)} / ${timeAgo(c.userB.lastLogin)}`;
   document.getElementById('threadModeChip').textContent='Oversight — read only';
   document.getElementById('threadModeChip').className='chip chip-grey';
   document.getElementById('composerBar').style.display='none';
@@ -281,6 +294,19 @@ function renderThread(messages, leftUserId){
 }
 
 function escapeHtml(s){const d=document.createElement('div');d.textContent=s;return d.innerHTML;}
+
+function timeAgo(dateStr){
+  if(!dateStr) return 'never logged in';
+  const diffMs = Date.now() - new Date(dateStr).getTime();
+  const mins = Math.floor(diffMs/60000);
+  if (mins < 2) return 'online just now';
+  if (mins < 60) return `last seen ${mins}m ago`;
+  const hrs = Math.floor(mins/60);
+  if (hrs < 24) return `last seen ${hrs}h ago`;
+  const days = Math.floor(hrs/24);
+  if (days < 30) return `last seen ${days}d ago`;
+  return `last seen ${new Date(dateStr).toLocaleDateString()}`;
+}
 
 async function loadDirectory(){
   try{
@@ -337,6 +363,9 @@ async function openDmThread(userId, userName){
     const d=await r.json();
     if(r.ok&&d.success){
       renderThread(d.messages, userId);
+      if(d.otherUser){
+        document.getElementById('threadSubtitle').textContent=`Direct message · ${timeAgo(d.otherUser.lastLogin)}`;
+      }
     } else {
       scroll.innerHTML=`<div class="empty-state"><p class="text-sm">${d.message||'Could not load thread'}</p></div>`;
     }
