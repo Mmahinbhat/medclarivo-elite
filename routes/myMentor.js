@@ -15,11 +15,11 @@
 
 const express = require('express');
 const router = express.Router();
-const auth = require('../middleware/auth'); // adjust name/path if different
+const { protect } = require('../middleware/auth'); // adjust name/path if different
 const User = require('../models/User');
 const Session = require('../models/Session');
 
-router.get('/my-mentor', auth, async (req, res) => {
+router.get('/my-mentor', protect, async (req, res) => {
   try {
     const studentId = req.user.id || req.user._id;
 
