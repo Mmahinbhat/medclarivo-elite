@@ -319,31 +319,6 @@ router.post('/sessions', protect, restrictTo('mentor', 'admin'), async (req, res
 // ════════════════════════════════════════════════════════════════
 router.get('/messages/:menteeId', protect, restrictTo('mentor', 'admin'), async (req, res) => {
   try {
-    const mentee = await User.findOne({ _id: req.params.menteeId, mentorId: req.user._id, role: 'student' });
-    if (!mentee) {
-      return res.status(404).json({ success: false, message: 'Mentee not found or not assigned to you.' });
-    }
-
-    const messages = await Message.find({
-      $or: [
-        { sender: req.user._id, recipient: mentee._id },
-        { sender: mentee._id, recipient: req.user._id },
-      ],
-    }).sort('createdAt').lean();
-
-    res.json({ success: true, messages });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ success: false, message: 'Failed to fetch messages.' });
-  }
-});
-
-
-// ════════════════════════════════════════════════════════════════
-// GET /api/mentor/availability
-// ════════════════════════════════════════════════════════════════
-router.get('/messages/:menteeId', protect, restrictTo('mentor', 'admin'), async (req, res) => {
-  try {
     // Same fix as /sessions/upcoming and the student-list bug: an admin's
     // _id never equals a student's mentorId, so the mentor-only filter
     // silently 404'd for every admin request. Admins can message any

@@ -116,7 +116,10 @@ router.post('/', async (req, res) => {
 router.get('/contacts', async (req, res) => {
   try {
     const contacts = await User.find({
-      role: { $in: ['mentor', 'admin', 'super_admin'] },
+      $or: [
+        { _id: req.user.mentorId || null, role: 'mentor' },
+        { role: { $in: ['admin', 'super_admin'] } },
+      ],
       _id: { $ne: req.user._id },
     }).select('name email role avatar').sort('name').lean();
 
