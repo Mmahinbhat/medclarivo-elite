@@ -127,6 +127,15 @@ router.get('/me', protect, (req, res) => {
 // ════════════════════════════════════════════════════════════════
 router.get('/my-mentor', protect, async (req, res) => {
   try {
+    // Only students have an assigned mentor in the "My Mentor" sense. If a
+    // non-student account (e.g. a mentor whose own mentorId field is
+    // unexpectedly set) hits this, don't look anything up — otherwise a
+    // mentor could see themselves (or another mentor) rendered as "their
+    // mentor" on the student dashboard.
+    if (req.user.role !== 'student') {
+      return res.json({ success: true, mentorAssigned: false, mentor: null });
+    }
+
     if (!req.user.mentorId) {
       return res.json({ success: true, mentorAssigned: false, mentor: null });
     }

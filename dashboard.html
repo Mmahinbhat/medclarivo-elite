@@ -1515,6 +1515,21 @@
       const data = await res.json();
       if (res.ok && data.success && data.user) {
         localStorage.setItem('mc_user', JSON.stringify(data.user));
+
+        // Guard: a non-student token landing here gets sent to their own
+        // dashboard instead of silently rendering the student UI for them.
+        const roleRedirects = {
+          mentor: 'mentor-dashboard.html',
+          assistant: 'assistant-dashboard.html',
+          parent: 'parent-dashboard.html',
+          admin: 'admin-dashboard.html',
+          super_admin: 'admin-dashboard.html',
+        };
+        if (data.user.role && roleRedirects[data.user.role]) {
+          window.location.href = roleRedirects[data.user.role];
+          return;
+        }
+
         applyExamConfig(data.user.onboarding, data.user.name);
       }
     } catch (err) {
