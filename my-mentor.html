@@ -133,7 +133,7 @@ const studentId = window.CURRENT_STUDENT_ID || null; // wire this to your auth/s
 async function loadMentor() {
   const container = document.getElementById('content');
   try {
-    const res = await fetch('/api/mentor/my-mentor', { credentials: 'include' });
+    const res = await fetch('/api/student/mentor/my-mentor', { credentials: 'include' });
     if (!res.ok) throw new Error('no mentor assigned');
     const data = await res.json();
     render(data);
