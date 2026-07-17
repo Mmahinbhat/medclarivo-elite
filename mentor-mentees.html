@@ -156,7 +156,7 @@
       <span id="menteeCountChip" class="chip chip-teal"></span>
     </div>
 
-    <main class="px-4 pt-6 pb-10 max-w-6xl">
+    <main class="px-4 pt-6 pb-10">
       <div id="content" class="text-center py-20 text-ink-faint">Loading mentees&hellip;</div>
     </main>
   </div>
@@ -210,7 +210,7 @@ function masteryColor(pct) {
 
 function render(mentees) {
   document.getElementById('content').innerHTML = `
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
       ${mentees.map((m, i) => `
         <div class="panel p-6 reveal" style="animation-delay:${i * 0.05}s">
           <div class="flex items-center gap-4 mb-4">
