@@ -47,7 +47,7 @@ const GRANTS = [
   [ROLES.ADMIN, MODULES.MESSAGE, CREATE, ORG],
   [ROLES.ADMIN, MODULES.MESSAGE, READ, ORG],
 
-  // ---- Mentor (scope: their own assigned students) ----
+// ---- Mentor (scope: their own assigned students) ----
   [ROLES.MENTOR, MODULES.USER, CREATE, ASSIGNED],
   [ROLES.MENTOR, MODULES.USER, READ, ASSIGNED],
   [ROLES.MENTOR, MODULES.MENTOR_REQUEST, READ, ASSIGNED],
@@ -59,6 +59,11 @@ const GRANTS = [
   [ROLES.MENTOR, MODULES.PROGRESS, READ, ASSIGNED],
   [ROLES.MENTOR, MODULES.CURRICULUM, READ, ORG],
   [ROLES.MENTOR, MODULES.DAILY_MISSION, READ, ASSIGNED],
+  // Lets a mentor reach the admin team via /api/admin/messages (the same
+  // route admins use for platform-wide messaging). Mentor-to-student
+  // messaging is separate and already handled by /api/mentor/messages.
+  [ROLES.MENTOR, MODULES.MESSAGE, CREATE, ASSIGNED],
+  [ROLES.MENTOR, MODULES.MESSAGE, READ, ASSIGNED],
 
   // ---- Assistant (ceiling only — an Admin can further restrict this per
   //      Mentor via setPermission; this is just the platform-wide max) ----
