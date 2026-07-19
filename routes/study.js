@@ -282,8 +282,96 @@ router.get('/analytics', protect, async (req, res) => {
   try {
     const user = req.user;
     const dailyTargetMinutes = parseDailyTargetMinutes(user.onboarding && user.onboarding.hours);
-
+    const period = req.query.period === 'month' ? 'month' : 'week';
     const now = new Date();
+
+    // Heatmap is period-independent (always the trailing 9 weeks), computed once.
+    const heatmapDays = 63;
+    const heatStart = new Date(now);
+    heatStart.setDate(now.getDate() - (heatmapDays - 1));
+    heatStart.setHours(0, 0, 0, 0);
+
+    const rangeSessions = await StudySession.find({
+      user: user._id,
+      completedAt: { $gte: heatStart },
+    }).select('durationMinutes completedAt').lean();
+
+    const minutesByDate = {};
+    rangeSessions.forEach(s => {
+      const key = new Date(s.completedAt).toISOString().slice(0, 10);
+      minutesByDate[key] = (minutesByDate[key] || 0) + (s.durationMinutes || 0);
+    });
+
+    function levelFor(minutes) {
+      if (minutes <= 0) return 0;
+      if (minutes < 30) return 1;
+      if (minutes < 60) return 2;
+      if (minutes < 120) return 3;
+      return 4;
+    }
+
+    const heatmap = [];
+    for (let i = 0; i < heatmapDays; i++) {
+      const d = new Date(heatStart);
+      d.setDate(heatStart.getDate() + i);
+      const key = d.toISOString().slice(0, 10);
+      const minutes = minutesByDate[key] || 0;
+      heatmap.push({ date: key, minutes, level: levelFor(minutes) });
+    }
+
+    if (period === 'month') {
+      // Current calendar month, bucketed into 7-day chunks (Wk 1 = days 1-7, etc.)
+      const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+      const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+      const daysElapsedThisMonth = now.getDate(); // 1-indexed "today"
+
+      const monthSessions = await StudySession.find({
+        user: user._id,
+        completedAt: { $gte: monthStart },
+      }).select('durationMinutes completedAt').lean();
+
+      const minutesByDayOfMonth = {};
+      monthSessions.forEach(s => {
+        const dom = new Date(s.completedAt).getDate();
+        minutesByDayOfMonth[dom] = (minutesByDayOfMonth[dom] || 0) + (s.durationMinutes || 0);
+      });
+
+      const bucketCount = Math.ceil(daysInMonth / 7);
+      const weeklyBuckets = [];
+      for (let b = 0; b < bucketCount; b++) {
+        const startDay = b * 7 + 1;
+        const endDay = Math.min(startDay + 6, daysInMonth);
+        let bucketMinutes = 0;
+        for (let d = startDay; d <= endDay; d++) {
+          bucketMinutes += minutesByDayOfMonth[d] || 0;
+        }
+        weeklyBuckets.push({ label: `Wk ${b + 1}`, minutes: bucketMinutes });
+      }
+
+      const monthMinutesTotal = Object.values(minutesByDayOfMonth).reduce((sum, m) => sum + m, 0);
+      const monthlyHours = Math.round((monthMinutesTotal / 60) * 10) / 10;
+      const monthlyTargetHours = Math.round((dailyTargetMinutes * daysInMonth / 60) * 10) / 10;
+
+      const daysStudiedThisMonth = Object.keys(minutesByDayOfMonth).filter(d => minutesByDayOfMonth[d] > 0).length;
+      const consistencyPct = daysElapsedThisMonth > 0
+        ? Math.round((daysStudiedThisMonth / daysElapsedThisMonth) * 100)
+        : 0;
+
+      const avgSessionMinutes = monthSessions.length
+        ? Math.round(monthSessions.reduce((sum, s) => sum + (s.durationMinutes || 0), 0) / monthSessions.length)
+        : 0;
+
+      return res.json({
+        success: true,
+        period: 'month',
+        analytics: {
+          monthlyHours, monthlyTargetHours, consistencyPct, avgSessionMinutes,
+          weeklyBuckets, dailyTargetMinutes, heatmap,
+        },
+      });
+    }
+
+    // ── Default: week ──
     const dayOfWeek = now.getDay();
     const diffToMonday = (dayOfWeek === 0 ? -6 : 1 - dayOfWeek);
     const monday = new Date(now);
@@ -322,41 +410,9 @@ router.get('/analytics', protect, async (req, res) => {
       ? Math.round(allSessions.reduce((sum, s) => sum + (s.durationMinutes || 0), 0) / allSessions.length)
       : 0;
 
-    const heatmapDays = 63;
-    const heatStart = new Date(now);
-    heatStart.setDate(now.getDate() - (heatmapDays - 1));
-    heatStart.setHours(0, 0, 0, 0);
-
-    const rangeSessions = await StudySession.find({
-      user: user._id,
-      completedAt: { $gte: heatStart },
-    }).select('durationMinutes completedAt').lean();
-
-    const minutesByDate = {};
-    rangeSessions.forEach(s => {
-      const key = new Date(s.completedAt).toISOString().slice(0, 10);
-      minutesByDate[key] = (minutesByDate[key] || 0) + (s.durationMinutes || 0);
-    });
-
-    function levelFor(minutes) {
-      if (minutes <= 0) return 0;
-      if (minutes < 30) return 1;
-      if (minutes < 60) return 2;
-      if (minutes < 120) return 3;
-      return 4;
-    }
-
-    const heatmap = [];
-    for (let i = 0; i < heatmapDays; i++) {
-      const d = new Date(heatStart);
-      d.setDate(heatStart.getDate() + i);
-      const key = d.toISOString().slice(0, 10);
-      const minutes = minutesByDate[key] || 0;
-      heatmap.push({ date: key, minutes, level: levelFor(minutes) });
-    }
-
     res.json({
       success: true,
+      period: 'week',
       analytics: {
         weeklyHours, weeklyTargetHours, consistencyPct, avgSessionMinutes,
         dailyMinutes, dailyTargetMinutes, heatmap,
