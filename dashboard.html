@@ -367,8 +367,9 @@
       <a href="#" class="nav-item active" onclick="setNav(this,event)" data-tip="Dashboard" data-action="top">
         <i data-lucide="layout-dashboard"></i><span class="nav-label">Dashboard</span>
       </a>
-      <a href="progress.html" class="nav-item" data-tip="Progress">
+      <a href="#" class="nav-item" onclick="setNav(this,event)" data-tip="Progress" data-action="soon">
         <i data-lucide="trending-up"></i><span class="nav-label flex-1">Progress</span>
+        <span class="hide-on-collapse chip chip-teal" style="padding:1px 7px;font-size:9.5px">Soon</span>
       </a>
       <a href="#" class="nav-item" onclick="setNav(this,event)" data-tip="Content Library" data-action="soon">
         <i data-lucide="library"></i><span class="nav-label flex-1">Content Library</span>
@@ -379,22 +380,19 @@
       </a>
 
       <p class="hide-on-collapse px-6 py-2 mt-3 text-[10px] text-white/25 uppercase tracking-[0.16em] font-bold">Mentorship</p>
-      <a href="my-mentor.html" class="nav-item" data-tip="My Mentor">
+      <a href="#" class="nav-item" onclick="setNav(this,event)" data-tip="My Mentor" data-action="scroll" data-target="mentorCard">
         <i data-lucide="users"></i><span class="nav-label">My Mentor</span>
       </a>
-      <a href="student-sessions.html" class="nav-item" data-tip="Sessions">
+      <a href="#" class="nav-item" onclick="setNav(this,event)" data-tip="Sessions" data-action="scroll" data-target="sessionsSection">
         <i data-lucide="video"></i><span class="nav-label">Sessions</span>
       </a>
       <a href="#" class="nav-item" onclick="setNav(this,event)" data-tip="Doubt Forum" data-action="scroll" data-target="doubtSection">
         <i data-lucide="message-circle"></i><span class="nav-label flex-1">Doubt Forum</span>
         <span class="hide-on-collapse w-1.5 h-1.5 bg-teal-2 rounded-full pulse-dot"></span>
       </a>
-      <a href="student-messages.html" class="nav-item" data-tip="Messages">
-        <i data-lucide="mail"></i><span class="nav-label">Messages</span>
-      </a>
 
       <p class="hide-on-collapse px-6 py-2 mt-3 text-[10px] text-white/25 uppercase tracking-[0.16em] font-bold">Support</p>
-      <a href="ticket.html?v=2" class="nav-item" data-tip="Raise a Ticket">
+      <a href="raise-ticket.html" class="nav-item" onclick="setNav(this,event)" data-tip="Raise a Ticket" data-action="page" data-target="raise-ticket.html">
         <i data-lucide="shield-alert"></i><span class="nav-label">Raise a Ticket</span>
       </a>
 
@@ -402,9 +400,9 @@
       <a href="#" class="nav-item" onclick="setNav(this,event)" data-tip="Achievements" data-action="scroll" data-target="achievementsSection">
         <i data-lucide="award"></i><span class="nav-label">Achievements</span>
       </a>
-      <a href="settings.html" class="nav-item" data-tip="Settings">
-     <i data-lucide="settings"></i><span class="nav-label">Settings</span>
-   </a>
+      <a href="#" class="nav-item" onclick="setNav(this,event)" data-tip="Settings" data-action="soon">
+        <i data-lucide="settings"></i><span class="nav-label">Settings</span>
+      </a>
     </nav>
 
     <div class="hide-on-collapse mx-3 mb-3 p-4 rounded-2xl" style="background:linear-gradient(135deg,rgba(15,168,154,0.22),rgba(15,168,154,0.06));border:1px solid rgba(15,168,154,0.25)">
@@ -544,64 +542,12 @@
             </div>
             <div class="track h-2 mb-6"><div class="fill h-2" id="missionBar" style="width:50%"></div></div>
 
-            <div class="space-y-2.5" id="tasksList">
-              <div class="task-row flex items-center gap-3 p-3.5 rounded-2xl hover:bg-mist transition-colors" data-done="false" data-task-id="task1">
-                <button class="check-btn" onclick="toggleTask(this)"><i data-lucide="check"></i></button>
-                <div class="flex-1 min-w-0">
-                  <div class="flex items-center gap-2 flex-wrap">
-                    <span class="chip chip-teal">Biology</span>
-                    <span class="task-label text-ink font-semibold text-sm">Revision: Plant Kingdom</span>
-                  </div>
-                  <div class="flex items-center gap-3 mt-1 text-xs text-ink-faint">
-                    <span class="flex items-center gap-1"><i data-lucide="clock" class="w-3 h-3"></i>45 min</span>
-                    <span class="chip chip-red" style="padding:1px 7px">High</span>
-                  </div>
-                </div>
-              </div>
-
-              <div class="task-row flex items-center gap-3 p-3.5 rounded-2xl hover:bg-mist transition-colors" data-done="false" data-task-id="task2" style="background:rgba(15,168,154,0.04)">
-                <button class="check-btn" onclick="toggleTask(this)"><i data-lucide="check"></i></button>
-                <div class="flex-1 min-w-0">
-                  <div class="flex items-center gap-2 flex-wrap">
-                    <span class="chip" style="background:rgba(37,99,235,0.08);color:#1D4ED8">Chemistry</span>
-                    <span class="task-label text-ink font-semibold text-sm">Organic Chemistry: Practice Set 4</span>
-                  </div>
-                  <div class="flex items-center gap-3 mt-1 text-xs text-ink-faint">
-                    <span class="flex items-center gap-1"><i data-lucide="clock" class="w-3 h-3"></i>1.5 hrs</span>
-                    <span class="chip chip-gold" style="padding:1px 7px">Medium</span>
-                    <span class="text-teal-deep font-semibold">In Progress</span>
-                  </div>
-                </div>
-              </div>
-
-              <div class="task-row flex items-center gap-3 p-3.5 rounded-2xl hover:bg-mist transition-colors" data-done="false" data-task-id="task3">
-                <button class="check-btn" onclick="toggleTask(this)"><i data-lucide="check"></i></button>
-                <div class="flex-1 min-w-0">
-                  <div class="flex items-center gap-2 flex-wrap">
-                    <span class="chip chip-violet">Physics</span>
-                    <span class="task-label text-ink font-semibold text-sm">Full Syllabus Mock Test #12</span>
-                  </div>
-                  <div class="flex items-center gap-3 mt-1 text-xs text-ink-faint">
-                    <span class="flex items-center gap-1"><i data-lucide="clock" class="w-3 h-3"></i>3 hrs</span>
-                    <span class="chip chip-red" style="padding:1px 7px">High</span>
-                  </div>
-                </div>
-              </div>
-
-              <div class="task-row flex items-center gap-3 p-3.5 rounded-2xl hover:bg-mist transition-colors" data-done="false" data-task-id="task4">
-                <button class="check-btn" onclick="toggleTask(this)"><i data-lucide="check"></i></button>
-                <div class="flex-1 min-w-0">
-                  <div class="flex items-center gap-2 flex-wrap">
-                    <span class="chip chip-navy">Revision</span>
-                    <span class="task-label text-ink font-semibold text-sm">Anatomy Flashcards &mdash; Nervous System</span>
-                  </div>
-                  <div class="flex items-center gap-3 mt-1 text-xs text-ink-faint">
-                    <span class="flex items-center gap-1"><i data-lucide="clock" class="w-3 h-3"></i>30 min</span>
-                    <span class="chip chip-teal" style="padding:1px 7px">Low</span>
-                  </div>
-                </div>
-              </div>
+            <div id="tasksEmptyState" class="hidden text-center py-10">
+              <i data-lucide="clipboard-list" class="w-8 h-8 text-ink-faint mx-auto mb-2"></i>
+              <p class="text-ink-faint text-sm font-semibold">No mission set for today yet</p>
+              <p class="text-ink-faint text-xs mt-1">Your mentor will assign today's tasks here.</p>
             </div>
+            <div class="space-y-2.5" id="tasksList"></div>
           </div>
 
               <!-- Mentor -->
@@ -694,14 +640,14 @@
               <div class="flex items-center justify-between mb-6">
                 <h2 class="font-display text-[20px] text-ink">Study Analytics</h2>
                 <div class="flex gap-1 p-1 rounded-xl bg-mist text-xs font-semibold">
-                  <button class="px-3 py-1.5 rounded-lg bg-white shadow-sm text-ink" id="analyticsPeriodWeekBtn" onclick="setAnalyticsPeriod('week')">Week</button>
-                  <button class="px-3 py-1.5 rounded-lg text-ink-faint" id="analyticsPeriodMonthBtn" onclick="setAnalyticsPeriod('month')">Month</button>
+                  <button class="px-3 py-1.5 rounded-lg bg-white shadow-sm text-ink">Week</button>
+                  <button class="px-3 py-1.5 rounded-lg text-ink-faint">Month</button>
                 </div>
               </div>
 
               <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-7">
                 <div>
-                  <p class="text-ink-faint text-[11px] uppercase tracking-wider font-semibold mb-1" id="analyticsHoursLabel">Weekly Hours</p>
+                  <p class="text-ink-faint text-[11px] uppercase tracking-wider font-semibold mb-1">Weekly Hours</p>
                   <p class="font-display text-3xl text-ink"><span id="analyticsWeeklyHours">0.0</span><span class="text-ink-faint text-base font-sans">/<span id="analyticsWeeklyTarget">0</span>h</span></p>
                 </div>
                 <div>
@@ -714,8 +660,37 @@
                 </div>
               </div>
 
-              <!-- Bar chart: Mon-Sun for Week, Wk1-Wk5 for Month. Rebuilt dynamically in JS. -->
-              <div class="grid gap-2 mb-7" id="analyticsBarChart" style="grid-template-columns:repeat(7,minmax(0,1fr))"></div>
+              <!-- Weekly bar chart -->
+              <div class="grid grid-cols-7 gap-2 mb-7" id="analyticsBarChart">
+                <div class="flex flex-col items-center gap-2">
+                  <div class="w-full h-20 bg-mist rounded-lg relative overflow-hidden flex items-end"><div class="w-full rounded-lg fill" id="bar-0" style="height:0%"></div></div>
+                  <span class="text-[10px] text-ink-faint font-semibold" id="barlabel-0">Mon</span>
+                </div>
+                <div class="flex flex-col items-center gap-2">
+                  <div class="w-full h-20 bg-mist rounded-lg relative overflow-hidden flex items-end"><div class="w-full rounded-lg fill" id="bar-1" style="height:0%"></div></div>
+                  <span class="text-[10px] text-ink-faint font-semibold" id="barlabel-1">Tue</span>
+                </div>
+                <div class="flex flex-col items-center gap-2">
+                  <div class="w-full h-20 bg-mist rounded-lg relative overflow-hidden flex items-end"><div class="w-full rounded-lg fill" id="bar-2" style="height:0%"></div></div>
+                  <span class="text-[10px] text-ink-faint font-semibold" id="barlabel-2">Wed</span>
+                </div>
+                <div class="flex flex-col items-center gap-2">
+                  <div class="w-full h-20 bg-mist rounded-lg relative overflow-hidden flex items-end"><div class="w-full rounded-lg fill" id="bar-3" style="height:0%"></div></div>
+                  <span class="text-[10px] text-ink-faint font-semibold" id="barlabel-3">Thu</span>
+                </div>
+                <div class="flex flex-col items-center gap-2">
+                  <div class="w-full h-20 bg-mist rounded-lg relative overflow-hidden flex items-end"><div class="w-full rounded-lg fill" id="bar-4" style="height:0%"></div></div>
+                  <span class="text-[10px] text-ink-faint font-semibold" id="barlabel-4">Fri</span>
+                </div>
+                <div class="flex flex-col items-center gap-2">
+                  <div class="w-full h-20 bg-mist rounded-lg relative overflow-hidden flex items-end"><div class="w-full rounded-lg fill" id="bar-5" style="height:0%"></div></div>
+                  <span class="text-[10px] text-ink-faint font-semibold" id="barlabel-5">Sat</span>
+                </div>
+                <div class="flex flex-col items-center gap-2">
+                  <div class="w-full h-20 bg-mist rounded-lg relative overflow-hidden flex items-end"><div class="w-full rounded-lg fill" id="bar-6" style="height:0%"></div></div>
+                  <span class="text-[10px] text-ink-faint font-semibold" id="barlabel-6">Sun</span>
+                </div>
+              </div>
 
               <!-- Heatmap -->
               <div>
@@ -993,79 +968,43 @@
 
 
   // ── Load real analytics (weekly hours, consistency, avg session, bar chart, heatmap) ──
-  let currentAnalyticsPeriod = 'week';
-
-  function setAnalyticsPeriod(period){
-    if (period === currentAnalyticsPeriod) return;
-    currentAnalyticsPeriod = period;
-    const weekBtn = document.getElementById('analyticsPeriodWeekBtn');
-    const monthBtn = document.getElementById('analyticsPeriodMonthBtn');
-    if (weekBtn && monthBtn) {
-      if (period === 'week') {
-        weekBtn.className = 'px-3 py-1.5 rounded-lg bg-white shadow-sm text-ink';
-        monthBtn.className = 'px-3 py-1.5 rounded-lg text-ink-faint';
-      } else {
-        monthBtn.className = 'px-3 py-1.5 rounded-lg bg-white shadow-sm text-ink';
-        weekBtn.className = 'px-3 py-1.5 rounded-lg text-ink-faint';
-      }
-    }
-    loadAnalytics();
-  }
-
   async function loadAnalytics(){
     try {
       const token = localStorage.getItem('mc_token');
-      const res = await fetch(`${API_BASE}/study/analytics?period=${currentAnalyticsPeriod}`, {
+      const res = await fetch(`${API_BASE}/study/analytics`, {
         headers: { 'Authorization': `Bearer ${token}` },
       });
       const data = await res.json();
       if (!data.success) return;
       const a = data.analytics;
-      const isMonth = data.period === 'month';
 
-      const set = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
-
-      set('analyticsHoursLabel', isMonth ? 'Monthly Hours' : 'Weekly Hours');
-      if (isMonth) {
-        set('analyticsWeeklyHours', a.monthlyHours.toFixed(1));
-        set('analyticsWeeklyTarget', Math.round(a.monthlyTargetHours));
+      if (typeof setText === 'function') {
+        setText('analyticsWeeklyHours', a.weeklyHours.toFixed(1));
+        setText('analyticsWeeklyTarget', Math.round(a.weeklyTargetHours));
+        setText('analyticsConsistency', a.consistencyPct);
+        setText('analyticsAvgSession', a.avgSessionMinutes);
       } else {
+        const set = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
         set('analyticsWeeklyHours', a.weeklyHours.toFixed(1));
         set('analyticsWeeklyTarget', Math.round(a.weeklyTargetHours));
+        set('analyticsConsistency', a.consistencyPct);
+        set('analyticsAvgSession', a.avgSessionMinutes);
       }
-      set('analyticsConsistency', a.consistencyPct);
-      set('analyticsAvgSession', a.avgSessionMinutes);
 
-      // Bars: 7 daily bars (Mon-Sun) for week, 4-5 weekly bars (Wk 1..) for month.
-      const bars = isMonth
-        ? a.weeklyBuckets.map(b => ({ label: b.label, minutes: b.minutes }))
-        : a.dailyMinutes.map(d => ({ label: d.day, minutes: d.minutes }));
-
-      const chart = document.getElementById('analyticsBarChart');
-      if (chart) {
-        chart.style.gridTemplateColumns = `repeat(${bars.length},minmax(0,1fr))`;
-        const maxMinutes = Math.max(a.dailyTargetMinutes, ...bars.map(b => b.minutes), 1);
-
-        let highlightIdx = -1;
-        if (!isMonth) {
-          const dow = new Date().getDay();
-          highlightIdx = dow === 0 ? 6 : dow - 1;
-        } else {
-          highlightIdx = Math.floor((new Date().getDate() - 1) / 7);
+      const maxDayMinutes = Math.max(a.dailyTargetMinutes, ...a.dailyMinutes.map(d => d.minutes), 1);
+      const dow = new Date().getDay();
+      const todayIdx = dow === 0 ? 6 : dow - 1;
+      a.dailyMinutes.forEach((d, i) => {
+        const bar = document.getElementById('bar-' + i);
+        const label = document.getElementById('barlabel-' + i);
+        if (!bar) return;
+        const pct = Math.min(100, Math.round((d.minutes / maxDayMinutes) * 100));
+        bar.style.height = pct + '%';
+        if (i === todayIdx) {
+          bar.style.background = 'var(--gold)';
+          if (label) { label.style.color = 'var(--gold)'; label.classList.add('font-bold'); }
         }
-
-        chart.innerHTML = bars.map((b, i) => {
-          const pct = Math.min(100, Math.round((b.minutes / maxMinutes) * 100));
-          const isToday = i === highlightIdx;
-          return `
-            <div class="flex flex-col items-center gap-2">
-              <div class="w-full h-20 bg-mist rounded-lg relative overflow-hidden flex items-end">
-                <div class="w-full rounded-lg fill" style="height:${pct}%;${isToday ? 'background:var(--gold)' : ''}"></div>
-              </div>
-              <span class="text-[10px] font-semibold${isToday ? ' font-bold' : ' text-ink-faint'}" style="${isToday ? 'color:var(--gold)' : ''}">${b.label}</span>
-            </div>`;
-        }).join('');
-      }
+      });
 
       const wrap = document.getElementById('heatmap');
       if (wrap) {
@@ -1118,6 +1057,37 @@
     }
   }
 
+  const PRIORITY_CHIP = {
+    high:   '<span class="chip chip-red" style="padding:1px 7px">High</span>',
+    medium: '<span class="chip chip-gold" style="padding:1px 7px">Medium</span>',
+    low:    '<span class="chip chip-teal" style="padding:1px 7px">Low</span>',
+  };
+  const SUBJECT_CHIP_CLASS = {
+    Biology: 'chip chip-teal',
+    Chemistry: 'chip',
+    Physics: 'chip chip-violet',
+    Revision: 'chip chip-navy',
+  };
+
+  function taskRowHTML(t, done){
+    const subjClass = SUBJECT_CHIP_CLASS[t.subject] || 'chip chip-navy';
+    const subjStyle = t.subject === 'Chemistry' ? 'style="background:rgba(37,99,235,0.08);color:#1D4ED8"' : '';
+    return `
+      <div class="task-row flex items-center gap-3 p-3.5 rounded-2xl hover:bg-mist transition-colors ${done ? 'done' : ''}" data-done="${done}" data-task-id="${t.id}">
+        <button class="check-btn" onclick="toggleTask(this)"><i data-lucide="check"></i></button>
+        <div class="flex-1 min-w-0">
+          <div class="flex items-center gap-2 flex-wrap">
+            <span class="${subjClass}" ${subjStyle}>${t.subject}</span>
+            <span class="task-label text-ink font-semibold text-sm">${t.title}</span>
+          </div>
+          <div class="flex items-center gap-3 mt-1 text-xs text-ink-faint">
+            ${t.durationLabel ? `<span class="flex items-center gap-1"><i data-lucide="clock" class="w-3 h-3"></i>${t.durationLabel}</span>` : ''}
+            ${PRIORITY_CHIP[t.priority] || ''}
+          </div>
+        </div>
+      </div>`;
+  }
+
   async function loadMissions(){
     try {
       const token = localStorage.getItem('mc_token');
@@ -1126,12 +1096,22 @@
       });
       const data = await res.json();
       if (!data.success) return;
+
+      const listEl = document.getElementById('tasksList');
+      const emptyEl = document.getElementById('tasksEmptyState');
+
+      if (!data.tasks || !data.tasks.length) {
+        listEl.innerHTML = '';
+        emptyEl.classList.remove('hidden');
+        document.getElementById('missionBar').style.width = '0%';
+        document.getElementById('missionPct').textContent = '0%';
+        return;
+      }
+
+      emptyEl.classList.add('hidden');
       const completed = new Set(data.completedTaskIds || []);
-      document.querySelectorAll('#tasksList [data-task-id]').forEach(row => {
-        const isDone = completed.has(row.getAttribute('data-task-id'));
-        row.setAttribute('data-done', isDone ? 'true' : 'false');
-        row.classList.toggle('done', isDone);
-      });
+      listEl.innerHTML = data.tasks.map(t => taskRowHTML(t, completed.has(t.id))).join('');
+      if (window.lucide) lucide.createIcons();
       updateMission();
     } catch (err) {
       console.error('Failed to load missions', err);
@@ -1139,6 +1119,11 @@
   }
   function updateMission(){
     const rows = document.querySelectorAll('#tasksList [data-done]');
+    if (!rows.length) {
+      document.getElementById('missionBar').style.width = '0%';
+      document.getElementById('missionPct').textContent = '0%';
+      return;
+    }
     const done = Array.from(rows).filter(r => r.getAttribute('data-done') === 'true').length;
     const pct = Math.round((done / rows.length) * 100);
     document.getElementById('missionBar').style.width = pct + '%';
@@ -1409,7 +1394,7 @@
       document.getElementById('mentorAvatarInitial').textContent = (m.name || 'M').trim().charAt(0).toUpperCase();
 
       const messageBtn = document.getElementById('mentorMessageBtn');
-      if (messageBtn) messageBtn.onclick = () => { window.location.href = 'student-messages.html'; };
+      if (messageBtn) messageBtn.onclick = () => { window.location.href = `mailto:${m.email}`; };
 
       filledEl.classList.remove('hidden');
       badgeEl.style.display = '';

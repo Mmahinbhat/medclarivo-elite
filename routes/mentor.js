@@ -10,6 +10,7 @@ const MentorRequest = require('../models/MentorRequest');
 const Session = require('../models/Session');
 const Message = require('../models/Message');
 const MentorAvailability = require('../models/MentorAvailability');
+const DailyMission = require('../models/DailyMission');
 const { draftReply } = require('../services/anthropic.service');
 
 // ════════════════════════════════════════════════════════════════
@@ -315,7 +316,7 @@ router.post('/sessions', protect, restrictTo('mentor', 'admin'), async (req, res
 });
 
 // ════════════════════════════════════════════════════════════════
-// GET /api/mentor/messages/:menteeId
+// GET /api/mentor/availability
 // ════════════════════════════════════════════════════════════════
 router.get('/messages/:menteeId', protect, restrictTo('mentor', 'admin'), async (req, res) => {
   try {
@@ -559,6 +560,94 @@ router.post('/admin-messages', protect, restrictTo('mentor'), async (req, res) =
   } catch (err) {
     console.error(err);
     res.status(500).json({ success: false, message: 'Failed to send message.' });
+  }
+});
+
+// ════════════════════════════════════════════════════════════════
+// GET /api/mentor/students/:id/mission  (mentor/admin only)
+// View a student's mission for today (to edit it).
+// ════════════════════════════════════════════════════════════════
+router.get('/students/:id/mission', protect, restrictTo('mentor', 'admin'), async (req, res) => {
+  try {
+    const student = await User.findOne({ _id: req.params.id, mentorId: req.user._id, role: 'student' }).select('_id');
+    if (!student) {
+      return res.status(404).json({ success: false, message: 'Student not found or not assigned to you.' });
+    }
+
+    const date = new Date().toISOString().slice(0, 10);
+    const mission = await DailyMission.findOne({ user: student._id, date });
+
+    res.json({
+      success: true,
+      date,
+      tasks: mission ? mission.tasks : [],
+      completedTaskIds: mission ? mission.completedTaskIds : [],
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: 'Failed to fetch mission.' });
+  }
+});
+
+// ════════════════════════════════════════════════════════════════
+// PUT /api/mentor/students/:id/mission  (mentor/admin only)
+// Set (replace) today's mission task list for a student.
+// body: { tasks: [{ subject, title, durationLabel, priority }, ...] }
+// ════════════════════════════════════════════════════════════════
+router.put('/students/:id/mission', protect, restrictTo('mentor', 'admin'), async (req, res) => {
+  try {
+    const student = await User.findOne({ _id: req.params.id, mentorId: req.user._id, role: 'student' }).select('_id');
+    if (!student) {
+      return res.status(404).json({ success: false, message: 'Student not found or not assigned to you.' });
+    }
+
+    const { tasks } = req.body;
+    if (!Array.isArray(tasks)) {
+      return res.status(400).json({ success: false, message: 'tasks must be an array.' });
+    }
+    if (tasks.length > 12) {
+      return res.status(400).json({ success: false, message: 'Maximum 12 tasks per day.' });
+    }
+
+    const validPriorities = ['high', 'medium', 'low'];
+    const cleanTasks = [];
+    for (const t of tasks) {
+      if (!t.subject || !t.title) {
+        return res.status(400).json({ success: false, message: 'Each task needs a subject and a title.' });
+      }
+      cleanTasks.push({
+        id: t.id || Math.random().toString(36).slice(2, 10),
+        subject: String(t.subject).trim().slice(0, 40),
+        title: String(t.title).trim().slice(0, 200),
+        durationLabel: t.durationLabel ? String(t.durationLabel).trim().slice(0, 20) : '',
+        priority: validPriorities.includes(t.priority) ? t.priority : 'medium',
+      });
+    }
+
+    const date = new Date().toISOString().slice(0, 10);
+    const validIds = new Set(cleanTasks.map(t => t.id));
+
+    const existing = await DailyMission.findOne({ user: student._id, date });
+    const keptCompletedIds = existing
+      ? existing.completedTaskIds.filter(id => validIds.has(id))
+      : [];
+
+    const mission = await DailyMission.findOneAndUpdate(
+      { user: student._id, date },
+      {
+        $set: {
+          tasks: cleanTasks,
+          completedTaskIds: keptCompletedIds,
+          assignedBy: req.user._id,
+        },
+      },
+      { upsert: true, new: true, setDefaultsOnInsert: true }
+    );
+
+    res.json({ success: true, date, tasks: mission.tasks, completedTaskIds: mission.completedTaskIds });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: 'Failed to set mission.' });
   }
 });
 
