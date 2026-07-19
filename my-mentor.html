@@ -225,7 +225,7 @@ async function loadMentor() {
 
     let sessionData = { stats: {}, upcomingSessions: [], sessionHistory: [], joinLink: null };
     try {
-      const sessionsRes = await fetch(`${API_BASE}/student/mentor/sessions`, { headers: authHeaders() });
+      const sessionsRes = await fetch(`${API_BASE}/student/mentor/my-mentor`, { headers: authHeaders() });
       if (sessionsRes.ok) sessionData = await sessionsRes.json();
     } catch (e) {}
 
