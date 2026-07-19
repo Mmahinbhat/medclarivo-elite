@@ -26,7 +26,7 @@ router.get('/my-mentor', protect, async (req, res) => {
     const student = await User.findById(studentId).select('mentorId').lean();
 
     if (!student || !student.mentorId) {
-      return res.status(404).json({ message: 'No mentor assigned yet' });
+      return res.status(404).json({ success: false, message: 'No mentor assigned yet' });
     }
 
     const mentor = await User.findById(student.mentorId)
@@ -34,7 +34,7 @@ router.get('/my-mentor', protect, async (req, res) => {
       .lean();
 
     if (!mentor) {
-      return res.status(404).json({ message: 'No mentor assigned yet' });
+      return res.status(404).json({ success: false, message: 'No mentor assigned yet' });
     }
 
     const now = new Date();
@@ -74,15 +74,18 @@ router.get('/my-mentor', protect, async (req, res) => {
     const formatTime = (d) =>
       new Date(d).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
 
+    const mentorSummary = {
+      _id: mentor._id,
+      name: mentor.name,
+      credentials: mentor.mentorProfile?.title || '',
+      bio: mentor.mentorProfile?.bio || '',
+      specialties: mentor.mentorProfile?.specialty ? [mentor.mentorProfile.specialty] : [],
+      joinLink: upcomingRaw[0]?.meetingLink || '#',
+    };
+
     res.json({
-      mentor: {
-        id: mentor._id,
-        name: mentor.name,
-        credentials: mentor.mentorProfile?.title || '',
-        bio: mentor.mentorProfile?.bio || '',
-        specialties: mentor.mentorProfile?.specialty ? [mentor.mentorProfile.specialty] : [],
-        joinLink: upcomingRaw[0]?.meetingLink || '#',
-      },
+      success: true,
+      mentor: mentorSummary,
       stats: {
         totalSessions: allSessions.length,
         sessionsThisMonth,
@@ -90,15 +93,25 @@ router.get('/my-mentor', protect, async (req, res) => {
         openDoubts,
       },
       upcomingSessions: upcomingRaw.map((s) => ({
+        _id: s._id,
+        startTime: s.startTime,
         date: formatDate(s.startTime),
         time: formatTime(s.startTime),
         topic: s.topic || '',
+        category: s.category,
+        status: s.status,
+        meetingLink: s.meetingLink || '',
+        mentor: mentorSummary,
       })),
       sessionHistory: historyRaw.map((s) => ({
+        _id: s._id,
+        startTime: s.startTime,
         date: formatDate(s.startTime),
         topic: s.topic || '',
+        category: s.category,
         notes: s.notes || '',
         status: s.status,
+        mentor: mentorSummary,
       })),
     });
   } catch (err) {
