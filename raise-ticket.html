@@ -20,6 +20,7 @@
     --line:rgba(11,18,32,0.08);
   }
   *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
   body{font-family:'DM Sans',sans-serif;background:var(--mist);color:var(--ink);min-height:100dvh;-webkit-font-smoothing:antialiased;}
   .font-display{font-family:'DM Serif Display',serif;}
   .panel{background:#fff;border-radius:22px;border:1px solid var(--line);}
@@ -30,52 +31,152 @@
   .chip-open{background:rgba(185,146,79,0.14);color:var(--gold);}
   .chip-reviewing{background:rgba(37,99,235,0.1);color:#1D4ED8;}
   .chip-resolved{background:rgba(15,168,154,0.12);color:var(--teal-deep);}
+
+  /* ===== Layout shell (shared with dashboard/progress/settings) ===== */
+  .app-shell{display:flex; min-height:100dvh;}
+  .sidebar{
+    position:fixed; left:16px; top:16px; bottom:16px;
+    width:260px; border-radius:24px;
+    background:linear-gradient(174deg, var(--navy-2) 0%, var(--navy) 78%);
+    box-shadow:0 20px 50px -20px rgba(10,20,36,0.55), 0 0 0 1px rgba(255,255,255,0.04) inset;
+    display:flex; flex-direction:column; z-index:60;
+    transition:transform .35s cubic-bezier(.4,0,.2,1), width .3s ease;
+    overflow:hidden;
+  }
+  .sidebar.collapsed{ width:84px; }
+  .sidebar.collapsed .hide-on-collapse{ display:none; }
+  .sidebar.collapsed .nav-item{ justify-content:center; padding-left:0; padding-right:0; }
+  .sidebar.collapsed .nav-item .nav-label{ display:none; }
+  @media (max-width:1023px){
+    .sidebar{ transform:translateX(-130%); }
+    .sidebar.open{ transform:translateX(0); }
+  }
+  .main-content{ margin-left:292px; flex:1; min-width:0; transition:margin-left .3s ease; }
+  .main-content.collapsed{ margin-left:116px; }
+  @media (max-width:1023px){ .main-content, .main-content.collapsed{ margin-left:0; } }
+
+  .nav-item{
+    display:flex; align-items:center; gap:12px;
+    padding:10px 16px; border-radius:14px;
+    color:rgba(255,255,255,0.52); font-size:13.5px; font-weight:500;
+    cursor:pointer; transition:all .2s ease; margin:1px 12px;
+    text-decoration:none; position:relative;
+  }
+  .nav-item:hover{ background:rgba(255,255,255,0.06); color:#fff; transform:translateX(2px); }
+  .nav-item.active{ background:rgba(15,168,154,0.16); color:#7FE9DD; }
+  .nav-item.active::before{
+    content:''; position:absolute; left:-12px; top:50%; transform:translateY(-50%);
+    width:3px; height:18px; border-radius:3px;
+    background:linear-gradient(180deg, var(--teal-2), var(--teal));
+  }
+  .nav-item svg{ width:18px; height:18px; flex-shrink:0; }
+  .btn-ghost-icon{ width:34px; height:34px; border-radius:10px; display:flex; align-items:center; justify-content:center; background:transparent; border:none; cursor:pointer; transition:all .15s; }
+  [data-tip]{ position:relative; }
 </style>
 </head>
 <body>
 
-<div class="max-w-3xl mx-auto px-5 py-8">
-  <a href="dashboard.html" class="inline-flex items-center gap-2 text-ink-faint hover:text-ink text-sm font-semibold mb-6">
-    <i data-lucide="arrow-left" class="w-4 h-4"></i> Back to Dashboard
-  </a>
-
-  <div class="flex items-center gap-3 mb-2">
-    <div class="w-10 h-10 rounded-xl flex items-center justify-center" style="background:rgba(185,146,79,0.14)">
-      <i data-lucide="shield-alert" class="w-5 h-5" style="color:var(--gold)"></i>
-    </div>
-    <h1 class="font-display text-2xl text-ink">Raise a Ticket</h1>
-  </div>
-  <p class="text-ink-faint text-sm mb-7">Report a concern about your mentor directly and privately to the MedClarivo admin team. This never goes to your mentor.</p>
-
-  <div class="panel p-6 md:p-7 mb-8">
-    <label class="block text-ink font-semibold text-sm mb-2">What happened?</label>
-    <select id="ticketCategory" class="w-full px-3.5 py-2.5 rounded-xl bg-mist border border-line text-sm text-ink mb-4 focus:outline-none focus:border-teal focus:ring-1 focus:ring-teal">
-      <option value="">Select a category&hellip;</option>
-      <option value="asked_personal_contact">Asked for my phone number / personal contact info</option>
-      <option value="inappropriate_behavior">Inappropriate or unprofessional behavior</option>
-      <option value="inappropriate_language">Inappropriate language</option>
-      <option value="other">Other concern</option>
-    </select>
-
-    <label class="block text-ink font-semibold text-sm mb-2">Describe what happened</label>
-    <textarea id="ticketDescription" rows="5" placeholder="Please include as much detail as you're comfortable sharing&hellip;"
-      class="w-full px-3.5 py-2.5 rounded-xl bg-mist border border-line text-sm text-ink placeholder-ink-faint mb-4 focus:outline-none focus:border-teal focus:ring-1 focus:ring-teal"></textarea>
-
-    <div class="flex items-start gap-2.5 p-3.5 rounded-xl mb-5" style="background:rgba(185,146,79,0.08);border:1px solid rgba(185,146,79,0.25)">
-      <i data-lucide="alert-triangle" class="w-4 h-4 flex-shrink-0 mt-0.5" style="color:var(--gold)"></i>
-      <p class="text-xs text-ink-soft leading-relaxed">
-        This goes directly and only to the MedClarivo admin team, who will contact you within 24 hours. Please only use this for genuine concerns &mdash;
-        <strong>false or malicious reports may result in action against your account.</strong>
-      </p>
+<div class="app-shell">
+  <aside class="sidebar" id="sidebar">
+    <div class="px-5 pt-5 pb-4 flex items-center justify-between">
+      <div class="flex items-center gap-3 min-w-0">
+        <div class="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style="background:linear-gradient(135deg,var(--teal),var(--teal-deep));">
+          <i data-lucide="cross" class="w-[18px] h-[18px] text-white"></i>
+        </div>
+        <div class="hide-on-collapse min-w-0">
+          <p class="font-display text-white text-[17px] leading-none tracking-tight">MedClarivo</p>
+          <p class="text-[9.5px] text-teal-2 font-bold tracking-[0.18em] uppercase mt-1">Elite</p>
+        </div>
+      </div>
     </div>
 
-    <button id="submitTicketBtn" onclick="submitTicket()" class="btn-primary w-full py-3 text-sm font-bold">Submit Ticket</button>
-    <p id="ticketFormMsg" class="text-xs mt-2.5 hidden"></p>
-  </div>
+    <nav class="flex-1 overflow-y-auto no-scrollbar py-1">
+      <p class="hide-on-collapse px-6 py-2 text-[10px] text-white/25 uppercase tracking-[0.16em] font-bold">Main</p>
+      <a href="dashboard.html" class="nav-item" data-tip="Dashboard">
+        <i data-lucide="layout-dashboard"></i><span class="nav-label">Dashboard</span>
+      </a>
+      <a href="progress.html" class="nav-item" data-tip="Progress">
+        <i data-lucide="trending-up"></i><span class="nav-label flex-1">Progress</span>
+      </a>
+      <a href="dashboard.html" class="nav-item" data-tip="Content Library">
+        <i data-lucide="library"></i><span class="nav-label flex-1">Content Library</span>
+        <span class="hide-on-collapse chip chip-open" style="padding:1px 7px;font-size:9.5px">Soon</span>
+      </a>
+      <a href="dashboard.html#analyticsSection" class="nav-item" data-tip="Analytics">
+        <i data-lucide="bar-chart-3"></i><span class="nav-label">Analytics</span>
+      </a>
 
-  <h2 class="font-display text-lg text-ink mb-4">Your Tickets</h2>
-  <div id="ticketsList" class="space-y-3">
-    <p class="text-ink-faint text-sm">Loading&hellip;</p>
+      <p class="hide-on-collapse px-6 py-2 mt-3 text-[10px] text-white/25 uppercase tracking-[0.16em] font-bold">Mentorship</p>
+      <a href="dashboard.html#mentorCard" class="nav-item" data-tip="My Mentor">
+        <i data-lucide="users"></i><span class="nav-label">My Mentor</span>
+      </a>
+      <a href="dashboard.html#sessionsSection" class="nav-item" data-tip="Sessions">
+        <i data-lucide="video"></i><span class="nav-label">Sessions</span>
+      </a>
+      <a href="dashboard.html#doubtSection" class="nav-item" data-tip="Doubt Forum">
+        <i data-lucide="message-circle"></i><span class="nav-label flex-1">Doubt Forum</span>
+      </a>
+
+      <p class="hide-on-collapse px-6 py-2 mt-3 text-[10px] text-white/25 uppercase tracking-[0.16em] font-bold">Support</p>
+      <a href="raise-ticket.html" class="nav-item active" data-tip="Raise a Ticket">
+        <i data-lucide="shield-alert"></i><span class="nav-label">Raise a Ticket</span>
+      </a>
+
+      <p class="hide-on-collapse px-6 py-2 mt-3 text-[10px] text-white/25 uppercase tracking-[0.16em] font-bold">Account</p>
+      <a href="dashboard.html#achievementsSection" class="nav-item" data-tip="Achievements">
+        <i data-lucide="award"></i><span class="nav-label">Achievements</span>
+      </a>
+      <a href="settings.html" class="nav-item" data-tip="Settings">
+        <i data-lucide="settings"></i><span class="nav-label">Settings</span>
+      </a>
+    </nav>
+
+    <a href="index.html" class="nav-item mb-4 text-red-300/70 hover:text-red-300 hover:bg-red-500/10" data-tip="Sign Out">
+      <i data-lucide="log-out"></i><span class="nav-label">Sign Out</span>
+    </a>
+  </aside>
+
+  <div class="main-content" id="mainContent">
+    <div class="max-w-3xl mx-auto px-5 py-8">
+      <div class="flex items-center gap-3 mb-2">
+        <div class="w-10 h-10 rounded-xl flex items-center justify-center" style="background:rgba(185,146,79,0.14)">
+          <i data-lucide="shield-alert" class="w-5 h-5" style="color:var(--gold)"></i>
+        </div>
+        <h1 class="font-display text-2xl text-ink">Raise a Ticket</h1>
+      </div>
+      <p class="text-ink-faint text-sm mb-7">Report a concern about your mentor directly and privately to the MedClarivo admin team. This never goes to your mentor.</p>
+
+      <div class="panel p-6 md:p-7 mb-8">
+        <label class="block text-ink font-semibold text-sm mb-2">What happened?</label>
+        <select id="ticketCategory" class="w-full px-3.5 py-2.5 rounded-xl bg-mist border border-line text-sm text-ink mb-4 focus:outline-none focus:border-teal focus:ring-1 focus:ring-teal">
+          <option value="">Select a category&hellip;</option>
+          <option value="asked_personal_contact">Asked for my phone number / personal contact info</option>
+          <option value="inappropriate_behavior">Inappropriate or unprofessional behavior</option>
+          <option value="inappropriate_language">Inappropriate language</option>
+          <option value="other">Other concern</option>
+        </select>
+
+        <label class="block text-ink font-semibold text-sm mb-2">Describe what happened</label>
+        <textarea id="ticketDescription" rows="5" placeholder="Please include as much detail as you're comfortable sharing&hellip;"
+          class="w-full px-3.5 py-2.5 rounded-xl bg-mist border border-line text-sm text-ink placeholder-ink-faint mb-4 focus:outline-none focus:border-teal focus:ring-1 focus:ring-teal"></textarea>
+
+        <div class="flex items-start gap-2.5 p-3.5 rounded-xl mb-5" style="background:rgba(185,146,79,0.08);border:1px solid rgba(185,146,79,0.25)">
+          <i data-lucide="alert-triangle" class="w-4 h-4 flex-shrink-0 mt-0.5" style="color:var(--gold)"></i>
+          <p class="text-xs text-ink-soft leading-relaxed">
+            This goes directly and only to the MedClarivo admin team, who will contact you within 24 hours. Please only use this for genuine concerns &mdash;
+            <strong>false or malicious reports may result in action against your account.</strong>
+          </p>
+        </div>
+
+        <button id="submitTicketBtn" onclick="submitTicket()" class="btn-primary w-full py-3 text-sm font-bold">Submit Ticket</button>
+        <p id="ticketFormMsg" class="text-xs mt-2.5 hidden"></p>
+      </div>
+
+      <h2 class="font-display text-lg text-ink mb-4">Your Tickets</h2>
+      <div id="ticketsList" class="space-y-3">
+        <p class="text-ink-faint text-sm">Loading&hellip;</p>
+      </div>
+    </div>
   </div>
 </div>
 
