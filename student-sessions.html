@@ -280,10 +280,15 @@ async function init() {
 
 async function loadSessions() {
   try {
-    const res = await fetch(`${API}/sessions`,{headers:{Authorization:`Bearer ${getToken()}`}});
+    const res = await fetch(`${API}/student/mentor/my-mentor`,{headers:{Authorization:`Bearer ${getToken()}`}});
     const data = await res.json();
     if(res.ok&&data.success){
-      allSessions=data.sessions||[];
+      const upcoming = (data.upcomingSessions||[]).map(s=>({...s, status:'scheduled'}));
+      const history = (data.sessionHistory||[]).map(s=>({...s, status: s.status||'completed'}));
+      allSessions=[...upcoming,...history];
+      renderAll();
+    } else if(res.status===404){
+      allSessions=[];
       renderAll();
     } else {
       showToast(data.message||'Failed to load sessions.','error');
