@@ -7,7 +7,7 @@
 <script src="sessionGuard.js"></script>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title>MedClarivo Elite | Dashboard</title>
+<title>MedClarivo Elite | Analytics</title>
 <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://unpkg.com/lucide@latest"></script>
@@ -336,14 +336,14 @@
       <a href="dashboard.html" class="nav-item" data-tip="Dashboard">
         <i data-lucide="layout-dashboard"></i><span class="nav-label">Dashboard</span>
       </a>
-      <a href="progress.html" class="nav-item active" data-tip="Progress">
+      <a href="progress.html" class="nav-item" data-tip="Progress">
         <i data-lucide="trending-up"></i><span class="nav-label flex-1">Progress</span>
       </a>
       <a href="dashboard.html" class="nav-item" data-tip="Content Library">
         <i data-lucide="library"></i><span class="nav-label flex-1">Content Library</span>
         <span class="hide-on-collapse chip chip-teal" style="padding:1px 7px;font-size:9.5px">Soon</span>
       </a>
-      <a href="analytics.html" class="nav-item" data-tip="Analytics">
+      <a href="analytics.html" class="nav-item active" data-tip="Analytics">
         <i data-lucide="bar-chart-3"></i><span class="nav-label">Analytics</span>
       </a>
 
@@ -394,37 +394,82 @@
           <i data-lucide="menu" class="w-5 h-5"></i>
         </button>
         <div>
-          <p class="font-display text-ink text-lg leading-none">Progress</p>
-          <p class="text-ink-faint text-xs mt-0.5">Your curriculum completion, subject by subject</p>
+          <p class="font-display text-ink text-lg leading-none">Analytics</p>
+          <p class="text-ink-faint text-xs mt-0.5">Your study time, consistency, and habits at a glance</p>
         </div>
       </div>
     </header>
 
     <div class="px-4 lg:px-6 pb-16 max-w-[1320px] mx-auto space-y-6">
 
-      <!-- ── Overall summary ── -->
-      <div class="panel p-6">
-        <div class="grid grid-cols-3 gap-4 mb-2">
-          <div>
-            <p class="text-ink-faint text-[11px] uppercase tracking-wider font-semibold mb-1">Overall Mastery</p>
-            <p class="font-display text-3xl text-ink"><span id="overallMastery">0</span><span class="text-ink-faint text-base font-sans">%</span></p>
-          </div>
-          <div>
-            <p class="text-ink-faint text-[11px] uppercase tracking-wider font-semibold mb-1">Chapters Done</p>
-            <p class="font-display text-3xl text-ink"><span id="chaptersDone">0</span><span class="text-ink-faint text-base font-sans">/<span id="chaptersTotal">0</span></span></p>
-          </div>
-          <div>
-            <p class="text-ink-faint text-[11px] uppercase tracking-wider font-semibold mb-1">Exam</p>
-            <p class="font-display text-2xl text-ink" id="examName">—</p>
+      <!-- ── Study Analytics ── -->
+      <section id="analyticsSection" class="panel p-6 md:p-7">
+        <div class="flex items-center justify-between mb-6">
+          <h2 class="font-display text-[20px] text-ink">Study Analytics</h2>
+          <div class="flex gap-1 p-1 rounded-xl bg-mist text-xs font-semibold">
+            <button class="px-3 py-1.5 rounded-lg bg-white shadow-sm text-ink" id="analyticsPeriodWeekBtn" onclick="setAnalyticsPeriod('week')">Week</button>
+            <button class="px-3 py-1.5 rounded-lg text-ink-faint" id="analyticsPeriodMonthBtn" onclick="setAnalyticsPeriod('month')">Month</button>
           </div>
         </div>
-        <div class="bar-track mt-3"><div class="bar-fill" id="overallBar" style="width:0%"></div></div>
-      </div>
 
-      <!-- ── Subject breakdown ── -->
-      <div id="subjectAccordion" class="space-y-3">
-        <p class="text-ink-faint text-sm text-center py-8">Loading…</p>
-      </div>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-7">
+          <div>
+            <p class="text-ink-faint text-[11px] uppercase tracking-wider font-semibold mb-1" id="analyticsHoursLabel">Weekly Hours</p>
+            <p class="font-display text-3xl text-ink"><span id="analyticsWeeklyHours">0.0</span><span class="text-ink-faint text-base font-sans">/<span id="analyticsWeeklyTarget">0</span>h</span></p>
+          </div>
+          <div>
+            <p class="text-ink-faint text-[11px] uppercase tracking-wider font-semibold mb-1">Consistency</p>
+            <p class="font-display text-3xl text-ink"><span id="analyticsConsistency">0</span><span class="text-ink-faint text-base font-sans">%</span></p>
+          </div>
+          <div>
+            <p class="text-ink-faint text-[11px] uppercase tracking-wider font-semibold mb-1">Avg Session</p>
+            <p class="font-display text-3xl text-ink"><span id="analyticsAvgSession">0</span><span class="text-ink-faint text-base font-sans"> min</span></p>
+          </div>
+        </div>
+
+        <!-- Bar chart: Mon-Sun for Week, Wk1-Wk5 for Month. Rebuilt dynamically in JS. -->
+        <div class="grid gap-2 mb-7" id="analyticsBarChart" style="grid-template-columns:repeat(7,minmax(0,1fr))"></div>
+
+        <!-- Heatmap -->
+        <div>
+          <p class="text-ink-faint text-[11px] uppercase tracking-wider font-semibold mb-3">Study Heatmap &middot; Last 9 weeks</p>
+          <div class="flex gap-1 overflow-x-auto no-scrollbar" id="heatmap"></div>
+        </div>
+      </section>
+
+      <!-- ── Achievements ── -->
+      <section id="achievementsSection" class="panel p-6">
+        <h3 class="font-display text-lg text-ink mb-4">Achievements</h3>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+          <div class="ach-card flex items-center gap-3 p-3 rounded-xl" style="background:var(--gold-soft)">
+            <div class="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style="background:rgba(255,255,255,0.5)">
+              <i data-lucide="flame" class="w-5 h-5" style="color:var(--gold)"></i>
+            </div>
+            <div class="min-w-0">
+              <p class="text-ink font-bold text-[13px]" id="achStreakText">0-Day Streak</p>
+              <p class="text-ink-faint text-[11px]">Unlocked today</p>
+            </div>
+          </div>
+          <div class="ach-card flex items-center gap-3 p-3 rounded-xl" style="background:rgba(15,168,154,0.07)">
+            <div class="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style="background:rgba(255,255,255,0.5)">
+              <i data-lucide="medal" class="w-5 h-5 text-teal-deep"></i>
+            </div>
+            <div class="min-w-0">
+              <p class="text-ink font-bold text-[13px]">Top Performer</p>
+              <p class="text-ink-faint text-[11px]">Top 2% this month</p>
+            </div>
+          </div>
+          <div class="ach-card flex items-center gap-3 p-3 rounded-xl" style="background:rgba(124,58,237,0.06)">
+            <div class="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style="background:rgba(255,255,255,0.5)">
+              <i data-lucide="sparkles" class="w-5 h-5" style="color:#7C3AED"></i>
+            </div>
+            <div class="min-w-0">
+              <p class="text-ink font-bold text-[13px]">Biology Expert</p>
+              <p class="text-ink-faint text-[11px]">94% mastery reached</p>
+            </div>
+          </div>
+        </div>
+      </section>
 
     </div>
   </div>
@@ -452,81 +497,105 @@
     if (examEl && me.onboarding && me.onboarding.exam) examEl.textContent = me.onboarding.exam;
   })();
 
-  function statusBadge(status){
-    if (status === 'completed') return '<span class="chip" style="background:rgba(15,168,154,0.12);color:var(--teal-deep)">Completed</span>';
-    if (status === 'in_progress') return '<span class="chip" style="background:var(--gold-soft, rgba(185,146,79,0.12));color:#B9924F">In Progress</span>';
-    return '<span class="chip" style="background:var(--mist-2);color:var(--ink-faint)">Not Started</span>';
+  let currentAnalyticsPeriod = 'week';
+
+  function setAnalyticsPeriod(period){
+    if (period === currentAnalyticsPeriod) return;
+    currentAnalyticsPeriod = period;
+    const weekBtn = document.getElementById('analyticsPeriodWeekBtn');
+    const monthBtn = document.getElementById('analyticsPeriodMonthBtn');
+    if (weekBtn && monthBtn) {
+      if (period === 'week') {
+        weekBtn.className = 'px-3 py-1.5 rounded-lg bg-white shadow-sm text-ink';
+        monthBtn.className = 'px-3 py-1.5 rounded-lg text-ink-faint';
+      } else {
+        monthBtn.className = 'px-3 py-1.5 rounded-lg bg-white shadow-sm text-ink';
+        weekBtn.className = 'px-3 py-1.5 rounded-lg text-ink-faint';
+      }
+    }
+    loadAnalytics();
   }
 
-  function toggleSubject(idx){
-    const el = document.getElementById(`chapterList-${idx}`);
-    const caret = document.getElementById(`caret-${idx}`);
-    const isOpen = el.style.display !== 'none';
-    el.style.display = isOpen ? 'none' : 'block';
-    caret.style.transform = isOpen ? 'rotate(0deg)' : 'rotate(180deg)';
-  }
-
-  async function loadProgress(){
+  async function loadAnalytics(){
     try {
-      const res = await fetch(`${API_BASE}/curriculum/subjects`, { headers: { Authorization: `Bearer ${token}` } });
+      const res = await fetch(`${API_BASE}/study/analytics?period=${currentAnalyticsPeriod}`, {
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
       const data = await res.json();
-      if (!data.success) {
-        document.getElementById('subjectAccordion').innerHTML =
-          `<p class="text-red-600 text-sm text-center py-8">${data.message || 'Failed to load progress.'}</p>`;
-        return;
+      if (!data.success) return;
+      const a = data.analytics;
+      const isMonth = data.period === 'month';
+
+      const set = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+
+      set('analyticsHoursLabel', isMonth ? 'Monthly Hours' : 'Weekly Hours');
+      if (isMonth) {
+        set('analyticsWeeklyHours', a.monthlyHours.toFixed(1));
+        set('analyticsWeeklyTarget', Math.round(a.monthlyTargetHours));
+      } else {
+        set('analyticsWeeklyHours', a.weeklyHours.toFixed(1));
+        set('analyticsWeeklyTarget', Math.round(a.weeklyTargetHours));
+      }
+      set('analyticsConsistency', a.consistencyPct);
+      set('analyticsAvgSession', a.avgSessionMinutes);
+
+      const bars = isMonth
+        ? a.weeklyBuckets.map(b => ({ label: b.label, minutes: b.minutes }))
+        : a.dailyMinutes.map(d => ({ label: d.day, minutes: d.minutes }));
+
+      const chart = document.getElementById('analyticsBarChart');
+      if (chart) {
+        chart.style.gridTemplateColumns = `repeat(${bars.length},minmax(0,1fr))`;
+        const maxMinutes = Math.max(a.dailyTargetMinutes, ...bars.map(b => b.minutes), 1);
+
+        let highlightIdx = -1;
+        if (!isMonth) {
+          const dow = new Date().getDay();
+          highlightIdx = dow === 0 ? 6 : dow - 1;
+        } else {
+          highlightIdx = Math.floor((new Date().getDate() - 1) / 7);
+        }
+
+        chart.innerHTML = bars.map((b, i) => {
+          const pct = Math.min(100, Math.round((b.minutes / maxMinutes) * 100));
+          const isToday = i === highlightIdx;
+          return `
+            <div class="flex flex-col items-center gap-2">
+              <div class="w-full h-20 bg-mist rounded-lg relative overflow-hidden flex items-end">
+                <div class="w-full rounded-lg fill" style="height:${pct}%;${isToday ? 'background:var(--gold)' : ''}"></div>
+              </div>
+              <span class="text-[10px] font-semibold${isToday ? ' font-bold' : ' text-ink-faint'}" style="${isToday ? 'color:var(--gold)' : ''}">${b.label}</span>
+            </div>`;
+        }).join('');
       }
 
-      document.getElementById('examName').textContent = data.examGroup || '—';
-
-      const subjects = data.subjects;
-      const totalChapters = subjects.reduce((sum, s) => sum + s.chapterCount, 0);
-      const doneChapters = subjects.reduce((sum, s) => sum + s.completedChapters, 0);
-      const overallMastery = subjects.length
-        ? Math.round(subjects.reduce((sum, s) => sum + s.mastery, 0) / subjects.length)
-        : 0;
-
-      document.getElementById('overallMastery').textContent = overallMastery;
-      document.getElementById('chaptersDone').textContent = doneChapters;
-      document.getElementById('chaptersTotal').textContent = totalChapters;
-      document.getElementById('overallBar').style.width = overallMastery + '%';
-
-      const accordion = document.getElementById('subjectAccordion');
-      if (!subjects.length) {
-        accordion.innerHTML = '<p class="text-ink-faint text-sm text-center py-8">No subjects found for your exam yet.</p>';
-        return;
+      const wrap = document.getElementById('heatmap');
+      if (wrap) {
+        wrap.innerHTML = '';
+        const heat = a.heatmap;
+        for (let w = 0; w < 9; w++){
+          const col = document.createElement('div');
+          col.className = 'flex flex-col gap-1';
+          for (let d = 0; d < 7; d++){
+            const idx = w * 7 + d;
+            const entry = heat[idx];
+            const cell = document.createElement('div');
+            const level = entry ? entry.level : 0;
+            cell.className = 'heat-cell heat-' + level;
+            if (entry) cell.title = entry.date + ' \u00b7 ' + entry.minutes + ' min';
+            col.appendChild(cell);
+          }
+          wrap.appendChild(col);
+        }
       }
 
-      accordion.innerHTML = subjects.map((s, idx) => `
-        <div class="panel p-5">
-          <div class="flex items-center justify-between cursor-pointer" onclick="toggleSubject(${idx})">
-            <div class="flex-1 min-w-0 mr-4">
-              <div class="flex items-center justify-between mb-1.5">
-                <p class="font-semibold text-ink text-sm">${s.name}</p>
-                <p class="text-ink-faint text-xs flex-shrink-0 ml-3">${s.completedChapters}/${s.chapterCount} chapters &middot; ${s.mastery}%</p>
-              </div>
-              <div class="bar-track"><div class="bar-fill" style="width:${s.mastery}%"></div></div>
-            </div>
-            <i data-lucide="chevron-down" class="w-4 h-4 text-ink-faint flex-shrink-0 transition-transform" id="caret-${idx}" style="transition:transform .2s ease"></i>
-          </div>
-          <div id="chapterList-${idx}" style="display:none;" class="mt-4 pt-4 border-t border-line space-y-2">
-            ${s.chapters.map(c => `
-              <div class="flex items-center justify-between py-1.5">
-                <p class="text-ink text-sm">${c.title}</p>
-                ${statusBadge(c.status)}
-              </div>
-            `).join('')}
-          </div>
-        </div>
-      `).join('');
       lucide.createIcons();
     } catch (err) {
-      console.error('Failed to load progress', err);
-      document.getElementById('subjectAccordion').innerHTML =
-        '<p class="text-red-600 text-sm text-center py-8">Network error loading progress.</p>';
+      console.error('Failed to load analytics', err);
     }
   }
 
-  loadProgress();
+  loadAnalytics();
 </script>
 
 </body>
