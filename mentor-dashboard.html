@@ -340,10 +340,10 @@
       <a href="#" class="nav-item active" onclick="setNav(this,event)" data-tip="Dashboard">
         <i data-lucide="layout-dashboard"></i><span class="nav-label">Dashboard</span>
       </a>
-      <a href="#" class="nav-item" onclick="setNav(this,event)" data-tip="My Mentees">
+      <a href="mentor-mentees.html" class="nav-item" onclick="setNav(this,event)" data-tip="My Mentees" data-action="page" data-target="mentor-mentees.html">
         <i data-lucide="users"></i><span class="nav-label">My Mentees</span>
       </a>
-      <a href="#" class="nav-item" onclick="setNav(this,event)" data-tip="Requests">
+      <a href="mentor-requests.html" class="nav-item" onclick="setNav(this,event)" data-tip="Requests" data-action="page" data-target="mentor-requests.html">
         <i data-lucide="user-check"></i><span class="nav-label flex-1">Requests</span>
         <span class="hide-on-collapse chip chip-navy" style="padding:1px 7px;font-size:9.5px">Soon</span>
       </a>
@@ -352,7 +352,7 @@
       </a>
 
       <p class="hide-on-collapse px-6 py-2 mt-3 text-[10px] text-white/25 uppercase tracking-[0.16em] font-bold">Mentorship</p>
-      <a href="#" class="nav-item" onclick="setNav(this,event)" data-tip="Sessions">
+      <a href="mentor-sessions.html" class="nav-item" onclick="setNav(this,event)" data-tip="Sessions" data-action="page" data-target="mentor-sessions.html">
         <i data-lucide="video"></i><span class="nav-label">Sessions</span>
       </a>
       <a href="#" class="nav-item" onclick="setNav(this,event)" data-tip="Doubt Forum">
@@ -743,16 +743,16 @@
     <i data-lucide="layout-dashboard" class="w-5 h-5"></i>
     <span class="text-[9px] font-bold">Home</span>
   </button>
-  <button class="flex flex-col items-center gap-1 p-2 text-ink-faint">
+  <button onclick="window.location.href='mentor-mentees.html'" class="flex flex-col items-center gap-1 p-2 text-ink-faint">
     <i data-lucide="users" class="w-5 h-5"></i>
     <span class="text-[9px] font-semibold">Mentees</span>
   </button>
-  <button class="flex flex-col items-center gap-1 p-2 text-ink-faint relative">
+  <button onclick="window.location.href='mentor-requests.html'" class="flex flex-col items-center gap-1 p-2 text-ink-faint relative">
     <i data-lucide="user-check" class="w-5 h-5"></i>
     <span class="text-[9px] font-semibold">Requests</span>
     <span class="absolute top-1 right-2.5 w-1.5 h-1.5 bg-teal rounded-full"></span>
   </button>
-  <button class="flex flex-col items-center gap-1 p-2 text-ink-faint">
+  <button onclick="window.location.href='mentor-sessions.html'" class="flex flex-col items-center gap-1 p-2 text-ink-faint">
     <i data-lucide="video" class="w-5 h-5"></i>
     <span class="text-[9px] font-semibold">Sessions</span>
   </button>
