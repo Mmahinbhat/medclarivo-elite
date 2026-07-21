@@ -133,7 +133,7 @@
       <a href="mentor-dashboard.html" class="nav-item">
         <i data-lucide="message-circle"></i><span class="flex-1">Doubt Forum</span>
       </a>
-      <a href="mentor-messages.html" class="nav-item">
+      <a href="mentor-inbox.html" class="nav-item">
         <i data-lucide="megaphone"></i><span class="flex-1">Admin Messages</span>
       </a>
 
@@ -242,7 +242,7 @@ function render(mentees) {
             <button onclick="toggleSubjects('${m.id}')" class="btn-outline px-4 py-2 text-xs flex items-center gap-1.5 flex-1 justify-center">
               <i data-lucide="chevron-down" class="w-3.5 h-3.5" id="chevron-${m.id}"></i> Subject Breakdown
             </button>
-            <a href="mentor-messages.html?mentee=${m.id}" class="btn-primary px-4 py-2 text-xs flex items-center gap-1.5">
+            <a href="mentor-inbox.html?mentee=${m.id}" class="btn-primary px-4 py-2 text-xs flex items-center gap-1.5">
               <i data-lucide="message-square" class="w-3.5 h-3.5"></i> Message
             </a>
           </div>
