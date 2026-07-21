@@ -82,6 +82,24 @@
 
   .mentee-subjects{ max-height:0; overflow:hidden; transition:max-height .3s ease; }
   .mentee-subjects.open{ max-height:400px; }
+
+  #missionModalOverlay{
+    position:fixed; inset:0; background:rgba(11,18,32,0.55);
+    display:none; align-items:center; justify-content:center; z-index:80; padding:24px;
+  }
+  #missionModalOverlay.open{ display:flex; }
+  #missionModal{
+    background:#fff; border-radius:22px; width:100%; max-width:520px; max-height:80vh;
+    display:flex; flex-direction:column; box-shadow:0 24px 64px -24px rgba(11,18,32,0.4);
+  }
+
+  .toast{
+    position:fixed; bottom:28px; left:50%; transform:translateX(-50%);
+    background:var(--navy); color:#fff; padding:11px 20px; border-radius:12px;
+    font-size:13px; font-weight:600; z-index:200; box-shadow:0 10px 28px rgba(0,0,0,0.28);
+    opacity:0; pointer-events:none; transition:opacity .25s ease;
+  }
+  .toast.show{ opacity:1; }
 </style>
 </head>
 <body>
@@ -246,6 +264,9 @@ function render(mentees) {
               <i data-lucide="message-square" class="w-3.5 h-3.5"></i> Message
             </a>
           </div>
+          <button onclick="openMissionModal('${m.id}', '${m.name.replace(/'/g, "\\'")}')" class="btn-outline w-full px-4 py-2 text-xs flex items-center justify-center gap-1.5 mb-3" style="border-color:rgba(15,168,154,0.35);color:var(--teal-deep)">
+            <i data-lucide="clipboard-list" class="w-3.5 h-3.5"></i> Assign Today's Mission
+          </button>
 
           <div id="subjects-${m.id}" class="mentee-subjects">
             <div class="border-t border-line pt-3 space-y-2.5" id="subjects-content-${m.id}">
@@ -305,6 +326,147 @@ function renderEmpty() {
 loadMe();
 loadMentees();
 lucide.createIcons();
+
+// ── Today's Mission editor (ported from mentor-dashboard.html) ──
+let currentMissionMenteeId = null;
+const MISSION_SUBJECTS = ['Biology', 'Chemistry', 'Physics', 'Revision'];
+
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show';
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+function missionRowHTML(t){
+  const subj = t.subject || 'Biology';
+  const subjOptions = MISSION_SUBJECTS.map(s => `<option value="${s}" ${s === subj ? 'selected' : ''}>${s}</option>`).join('');
+  const priority = t.priority || 'medium';
+  return `
+    <div class="mission-row" style="display:flex;gap:6px;align-items:center;">
+      <select class="mission-subject" style="flex:0 0 96px;border:1px solid var(--line);border-radius:8px;padding:6px;font-size:12px">${subjOptions}</select>
+      <input class="mission-title" type="text" placeholder="Task title" value="${(t.title || '').replace(/"/g, '&quot;')}"
+             style="flex:1;min-width:0;border:1px solid var(--line);border-radius:8px;padding:6px 8px;font-size:12px"/>
+      <input class="mission-duration" type="text" placeholder="45 min" value="${(t.durationLabel || '').replace(/"/g, '&quot;')}"
+             style="flex:0 0 70px;border:1px solid var(--line);border-radius:8px;padding:6px 8px;font-size:12px"/>
+      <select class="mission-priority" style="flex:0 0 86px;border:1px solid var(--line);border-radius:8px;padding:6px;font-size:12px">
+        <option value="high" ${priority==='high'?'selected':''}>High</option>
+        <option value="medium" ${priority==='medium'?'selected':''}>Medium</option>
+        <option value="low" ${priority==='low'?'selected':''}>Low</option>
+      </select>
+      <button onclick="this.closest('.mission-row').remove()" style="flex:0 0 24px;color:#DC2626;background:none;border:none;cursor:pointer">
+        <i data-lucide="x" class="w-4 h-4"></i>
+      </button>
+    </div>`;
+}
+
+function addMissionTaskRow(task){
+  const wrap = document.getElementById('missionTaskRows');
+  const div = document.createElement('div');
+  div.innerHTML = missionRowHTML(task || {});
+  wrap.appendChild(div.firstElementChild);
+  if (window.lucide) lucide.createIcons();
+}
+
+async function openMissionModal(menteeId, menteeName){
+  currentMissionMenteeId = menteeId;
+  document.getElementById('missionModalTitle').textContent = `Assign Today's Mission — ${menteeName}`;
+  document.getElementById('missionModalOverlay').classList.add('open');
+
+  const wrap = document.getElementById('missionTaskRows');
+  wrap.innerHTML = '<p class="text-ink-faint text-xs">Loading&hellip;</p>';
+  document.getElementById('missionEditorDate').textContent = '';
+  document.getElementById('missionSaveStatus').classList.add('hidden');
+
+  if (!token) { wrap.innerHTML = '<p class="text-ink-faint text-xs">Please sign in.</p>'; return; }
+
+  try {
+    const res = await fetch(`${API_BASE}/mentor/students/${menteeId}/mission`, { headers: { Authorization: `Bearer ${token}` } });
+    const data = await res.json();
+    wrap.innerHTML = '';
+    if (res.ok && data.success) {
+      document.getElementById('missionEditorDate').textContent = data.date || '';
+      (data.tasks || []).forEach(t => addMissionTaskRow(t));
+      if (!data.tasks || !data.tasks.length) {
+        wrap.innerHTML = '<p class="text-ink-faint text-xs">No mission set yet — add a task below.</p>';
+      }
+    } else {
+      wrap.innerHTML = `<p class="text-ink-faint text-xs">${data.message || 'Could not load mission.'}</p>`;
+    }
+  } catch (err) {
+    wrap.innerHTML = '<p class="text-ink-faint text-xs">Network error loading mission.</p>';
+  }
+}
+
+function closeMissionModal(){
+  document.getElementById('missionModalOverlay').classList.remove('open');
+}
+
+async function saveMission(){
+  if (!currentMissionMenteeId) return;
+  const rows = document.querySelectorAll('#missionTaskRows .mission-row');
+  const tasks = Array.from(rows).map(row => ({
+    subject: row.querySelector('.mission-subject').value,
+    title: row.querySelector('.mission-title').value.trim(),
+    durationLabel: row.querySelector('.mission-duration').value.trim(),
+    priority: row.querySelector('.mission-priority').value,
+  })).filter(t => t.title);
+
+  const statusEl = document.getElementById('missionSaveStatus');
+  const btn = document.getElementById('saveMissionBtn');
+  btn.disabled = true;
+  btn.textContent = 'Saving…';
+
+  try {
+    const res = await fetch(`${API_BASE}/mentor/students/${currentMissionMenteeId}/mission`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ tasks }),
+    });
+    const data = await res.json();
+    statusEl.classList.remove('hidden');
+    if (data.success) {
+      statusEl.textContent = 'Mission saved — your student will see it now.';
+      statusEl.style.color = 'var(--teal-deep)';
+      showToast('✅ Mission saved');
+    } else {
+      statusEl.textContent = data.message || 'Failed to save mission.';
+      statusEl.style.color = '#DC2626';
+    }
+  } catch (err) {
+    statusEl.classList.remove('hidden');
+    statusEl.textContent = 'Network error saving mission.';
+    statusEl.style.color = '#DC2626';
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Save Mission';
+  }
+}
 </script>
+
+<div id="missionModalOverlay" onclick="if(event.target===this) closeMissionModal()">
+  <div id="missionModal">
+    <div class="flex items-center justify-between p-5 border-b" style="border-color:var(--line)">
+      <h3 class="font-display text-lg text-ink" id="missionModalTitle">Assign Today's Mission</h3>
+      <button class="w-8 h-8 rounded-full flex items-center justify-center hover:bg-gray-100 transition-colors" style="color:var(--ink-soft)" onclick="closeMissionModal()">
+        <i data-lucide="x" class="w-4 h-4"></i>
+      </button>
+    </div>
+    <div class="p-5 overflow-y-auto" style="flex:1">
+      <div class="flex items-center justify-between mb-3">
+        <h4 class="font-display text-base text-ink">Tasks</h4>
+        <span class="text-ink-faint text-xs" id="missionEditorDate"></span>
+      </div>
+      <div id="missionTaskRows" class="space-y-2 mb-3"></div>
+      <button class="btn-outline text-xs" onclick="addMissionTaskRow()" style="border:1px dashed var(--line);border-radius:10px;padding:7px 12px;color:var(--ink-soft);width:100%">
+        + Add Task
+      </button>
+      <button class="btn-primary w-full mt-3 py-2.5" id="saveMissionBtn" onclick="saveMission()">Save Mission</button>
+      <p class="text-ink-faint text-xs mt-2 hidden" id="missionSaveStatus"></p>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
 </body>
 </html>
