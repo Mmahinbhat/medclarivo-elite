@@ -372,9 +372,19 @@
   document.getElementById('sendBtn').addEventListener('click', sendMessage);
   document.getElementById('replyInput').addEventListener('keydown', e => { if (e.key === 'Enter') sendMessage(); });
 
-  loadMe();
-  loadContacts();
-  loadUnreadCount();
+  async function init() {
+    await loadMe();
+    await loadContacts();
+    loadUnreadCount();
+
+    const params = new URLSearchParams(window.location.search);
+    const mentorId = params.get('mentor');
+    if (mentorId && contacts.some(c => c._id === mentorId)) {
+      openThread(mentorId);
+    }
+  }
+
+  init();
 </script>
 
 </body>

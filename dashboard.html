@@ -1404,7 +1404,7 @@
       document.getElementById('mentorAvatarInitial').textContent = (m.name || 'M').trim().charAt(0).toUpperCase();
 
       const messageBtn = document.getElementById('mentorMessageBtn');
-      if (messageBtn) messageBtn.onclick = () => { window.location.href = `mailto:${m.email}`; };
+      if (messageBtn) messageBtn.onclick = () => { window.location.href = `student-messages.html?mentor=${m._id || m.id}`; };
 
       filledEl.classList.remove('hidden');
       badgeEl.style.display = '';
