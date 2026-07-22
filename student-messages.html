@@ -72,7 +72,7 @@
   .no-scrollbar{ -ms-overflow-style:none; scrollbar-width:none; }
 
   [data-tip]{ position:relative; }
-  [data-tip]:hover::after{ content:attr(data-tip); position:absolute; bottom:120%; left:50%; transform:translateX(-50%); background:var(--navy); color:#fff; font-size:11px; white-space:nowrap; padding:5px 9px; border-radius:8px; pointer-events:none; z-index:99; font-weight:500; }
+  .sidebar.collapsed [data-tip]:hover::after{ content:attr(data-tip); position:absolute; bottom:120%; left:50%; transform:translateX(-50%); background:var(--navy); color:#fff; font-size:11px; white-space:nowrap; padding:5px 9px; border-radius:8px; pointer-events:none; z-index:99; font-weight:500; }
 </style>
 </head>
 <body>
@@ -109,15 +109,22 @@
       <a href="dashboard.html" class="nav-item" data-tip="Dashboard">
         <i data-lucide="layout-dashboard"></i><span class="nav-label">Dashboard</span>
       </a>
+      <a href="progress.html" class="nav-item" data-tip="Progress">
+        <i data-lucide="trending-up"></i><span class="nav-label">Progress</span>
+      </a>
+      <a href="#" class="nav-item" data-tip="Content Library">
+        <i data-lucide="library"></i><span class="nav-label flex-1">Content Library</span>
+        <span class="hide-on-collapse chip chip-teal" style="padding:1px 7px;font-size:9.5px">Soon</span>
+      </a>
       <a href="analytics.html" class="nav-item" data-tip="Analytics">
         <i data-lucide="bar-chart-3"></i><span class="nav-label">Analytics</span>
       </a>
 
       <p class="hide-on-collapse px-6 py-2 mt-3 text-[10px] text-white/25 uppercase tracking-[0.16em] font-bold">Mentorship</p>
-      <a href="dashboard.html#mentorCard" class="nav-item" data-tip="My Mentor">
+      <a href="my-mentor.html" class="nav-item" data-tip="My Mentor">
         <i data-lucide="users"></i><span class="nav-label">My Mentor</span>
       </a>
-      <a href="dashboard.html#sessionsSection" class="nav-item" data-tip="Sessions">
+      <a href="student-sessions.html" class="nav-item" data-tip="Sessions">
         <i data-lucide="video"></i><span class="nav-label">Sessions</span>
       </a>
       <a href="student-messages.html" class="nav-item active" data-tip="Messages">
@@ -128,6 +135,11 @@
       <p class="hide-on-collapse px-6 py-2 mt-3 text-[10px] text-white/25 uppercase tracking-[0.16em] font-bold">Support</p>
       <a href="raise-ticket.html" class="nav-item" data-tip="Raise a Ticket">
         <i data-lucide="shield-alert"></i><span class="nav-label">Raise a Ticket</span>
+      </a>
+
+      <p class="hide-on-collapse px-6 py-2 mt-3 text-[10px] text-white/25 uppercase tracking-[0.16em] font-bold">Account</p>
+      <a href="settings.html" class="nav-item" data-tip="Settings">
+        <i data-lucide="settings"></i><span class="nav-label">Settings</span>
       </a>
     </nav>
 

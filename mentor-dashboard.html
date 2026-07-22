@@ -268,7 +268,7 @@
   }
 
   [data-tip]{ position:relative; }
-  [data-tip]:hover::after{
+  .sidebar.collapsed [data-tip]:hover::after{
     content:attr(data-tip); position:absolute; bottom:120%; left:50%; transform:translateX(-50%);
     background:var(--navy); color:#fff; font-size:11px; white-space:nowrap; padding:5px 9px;
     border-radius:8px; pointer-events:none; z-index:99; font-weight:500;
