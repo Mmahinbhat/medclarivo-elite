@@ -339,7 +339,7 @@
 
     <nav class="flex-1 overflow-y-auto no-scrollbar py-1">
       <p class="hide-on-collapse px-6 py-2 text-[10px] text-white/25 uppercase tracking-[0.16em] font-bold">Main</p>
-      <a href="#" class="nav-item active" onclick="setNav(this,event)" data-tip="Dashboard">
+      <a href="#" class="nav-item active" onclick="setNav(this,event)" data-tip="Dashboard" data-action="top">
         <i data-lucide="layout-dashboard"></i><span class="nav-label">Dashboard</span>
       </a>
       <a href="mentor-mentees.html" class="nav-item" onclick="setNav(this,event)" data-tip="My Mentees" data-action="page" data-target="mentor-mentees.html">
@@ -347,9 +347,8 @@
       </a>
       <a href="mentor-requests.html" class="nav-item" onclick="setNav(this,event)" data-tip="Requests" data-action="page" data-target="mentor-requests.html">
         <i data-lucide="user-check"></i><span class="nav-label flex-1">Requests</span>
-        <span class="hide-on-collapse chip chip-navy" style="padding:1px 7px;font-size:9.5px">Soon</span>
       </a>
-      <a href="#" class="nav-item" onclick="setNav(this,event)" data-tip="Analytics">
+      <a href="#" class="nav-item" onclick="setNav(this,event)" data-tip="Analytics" data-action="soon">
         <i data-lucide="bar-chart-3"></i><span class="nav-label">Analytics</span>
       </a>
 
@@ -357,7 +356,7 @@
       <a href="mentor-sessions.html" class="nav-item" onclick="setNav(this,event)" data-tip="Sessions" data-action="page" data-target="mentor-sessions.html">
         <i data-lucide="video"></i><span class="nav-label">Sessions</span>
       </a>
-      <a href="#" class="nav-item" onclick="setNav(this,event)" data-tip="Doubt Forum">
+      <a href="#" class="nav-item" onclick="setNav(this,event)" data-tip="Doubt Forum" data-action="soon">
         <i data-lucide="message-circle"></i><span class="nav-label flex-1">Doubt Forum</span>
         <span class="hide-on-collapse w-1.5 h-1.5 bg-teal-2 rounded-full pulse-dot"></span>
       </a>
@@ -367,10 +366,10 @@
       </a>
 
       <p class="hide-on-collapse px-6 py-2 mt-3 text-[10px] text-white/25 uppercase tracking-[0.16em] font-bold">Account</p>
-      <a href="#" class="nav-item" onclick="setNav(this,event)" data-tip="Recognition">
+      <a href="#" class="nav-item" onclick="setNav(this,event)" data-tip="Recognition" data-action="soon">
         <i data-lucide="award"></i><span class="nav-label">Recognition</span>
       </a>
-      <a href="#" class="nav-item" onclick="setNav(this,event)" data-tip="Settings">
+      <a href="#" class="nav-item" onclick="setNav(this,event)" data-tip="Settings" data-action="soon">
         <i data-lucide="settings"></i><span class="nav-label">Settings</span>
       </a>
     </nav>
@@ -779,9 +778,25 @@
 
   // ── Active nav ──
   function setNav(el, e){
-    e.preventDefault();
+    if (e) e.preventDefault();
+    const action = el.dataset.action;
+
+    if (action === 'page' && el.dataset.target) {
+      window.location.href = el.dataset.target;
+      return;
+    }
+
     document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
     el.classList.add('active');
+
+    if (action === 'scroll' && el.dataset.target) {
+      document.getElementById(el.dataset.target)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    } else if (action === 'soon') {
+      showToast(`${el.dataset.tip || 'This'} is coming soon`);
+    } else {
+      // 'top' (Dashboard) or anything else with no real destination yet
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
     closeSidebar();
   }
 
