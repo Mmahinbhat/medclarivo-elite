@@ -651,4 +651,145 @@ router.put('/students/:id/mission', protect, restrictTo('mentor', 'admin'), asyn
   }
 });
 
+// ════════════════════════════════════════════════════════════════
+// GET /api/mentor/analytics  (mentor/admin only)
+// Real numbers for the "Mentoring Analytics" card: sessions held this
+// week, response rate to mentee requests, satisfaction (real rating,
+// honestly labeled if there are no reviews yet), a real Mon-Sun bar
+// chart, a real 9-week heatmap, and genuine recognition milestones.
+// ════════════════════════════════════════════════════════════════
+router.get('/analytics', protect, restrictTo('mentor', 'admin'), async (req, res) => {
+  try {
+    const mentorId = req.user._id;
+    const now = new Date();
+
+    // ── This week's Mon–Sun window ──
+    const dayOfWeek = now.getDay(); // 0=Sun..6=Sat
+    const diffToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+    const monday = new Date(now);
+    monday.setDate(now.getDate() + diffToMonday);
+    monday.setHours(0, 0, 0, 0);
+
+    const dayLabels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    const dailyCounts = [];
+    for (let i = 0; i < 7; i++) {
+      const dayStart = new Date(monday);
+      dayStart.setDate(monday.getDate() + i);
+      const dayEnd = new Date(dayStart);
+      dayEnd.setDate(dayStart.getDate() + 1);
+      if (dayStart > now) {
+        dailyCounts.push({ day: dayLabels[i], count: 0 });
+        continue;
+      }
+      const count = await Session.countDocuments({
+        mentor: mentorId,
+        status: 'completed',
+        startTime: { $gte: dayStart, $lt: dayEnd },
+      });
+      dailyCounts.push({ day: dayLabels[i], count });
+    }
+
+    const weeklySessionsCompleted = dailyCounts.reduce((sum, d) => sum + d.count, 0);
+    const weeklySessionTarget = (req.user.mentorProfile && req.user.mentorProfile.weeklySessionTarget) || 8;
+
+    // ── Response rate: % of mentor requests that have been actioned ──
+    const totalRequests = await MentorRequest.countDocuments({ mentor: mentorId });
+    const respondedRequests = await MentorRequest.countDocuments({ mentor: mentorId, status: { $ne: 'pending' } });
+    const responseRate = totalRequests > 0 ? Math.round((respondedRequests / totalRequests) * 100) : null;
+
+    // ── Satisfaction: real rating/reviewCount, honestly labeled if empty ──
+    const rating = req.user.mentorProfile ? req.user.mentorProfile.rating : null;
+    const reviewCount = req.user.mentorProfile ? req.user.mentorProfile.reviewCount : 0;
+
+    // ── 9-week heatmap of completed sessions ──
+    const heatmapWeeks = 9;
+    const heatmapStart = new Date(monday);
+    heatmapStart.setDate(monday.getDate() - (heatmapWeeks - 1) * 7);
+
+    const rangeSessions = await Session.find({
+      mentor: mentorId,
+      status: 'completed',
+      startTime: { $gte: heatmapStart },
+    }).select('startTime').lean();
+
+    const countByDate = {};
+    rangeSessions.forEach(s => {
+      const key = new Date(s.startTime).toISOString().slice(0, 10);
+      countByDate[key] = (countByDate[key] || 0) + 1;
+    });
+
+    function levelFor(count) {
+      if (count <= 0) return 0;
+      if (count === 1) return 2;
+      if (count === 2) return 3;
+      return 4;
+    }
+
+    const heatmap = [];
+    for (let w = 0; w < heatmapWeeks; w++) {
+      const weekStart = new Date(heatmapStart);
+      weekStart.setDate(heatmapStart.getDate() + w * 7);
+      const week = [];
+      for (let d = 0; d < 7; d++) {
+        const day = new Date(weekStart);
+        day.setDate(weekStart.getDate() + d);
+        const key = day.toISOString().slice(0, 10);
+        const count = countByDate[key] || 0;
+        week.push({ date: key, count, level: levelFor(count) });
+      }
+      heatmap.push(week);
+    }
+
+    // ── Recognition: genuine milestones ──
+    const totalCompletedSessions = await Session.countDocuments({ mentor: mentorId, status: 'completed' });
+
+    // Consecutive-week streak: walk backwards from this week while each
+    // week has >=1 completed session.
+    let streakWeeks = 0;
+    for (let w = 0; w < 52; w++) {
+      const weekStart = new Date(monday);
+      weekStart.setDate(monday.getDate() - w * 7);
+      const weekEnd = new Date(weekStart);
+      weekEnd.setDate(weekStart.getDate() + 7);
+      const count = await Session.countDocuments({
+        mentor: mentorId,
+        status: 'completed',
+        startTime: { $gte: weekStart, $lt: weekEnd },
+      });
+      if (count > 0) streakWeeks++;
+      else break;
+    }
+
+    const milestones = [];
+    if (streakWeeks > 0) {
+      milestones.push({ type: 'streak', label: `${streakWeeks}-Week Streak`, sub: 'Active every week' });
+    }
+    if (reviewCount >= 10 && rating >= 4.5) {
+      milestones.push({ type: 'top_rated', label: 'Top Rated Mentor', sub: `${rating.toFixed(1)}★ over ${reviewCount} reviews` });
+    }
+    const sessionMilestones = [100, 50, 25, 10];
+    const hitMilestone = sessionMilestones.find(m => totalCompletedSessions >= m);
+    if (hitMilestone) {
+      milestones.push({ type: 'sessions', label: `${hitMilestone} Sessions`, sub: 'Milestone reached' });
+    }
+
+    res.json({
+      success: true,
+      weeklySessionsCompleted,
+      weeklySessionTarget,
+      dailyCounts,
+      responseRate,
+      rating,
+      reviewCount,
+      heatmap,
+      totalCompletedSessions,
+      streakWeeks,
+      milestones,
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: 'Failed to fetch analytics.' });
+  }
+});
+
 module.exports = router;

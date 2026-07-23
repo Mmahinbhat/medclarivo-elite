@@ -268,7 +268,7 @@
   }
 
   [data-tip]{ position:relative; }
-  .sidebar.collapsed [data-tip]:hover::after{
+  [data-tip]:hover::after{
     content:attr(data-tip); position:absolute; bottom:120%; left:50%; transform:translateX(-50%);
     background:var(--navy); color:#fff; font-size:11px; white-space:nowrap; padding:5px 9px;
     border-radius:8px; pointer-events:none; z-index:99; font-weight:500;
@@ -339,7 +339,7 @@
 
     <nav class="flex-1 overflow-y-auto no-scrollbar py-1">
       <p class="hide-on-collapse px-6 py-2 text-[10px] text-white/25 uppercase tracking-[0.16em] font-bold">Main</p>
-      <a href="#" class="nav-item active" onclick="setNav(this,event)" data-tip="Dashboard" data-action="top">
+      <a href="#" class="nav-item active" onclick="setNav(this,event)" data-tip="Dashboard">
         <i data-lucide="layout-dashboard"></i><span class="nav-label">Dashboard</span>
       </a>
       <a href="mentor-mentees.html" class="nav-item" onclick="setNav(this,event)" data-tip="My Mentees" data-action="page" data-target="mentor-mentees.html">
@@ -347,8 +347,9 @@
       </a>
       <a href="mentor-requests.html" class="nav-item" onclick="setNav(this,event)" data-tip="Requests" data-action="page" data-target="mentor-requests.html">
         <i data-lucide="user-check"></i><span class="nav-label flex-1">Requests</span>
+        <span class="hide-on-collapse chip chip-navy" style="padding:1px 7px;font-size:9.5px">Soon</span>
       </a>
-      <a href="#" class="nav-item" onclick="setNav(this,event)" data-tip="Analytics" data-action="soon">
+      <a href="#" class="nav-item" onclick="setNav(this,event)" data-tip="Analytics">
         <i data-lucide="bar-chart-3"></i><span class="nav-label">Analytics</span>
       </a>
 
@@ -356,7 +357,7 @@
       <a href="mentor-sessions.html" class="nav-item" onclick="setNav(this,event)" data-tip="Sessions" data-action="page" data-target="mentor-sessions.html">
         <i data-lucide="video"></i><span class="nav-label">Sessions</span>
       </a>
-      <a href="#" class="nav-item" onclick="setNav(this,event)" data-tip="Doubt Forum" data-action="soon">
+      <a href="#" class="nav-item" onclick="setNav(this,event)" data-tip="Doubt Forum">
         <i data-lucide="message-circle"></i><span class="nav-label flex-1">Doubt Forum</span>
         <span class="hide-on-collapse w-1.5 h-1.5 bg-teal-2 rounded-full pulse-dot"></span>
       </a>
@@ -366,10 +367,10 @@
       </a>
 
       <p class="hide-on-collapse px-6 py-2 mt-3 text-[10px] text-white/25 uppercase tracking-[0.16em] font-bold">Account</p>
-      <a href="#" class="nav-item" onclick="setNav(this,event)" data-tip="Recognition" data-action="soon">
+      <a href="#" class="nav-item" onclick="setNav(this,event)" data-tip="Recognition">
         <i data-lucide="award"></i><span class="nav-label">Recognition</span>
       </a>
-      <a href="#" class="nav-item" onclick="setNav(this,event)" data-tip="Settings" data-action="soon">
+      <a href="#" class="nav-item" onclick="setNav(this,event)" data-tip="Settings">
         <i data-lucide="settings"></i><span class="nav-label">Settings</span>
       </a>
     </nav>
@@ -574,46 +575,46 @@
               <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-7">
                 <div>
                   <p class="text-ink-faint text-[11px] uppercase tracking-wider font-semibold mb-1">Sessions Held</p>
-                  <p class="font-display text-3xl text-ink">5<span class="text-ink-faint text-base font-sans">/8</span></p>
+                  <p class="font-display text-3xl text-ink"><span id="analyticsSessionsHeld">0</span><span class="text-ink-faint text-base font-sans">/<span id="analyticsSessionsTarget">8</span></span></p>
                 </div>
                 <div>
                   <p class="text-ink-faint text-[11px] uppercase tracking-wider font-semibold mb-1">Response Rate</p>
-                  <p class="font-display text-3xl text-ink">94<span class="text-ink-faint text-base font-sans">%</span></p>
+                  <p class="font-display text-3xl text-ink" id="analyticsResponseRate">—</p>
                 </div>
                 <div>
                   <p class="text-ink-faint text-[11px] uppercase tracking-wider font-semibold mb-1">Satisfaction</p>
-                  <p class="font-display text-3xl text-ink">4.8<span class="text-ink-faint text-base font-sans">/5</span></p>
+                  <p class="font-display text-3xl text-ink" id="analyticsSatisfaction">—</p>
                 </div>
               </div>
 
-              <div class="grid grid-cols-7 gap-2 mb-7">
+              <div class="grid grid-cols-7 gap-2 mb-7" id="analyticsBarChart">
                 <div class="flex flex-col items-center gap-2">
-                  <div class="w-full h-20 bg-mist rounded-lg relative overflow-hidden flex items-end"><div class="w-full rounded-lg fill" style="height:80%"></div></div>
-                  <span class="text-[10px] text-ink-faint font-semibold">Mon</span>
+                  <div class="w-full h-20 bg-mist rounded-lg relative overflow-hidden flex items-end"><div class="w-full rounded-lg fill" id="abar-0" style="height:0%"></div></div>
+                  <span class="text-[10px] text-ink-faint font-semibold" id="abarlabel-0">Mon</span>
                 </div>
                 <div class="flex flex-col items-center gap-2">
-                  <div class="w-full h-20 bg-mist rounded-lg relative overflow-hidden flex items-end"><div class="w-full rounded-lg fill" style="height:55%"></div></div>
-                  <span class="text-[10px] text-ink-faint font-semibold">Tue</span>
+                  <div class="w-full h-20 bg-mist rounded-lg relative overflow-hidden flex items-end"><div class="w-full rounded-lg fill" id="abar-1" style="height:0%"></div></div>
+                  <span class="text-[10px] text-ink-faint font-semibold" id="abarlabel-1">Tue</span>
                 </div>
                 <div class="flex flex-col items-center gap-2">
-                  <div class="w-full h-20 bg-mist rounded-lg relative overflow-hidden flex items-end"><div class="w-full rounded-lg fill" style="height:90%"></div></div>
-                  <span class="text-[10px] text-ink-faint font-semibold">Wed</span>
+                  <div class="w-full h-20 bg-mist rounded-lg relative overflow-hidden flex items-end"><div class="w-full rounded-lg fill" id="abar-2" style="height:0%"></div></div>
+                  <span class="text-[10px] text-ink-faint font-semibold" id="abarlabel-2">Wed</span>
                 </div>
                 <div class="flex flex-col items-center gap-2">
-                  <div class="w-full h-20 bg-mist rounded-lg relative overflow-hidden flex items-end"><div class="w-full rounded-lg" style="height:65%;background:var(--gold)"></div></div>
-                  <span class="text-[10px] font-bold" style="color:var(--gold)">Thu</span>
+                  <div class="w-full h-20 bg-mist rounded-lg relative overflow-hidden flex items-end"><div class="w-full rounded-lg fill" id="abar-3" style="height:0%"></div></div>
+                  <span class="text-[10px] text-ink-faint font-semibold" id="abarlabel-3">Thu</span>
                 </div>
                 <div class="flex flex-col items-center gap-2">
-                  <div class="w-full h-20 bg-mist rounded-lg relative overflow-hidden flex items-end"><div class="w-full rounded-lg fill" style="height:40%"></div></div>
-                  <span class="text-[10px] text-ink-faint font-semibold">Fri</span>
+                  <div class="w-full h-20 bg-mist rounded-lg relative overflow-hidden flex items-end"><div class="w-full rounded-lg fill" id="abar-4" style="height:0%"></div></div>
+                  <span class="text-[10px] text-ink-faint font-semibold" id="abarlabel-4">Fri</span>
                 </div>
                 <div class="flex flex-col items-center gap-2">
-                  <div class="w-full h-20 bg-mist rounded-lg relative overflow-hidden"></div>
-                  <span class="text-[10px] text-ink-faint font-semibold">Sat</span>
+                  <div class="w-full h-20 bg-mist rounded-lg relative overflow-hidden flex items-end"><div class="w-full rounded-lg fill" id="abar-5" style="height:0%"></div></div>
+                  <span class="text-[10px] text-ink-faint font-semibold" id="abarlabel-5">Sat</span>
                 </div>
                 <div class="flex flex-col items-center gap-2">
-                  <div class="w-full h-20 bg-mist rounded-lg relative overflow-hidden"></div>
-                  <span class="text-[10px] text-ink-faint font-semibold">Sun</span>
+                  <div class="w-full h-20 bg-mist rounded-lg relative overflow-hidden flex items-end"><div class="w-full rounded-lg fill" id="abar-6" style="height:0%"></div></div>
+                  <span class="text-[10px] text-ink-faint font-semibold" id="abarlabel-6">Sun</span>
                 </div>
               </div>
 
@@ -626,34 +627,8 @@
             <div class="grid grid-cols-1 gap-7">
               <section class="panel p-6 reveal" style="animation-delay:.18s">
                 <h3 class="font-display text-lg text-ink mb-4">Recognition</h3>
-                <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-                  <div class="ach-card flex items-center gap-3 p-3 rounded-xl" style="background:var(--gold-soft)">
-                    <div class="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style="background:rgba(255,255,255,0.5)">
-                      <i data-lucide="flame" class="w-5 h-5" style="color:var(--gold)"></i>
-                    </div>
-                    <div class="min-w-0">
-                      <p class="text-ink font-bold text-[13px]">18-Week Streak</p>
-                      <p class="text-ink-faint text-[11px]">Active every week</p>
-                    </div>
-                  </div>
-                  <div class="ach-card flex items-center gap-3 p-3 rounded-xl" style="background:rgba(15,168,154,0.07)">
-                    <div class="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style="background:rgba(255,255,255,0.5)">
-                      <i data-lucide="medal" class="w-5 h-5 text-teal-deep"></i>
-                    </div>
-                    <div class="min-w-0">
-                      <p class="text-ink font-bold text-[13px]">Top Rated Mentor</p>
-                      <p class="text-ink-faint text-[11px]">Top 5% this month</p>
-                    </div>
-                  </div>
-                  <div class="ach-card flex items-center gap-3 p-3 rounded-xl" style="background:rgba(124,58,237,0.06)">
-                    <div class="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style="background:rgba(255,255,255,0.5)">
-                      <i data-lucide="sparkles" class="w-5 h-5" style="color:#7C3AED"></i>
-                    </div>
-                    <div class="min-w-0">
-                      <p class="text-ink font-bold text-[13px]">100 Sessions</p>
-                      <p class="text-ink-faint text-[11px]">Milestone reached</p>
-                    </div>
-                  </div>
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5" id="recognitionGrid">
+                  <p class="text-ink-faint text-sm">Loading&hellip;</p>
                 </div>
               </section>
             </div>
@@ -778,25 +753,9 @@
 
   // ── Active nav ──
   function setNav(el, e){
-    if (e) e.preventDefault();
-    const action = el.dataset.action;
-
-    if (action === 'page' && el.dataset.target) {
-      window.location.href = el.dataset.target;
-      return;
-    }
-
+    e.preventDefault();
     document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
     el.classList.add('active');
-
-    if (action === 'scroll' && el.dataset.target) {
-      document.getElementById(el.dataset.target)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    } else if (action === 'soon') {
-      showToast(`${el.dataset.tip || 'This'} is coming soon`);
-    } else {
-      // 'top' (Dashboard) or anything else with no real destination yet
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
     closeSidebar();
   }
 
@@ -1241,25 +1200,93 @@
 
     loadMentees(token);
     loadSessions(token);
+    loadAnalytics();
     loadRequests(token);
     checkAdminMessagesUnread();
   })();
 
-  // ── Heatmap ──
-  (function buildHeatmap(){
+  // ── Real Mentoring Analytics: sessions held, response rate, satisfaction,
+  //    weekly bar chart, 9-week heatmap, and recognition milestones ──
+  const MILESTONE_ICON = {
+    streak:     { icon: 'flame', bg: 'var(--gold-soft)', color: 'var(--gold)' },
+    top_rated:  { icon: 'medal', bg: 'rgba(15,168,154,0.07)', color: 'var(--teal-deep)' },
+    sessions:   { icon: 'sparkles', bg: 'rgba(124,58,237,0.06)', color: '#7C3AED' },
+  };
+
+  function milestoneCardHTML(m){
+    const cfg = MILESTONE_ICON[m.type] || MILESTONE_ICON.sessions;
+    return `
+      <div class="ach-card flex items-center gap-3 p-3 rounded-xl" style="background:${cfg.bg}">
+        <div class="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style="background:rgba(255,255,255,0.5)">
+          <i data-lucide="${cfg.icon}" class="w-5 h-5" style="color:${cfg.color}"></i>
+        </div>
+        <div class="min-w-0">
+          <p class="text-ink font-bold text-[13px]">${m.label}</p>
+          <p class="text-ink-faint text-[11px]">${m.sub}</p>
+        </div>
+      </div>`;
+  }
+
+  async function loadAnalytics(){
     const wrap = document.getElementById('heatmap');
-    for (let w = 0; w < 9; w++){
-      const col = document.createElement('div');
-      col.className = 'flex flex-col gap-1';
-      for (let d = 0; d < 7; d++){
-        const cell = document.createElement('div');
-        const level = Math.floor(Math.random() * 5);
-        cell.className = 'heat-cell heat-' + level;
-        col.appendChild(cell);
+    try {
+      const token = localStorage.getItem('mc_token');
+      const res = await fetch(`${API_BASE}/mentor/analytics`, { headers: { Authorization: `Bearer ${token}` } });
+      const data = await res.json();
+      if (!data.success) return;
+
+      document.getElementById('analyticsSessionsHeld').textContent = data.weeklySessionsCompleted;
+      document.getElementById('analyticsSessionsTarget').textContent = data.weeklySessionTarget;
+      document.getElementById('analyticsResponseRate').innerHTML = data.responseRate === null
+        ? '<span class="text-ink-faint text-base font-sans">No requests yet</span>'
+        : `${data.responseRate}<span class="text-ink-faint text-base font-sans">%</span>`;
+      document.getElementById('analyticsSatisfaction').innerHTML = (data.reviewCount || 0) > 0
+        ? `${data.rating.toFixed(1)}<span class="text-ink-faint text-base font-sans">/5 (${data.reviewCount})</span>`
+        : '<span class="text-ink-faint text-base font-sans">No reviews yet</span>';
+
+      const maxCount = Math.max(1, ...data.dailyCounts.map(d => d.count));
+      const dow = new Date().getDay();
+      const todayIdx = dow === 0 ? 6 : dow - 1;
+      data.dailyCounts.forEach((d, i) => {
+        const bar = document.getElementById(`abar-${i}`);
+        const label = document.getElementById(`abarlabel-${i}`);
+        if (!bar) return;
+        const pct = Math.round((d.count / maxCount) * 100);
+        bar.style.height = pct + '%';
+        if (i === todayIdx) {
+          bar.style.background = 'var(--gold)';
+          bar.classList.remove('fill');
+          if (label) { label.style.color = 'var(--gold)'; label.classList.add('font-bold'); }
+        }
+      });
+
+      if (wrap) {
+        wrap.innerHTML = '';
+        data.heatmap.forEach(week => {
+          const col = document.createElement('div');
+          col.className = 'flex flex-col gap-1';
+          week.forEach(day => {
+            const cell = document.createElement('div');
+            cell.className = 'heat-cell heat-' + day.level;
+            cell.title = `${day.date} · ${day.count} session${day.count === 1 ? '' : 's'}`;
+            col.appendChild(cell);
+          });
+          wrap.appendChild(col);
+        });
       }
-      wrap.appendChild(col);
+
+      const recognitionEl = document.getElementById('recognitionGrid');
+      if (recognitionEl) {
+        recognitionEl.innerHTML = data.milestones.length
+          ? data.milestones.map(milestoneCardHTML).join('')
+          : '<p class="text-ink-faint text-sm">Complete more sessions to start earning recognition badges.</p>';
+      }
+      if (window.lucide) lucide.createIcons();
+    } catch (err) {
+      console.error('Failed to load analytics', err);
+      if (wrap) wrap.innerHTML = '<p class="text-ink-faint text-xs">Could not load activity.</p>';
     }
-  })();
+  }
 
   // ── Command palette ──
   function openCmdk(){ document.getElementById('cmdkBackdrop').classList.add('open'); document.getElementById('cmdkInput').focus(); }
