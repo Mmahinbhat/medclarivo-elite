@@ -98,11 +98,17 @@
   }
   .chip{ display:inline-flex; align-items:center; gap:5px; padding:4px 10px; border-radius:999px; font-size:11px; font-weight:700; }
   .chip-teal{ background:rgba(15,168,154,0.12); color:var(--teal-deep); }
+  .chip-gold{ background:var(--gold-soft); color:#8A6B36; }
+  .chip-navy{ background:rgba(11,18,32,0.06); color:var(--ink-soft); }
   .msg-bubble{ max-width:78%; padding:10px 14px; border-radius:16px; font-size:13.5px; line-height:1.5; }
   .msg-mine{ background:var(--navy); color:#fff; margin-left:auto; border-bottom-right-radius:4px; }
   .msg-theirs{ background:var(--mist-2); color:var(--ink); margin-right:auto; border-bottom-left-radius:4px; }
   .bar-track{ background:var(--mist-2); border-radius:999px; overflow:hidden; height:8px; }
   .bar-fill{ height:100%; border-radius:999px; background:linear-gradient(90deg, var(--teal), var(--teal-2)); }
+  .day-bar-track{ background:var(--mist-2); border-radius:6px; overflow:hidden; width:100%; height:64px; display:flex; align-items:flex-end; }
+  .day-bar-fill{ width:100%; border-radius:6px 6px 0 0; background:linear-gradient(180deg, var(--teal-2), var(--teal)); transition:height .5s ease; min-height:2px; }
+  .btn-primary{ background:var(--navy); color:#fff; border-radius:14px; font-weight:700; transition:all .2s ease; }
+  .btn-primary:hover{ background:var(--navy-2); }
 </style>
 </head>
 <body>
@@ -119,8 +125,17 @@
       <a class="nav-item active" data-target="overviewSection">
         <i data-lucide="layout-dashboard"></i><span class="nav-label">Overview</span>
       </a>
+      <a class="nav-item" data-target="consistencySection">
+        <i data-lucide="calendar-check"></i><span class="nav-label">Study Consistency</span>
+      </a>
+      <a class="nav-item" data-target="sessionsSection">
+        <i data-lucide="video"></i><span class="nav-label">Sessions</span>
+      </a>
       <a class="nav-item" data-target="messagesSection">
         <i data-lucide="message-circle"></i><span class="nav-label">Messages</span>
+      </a>
+      <a class="nav-item" data-target="concernSection">
+        <i data-lucide="flag"></i><span class="nav-label">Report a Concern</span>
       </a>
     </nav>
     <div class="px-3 pb-6">
@@ -174,6 +189,23 @@
             </div>
           </div>
 
+          <!-- Score goal: only rendered if the child actually set target/prev scores at onboarding -->
+          <div id="scoreProgressPanel" class="panel p-6 mb-6 hidden">
+            <h2 class="font-display text-lg text-ink mb-4">Score Goal</h2>
+            <div class="flex items-center gap-6">
+              <div>
+                <p class="text-ink-faint text-[11px] uppercase tracking-wider font-semibold mb-1">Starting Score</p>
+                <p class="font-display text-2xl text-ink" id="scorePrev">—</p>
+              </div>
+              <i data-lucide="arrow-right" class="w-5 h-5 text-ink-faint"></i>
+              <div>
+                <p class="text-ink-faint text-[11px] uppercase tracking-wider font-semibold mb-1">Target Score</p>
+                <p class="font-display text-2xl text-teal-deep" id="scoreTarget">—</p>
+              </div>
+            </div>
+            <p class="text-ink-faint text-xs mt-3" id="scoreNote"></p>
+          </div>
+
           <div class="panel p-6 mb-6">
             <div class="flex items-center justify-between mb-4">
               <h2 class="font-display text-lg text-ink">Mentor</h2>
@@ -191,9 +223,46 @@
           </div>
         </section>
 
+        <!-- ── Study Consistency ── -->
+        <section id="consistencySection" class="panel p-6">
+          <div class="flex items-center justify-between mb-4">
+            <h2 class="font-display text-lg text-ink">Study Consistency</h2>
+            <span class="chip chip-teal" id="consistencyChip">—</span>
+          </div>
+          <p class="text-ink-faint text-xs mb-5">How consistently your child studied this week — not just the lifetime total.</p>
+          <div class="grid grid-cols-7 gap-2 mb-3" id="dailyBars">
+            <p class="text-ink-faint text-sm col-span-7 text-center py-4">Loading…</p>
+          </div>
+          <p class="text-ink-faint text-xs" id="weeklyHoursNote"></p>
+        </section>
+
+        <!-- ── Sessions ── -->
+        <section id="sessionsSection" class="panel p-6">
+          <h2 class="font-display text-lg text-ink mb-4">Mentor Sessions</h2>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <p class="text-ink-faint text-[11px] uppercase tracking-wider font-semibold mb-2">Upcoming</p>
+              <div id="upcomingSessionsList" class="space-y-2">
+                <p class="text-ink-faint text-sm">Loading…</p>
+              </div>
+            </div>
+            <div>
+              <p class="text-ink-faint text-[11px] uppercase tracking-wider font-semibold mb-2">Recent</p>
+              <div id="recentSessionsList" class="space-y-2">
+                <p class="text-ink-faint text-sm">Loading…</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
         <!-- ── Messages ── -->
         <section id="messagesSection" class="panel p-6">
-          <h2 class="font-display text-lg text-ink mb-1">Message the Mentor</h2>
+          <div class="flex items-center justify-between mb-1">
+            <h2 class="font-display text-lg text-ink">Message the Mentor</h2>
+            <span class="chip chip-teal" id="messagesLiveBadge" style="display:none">
+              <span class="w-1.5 h-1.5 rounded-full bg-teal-deep"></span>Live
+            </span>
+          </div>
           <p class="text-ink-faint text-xs mb-4" id="messagesSubtitle">Chat directly with your child's mentor.</p>
 
           <div id="messagesEmpty" class="text-center py-8 hidden">
@@ -205,11 +274,37 @@
           <div id="messagesThread" class="space-y-3 mb-4 max-h-96 overflow-y-auto pr-1"></div>
 
           <div id="messageInputRow" class="flex gap-2 hidden">
-            <input id="messageInput" type="text" placeholder="Type a message…"
+            <input id="messageInput" type="text" maxlength="2000" placeholder="Type a message…"
                    class="flex-1 border border-line rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-teal/30"/>
-            <button id="sendMessageBtn" class="bg-navy text-white rounded-xl px-5 py-2.5 text-sm font-semibold hover:bg-navy-2 transition-colors">
+            <button id="sendMessageBtn" class="btn-primary px-5 py-2.5 text-sm">
               Send
             </button>
+          </div>
+        </section>
+
+        <!-- ── Report a Concern ── -->
+        <section id="concernSection" class="panel p-6">
+          <h2 class="font-display text-lg text-ink mb-1">Report a Concern</h2>
+          <p class="text-ink-faint text-xs mb-5">Use this to flag any conduct concern about your child's mentor. This goes directly and only to MedClarivo's admin team.</p>
+
+          <div class="space-y-3 mb-6">
+            <select id="concernCategory" class="w-full border border-line rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-teal/30">
+              <option value="inappropriate_behavior">Inappropriate behavior</option>
+              <option value="inappropriate_language">Inappropriate language</option>
+              <option value="asked_personal_contact">Asked for personal contact info</option>
+              <option value="other">Other concern</option>
+            </select>
+            <textarea id="concernDescription" rows="4" maxlength="2000" placeholder="Describe what happened…"
+              class="w-full border border-line rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-teal/30 resize-none"></textarea>
+            <div id="concernError" class="hidden text-red-600 text-xs font-medium"></div>
+            <button id="submitConcernBtn" class="btn-primary px-5 py-2.5 text-sm">Submit Report</button>
+          </div>
+
+          <div class="border-t border-line pt-5">
+            <p class="text-ink-faint text-[11px] uppercase tracking-wider font-semibold mb-3">Your past reports</p>
+            <div id="concernHistory" class="space-y-2">
+              <p class="text-ink-faint text-sm">Loading…</p>
+            </div>
           </div>
         </section>
 
@@ -221,6 +316,9 @@
 <script>
   const API_BASE = 'https://med-clarivo.onrender.com/api';
   const token = localStorage.getItem('mc_token');
+  let currentParentId = null;
+  let messagePollTimer = null;
+  let lastMessageCount = 0;
 
   if (window.lucide) lucide.createIcons();
 
@@ -270,6 +368,20 @@
       setText('statXp', c.xp);
       setText('statMastery', c.overallMastery);
 
+      // Score goal — only show if the child actually set these at onboarding.
+      // Note: MedClarivo doesn't track a live "current mock-test score" field
+      // anywhere in the system, so we intentionally show this as a fixed
+      // starting-point-vs-goal, not a progress bar that would fabricate a
+      // percentage we can't actually measure.
+      if (c.targetScore != null) {
+        document.getElementById('scoreProgressPanel').classList.remove('hidden');
+        setText('scorePrev', c.prevScore != null ? c.prevScore : 'Not set');
+        setText('scoreTarget', c.targetScore);
+        setText('scoreNote', c.prevScore != null
+          ? `Goal set at onboarding: improve from ${c.prevScore} to ${c.targetScore}. MedClarivo doesn't yet track live mock-test scores, so this reflects the goal, not day-to-day progress.`
+          : 'Target score set at onboarding.');
+      }
+
       const mentorCard = document.getElementById('mentorCard');
       if (data.mentor) {
         mentorCard.innerHTML = `
@@ -284,7 +396,10 @@
         `;
         document.getElementById('messageInputRow').classList.remove('hidden');
         document.getElementById('messagesEmpty').classList.add('hidden');
-        loadMessages();
+        document.getElementById('messagesLiveBadge').style.display = '';
+        loadMessages(false);
+        if (messagePollTimer) clearInterval(messagePollTimer);
+        messagePollTimer = setInterval(() => loadMessages(true), 8000);
       } else {
         mentorCard.innerHTML = `<p class="text-ink-faint text-sm">No mentor assigned yet.</p>`;
         document.getElementById('messagesEmpty').classList.remove('hidden');
@@ -292,6 +407,9 @@
       }
 
       loadSubjects();
+      loadConsistency();
+      loadSessions();
+      loadConcernHistory();
     } catch (err) {
       console.error('Failed to load child data', err);
     }
@@ -322,7 +440,69 @@
     }
   }
 
-  async function loadMessages() {
+  async function loadConsistency() {
+    try {
+      const res = await fetch(`${API_BASE}/parent/child/analytics`, { headers: { Authorization: `Bearer ${token}` } });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        document.getElementById('dailyBars').innerHTML = '<p class="text-ink-faint text-sm col-span-7 text-center py-4">Could not load study data.</p>';
+        return;
+      }
+      const a = data.analytics;
+      setText('consistencyChip', `${a.consistencyPct}% consistent`);
+      setText('weeklyHoursNote', `${a.weeklyHours} hours studied this week.`);
+
+      const maxMin = Math.max(1, ...a.dailyMinutes.map(d => d.minutes));
+      document.getElementById('dailyBars').innerHTML = a.dailyMinutes.map(d => {
+        const heightPct = Math.round((d.minutes / maxMin) * 100);
+        return `
+          <div class="flex flex-col items-center gap-1.5">
+            <div class="day-bar-track"><div class="day-bar-fill" style="height:${d.minutes > 0 ? heightPct : 0}%"></div></div>
+            <span class="text-ink-faint text-[10px] font-semibold">${d.day}</span>
+          </div>`;
+      }).join('');
+    } catch (err) {
+      console.error('Failed to load consistency', err);
+    }
+  }
+
+  function formatSessionDate(iso) {
+    const d = new Date(iso);
+    return d.toLocaleDateString([], { month: 'short', day: 'numeric' }) + ' · ' + d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+  }
+
+  async function loadSessions() {
+    try {
+      const res = await fetch(`${API_BASE}/parent/child/sessions`, { headers: { Authorization: `Bearer ${token}` } });
+      const data = await res.json();
+      const upcomingEl = document.getElementById('upcomingSessionsList');
+      const recentEl = document.getElementById('recentSessionsList');
+      if (!res.ok || !data.success) {
+        upcomingEl.innerHTML = '<p class="text-ink-faint text-sm">Could not load sessions.</p>';
+        recentEl.innerHTML = '';
+        return;
+      }
+      upcomingEl.innerHTML = data.upcoming.length
+        ? data.upcoming.map(s => `
+          <div class="flex items-center justify-between p-2.5 rounded-xl bg-mist-2">
+            <span class="text-ink text-sm font-medium">${s.topic || 'Session'}</span>
+            <span class="text-ink-faint text-xs">${formatSessionDate(s.startTime)}</span>
+          </div>`).join('')
+        : '<p class="text-ink-faint text-sm">No upcoming sessions scheduled.</p>';
+
+      recentEl.innerHTML = data.recent.length
+        ? data.recent.map(s => `
+          <div class="flex items-center justify-between p-2.5 rounded-xl bg-mist-2">
+            <span class="text-ink text-sm font-medium">${s.topic || 'Session'}</span>
+            <span class="chip ${s.status === 'completed' ? 'chip-teal' : 'chip-navy'}">${s.status === 'completed' ? 'Completed' : 'Cancelled'}</span>
+          </div>`).join('')
+        : '<p class="text-ink-faint text-sm">No past sessions yet.</p>';
+    } catch (err) {
+      console.error('Failed to load sessions', err);
+    }
+  }
+
+  async function loadMessages(isPoll) {
     try {
       const res = await fetch(`${API_BASE}/parent/messages`, {
         headers: { Authorization: `Bearer ${token}` },
@@ -330,15 +510,23 @@
       const data = await res.json();
       if (!data.success) return;
 
+      const messages = data.messages || [];
+      if (isPoll && messages.length === lastMessageCount) return; // nothing new, don't disrupt scroll position
+      lastMessageCount = messages.length;
+
       const thread = document.getElementById('messagesThread');
-      const me = JSON.parse(localStorage.getItem('mc_user') || '{}');
-      if (!data.messages || data.messages.length === 0) {
+      if (!messages.length) {
         thread.innerHTML = '<p class="text-ink-faint text-sm text-center py-6">No messages yet — say hello!</p>';
         return;
       }
-      thread.innerHTML = data.messages.map(m => {
-        const mine = m.sender === me._id;
-        return `<div class="msg-bubble ${mine ? 'msg-mine' : 'msg-theirs'}">${m.content}</div>`;
+      thread.innerHTML = messages.map(m => {
+        const mine = m.sender === currentParentId;
+        const time = new Date(m.createdAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+        return `
+          <div class="flex flex-col ${mine ? 'items-end' : 'items-start'}">
+            <div class="msg-bubble ${mine ? 'msg-mine' : 'msg-theirs'}">${m.content.replace(/</g,'&lt;')}</div>
+            <span class="text-ink-faint text-[10px] mt-0.5 ${mine ? 'mr-1' : 'ml-1'}">${time}</span>
+          </div>`;
       }).join('');
       thread.scrollTop = thread.scrollHeight;
     } catch (err) {
@@ -358,9 +546,11 @@
         body: JSON.stringify({ content }),
       });
       const data = await res.json();
-      if (data.success) loadMessages();
+      if (data.success) loadMessages(false);
+      else input.value = content;
     } catch (err) {
       console.error('Failed to send message', err);
+      input.value = content;
     }
   });
 
@@ -368,11 +558,93 @@
     if (e.key === 'Enter') document.getElementById('sendMessageBtn').click();
   });
 
-  if (!token) {
-    window.location.href = 'index.html';
-  } else {
-    loadChild();
+  async function loadConcernHistory() {
+    try {
+      const res = await fetch(`${API_BASE}/parent/concerns`, { headers: { Authorization: `Bearer ${token}` } });
+      const data = await res.json();
+      const el = document.getElementById('concernHistory');
+      if (!res.ok || !data.success || !data.tickets.length) {
+        el.innerHTML = '<p class="text-ink-faint text-sm">No reports filed yet.</p>';
+        return;
+      }
+      const statusChip = { open: 'chip-gold', reviewing: 'chip-navy', resolved: 'chip-teal' };
+      el.innerHTML = data.tickets.map(t => `
+        <div class="flex items-center justify-between p-2.5 rounded-xl bg-mist-2">
+          <div>
+            <p class="text-ink text-sm font-medium">${t.category.replace(/_/g, ' ')}</p>
+            <p class="text-ink-faint text-xs">${new Date(t.createdAt).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })}</p>
+          </div>
+          <span class="chip ${statusChip[t.status] || 'chip-navy'}">${t.status}</span>
+        </div>`).join('');
+    } catch (err) {
+      console.error('Failed to load concern history', err);
+    }
   }
+
+  document.getElementById('submitConcernBtn').addEventListener('click', async () => {
+    const category = document.getElementById('concernCategory').value;
+    const description = document.getElementById('concernDescription').value.trim();
+    const errorEl = document.getElementById('concernError');
+    errorEl.classList.add('hidden');
+
+    if (!description) {
+      errorEl.textContent = 'Please describe the concern before submitting.';
+      errorEl.classList.remove('hidden');
+      return;
+    }
+
+    const btn = document.getElementById('submitConcernBtn');
+    btn.disabled = true;
+    btn.textContent = 'Submitting…';
+
+    try {
+      const res = await fetch(`${API_BASE}/parent/concerns`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ category, description }),
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        document.getElementById('concernDescription').value = '';
+        loadConcernHistory();
+      } else {
+        errorEl.textContent = data.message || 'Could not submit report.';
+        errorEl.classList.remove('hidden');
+      }
+    } catch (err) {
+      errorEl.textContent = 'Network error — please try again.';
+      errorEl.classList.remove('hidden');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Submit Report';
+    }
+  });
+
+  window.addEventListener('beforeunload', () => { if (messagePollTimer) clearInterval(messagePollTimer); });
+
+  (async function init() {
+    if (!token) { window.location.href = 'index.html'; return; }
+
+    // Fetch fresh identity rather than trusting a possibly-stale localStorage
+    // cache — this is what decides which message bubbles render as "mine".
+    try {
+      const res = await fetch(`${API_BASE}/auth/me`, { headers: { Authorization: `Bearer ${token}` } });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        currentParentId = data.user._id;
+        localStorage.setItem('mc_user', JSON.stringify(data.user));
+      } else {
+        window.location.href = 'index.html';
+        return;
+      }
+    } catch (e) {
+      // Network hiccup — fall back to cache rather than blocking the whole page.
+      const cached = JSON.parse(localStorage.getItem('mc_user') || 'null');
+      currentParentId = cached ? cached._id : null;
+    }
+
+    loadChild();
+  })();
 </script>
 
 </body>
