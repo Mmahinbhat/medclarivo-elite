@@ -9,6 +9,7 @@ const { examGroupFor } = require('./curriculum');
 const Message = require('../models/Message');
 const StudySession = require('../models/StudySession');
 const Session = require('../models/Session');
+const SessionNote = require('../models/SessionNote');
 const Ticket = require('../models/Ticket');
 const auditService = require('../services/auditService');
 const { MODULES } = require('../utils/rbacConstants');
@@ -259,12 +260,44 @@ router.get('/child/sessions', protect, restrictTo('parent'), async (req, res) =>
 
     res.json({
       success: true,
-      upcoming: upcoming.map(s => ({ startTime: s.startTime, topic: s.topic, status: s.status })),
-      recent: recent.map(s => ({ startTime: s.startTime, topic: s.topic, status: s.status })),
+      upcoming: upcoming.map(s => ({ id: s._id, startTime: s.startTime, topic: s.topic, status: s.status })),
+      recent: recent.map(s => ({ id: s._id, startTime: s.startTime, topic: s.topic, status: s.status })),
     });
   } catch (err) {
     console.error(err);
     res.status(500).json({ success: false, message: 'Failed to fetch sessions.' });
+  }
+});
+
+// ════════════════════════════════════════════════════════════════
+// GET /api/parent/child/sessions/:sessionId/notes  (parent only)
+// Returns only the mentor's *shared* notes for one of the child's own
+// sessions — never privateNotes, which are mentor-only. Ownership is
+// checked (mentee === the linked child) so a parent can't fetch notes
+// for a session that isn't theirs.
+// ════════════════════════════════════════════════════════════════
+router.get('/child/sessions/:sessionId/notes', protect, restrictTo('parent'), async (req, res) => {
+  try {
+    const child = await getLinkedChild(req);
+    if (!child) {
+      return res.status(404).json({ success: false, message: 'No child linked to this account yet.' });
+    }
+
+    const session = await Session.findOne({ _id: req.params.sessionId, mentee: child._id }).lean();
+    if (!session) {
+      return res.status(404).json({ success: false, message: 'Session not found.' });
+    }
+
+    const note = await SessionNote.findOne({ session: session._id }).select('sharedNotes updatedAt').lean();
+
+    res.json({
+      success: true,
+      sharedNotes: (note && note.sharedNotes) || '',
+      updatedAt: note ? note.updatedAt : null,
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: 'Failed to fetch session notes.' });
   }
 });
 
