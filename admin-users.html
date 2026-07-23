@@ -162,9 +162,6 @@
       <a class="nav-item" href="admin-tickets.html"><i data-lucide="shield-alert"></i><span>Tickets</span></a>
       <a class="nav-item" href="admin-profile.html"><i data-lucide="user-circle"></i><span>Profile</span></a>
     </nav>
-        <i data-lucide="scroll-text"></i><span>Audit Log</span>
-      </a>
-    </nav>
     <div class="px-3 pb-6">
       <a href="#" id="signOutLink" class="nav-item text-red-300/70 hover:text-red-300 hover:bg-red-500/10">
         <i data-lucide="log-out"></i><span>Sign Out</span>
@@ -235,11 +232,11 @@
           <table>
             <thead>
               <tr>
-                <th>Name</th><th>Email</th><th>Role</th><th>Status</th><th>Joined</th><th></th>
+                <th>Name</th><th>Email</th><th>Role</th><th>Status</th><th>Linked Child</th><th>Joined</th><th></th>
               </tr>
             </thead>
             <tbody id="usersTableBody">
-              <tr><td colspan="6" class="text-ink-faint text-center py-6">Loading…</td></tr>
+              <tr><td colspan="7" class="text-ink-faint text-center py-6">Loading…</td></tr>
             </tbody>
           </table>
         </div>
@@ -284,12 +281,34 @@
   </div>
 </div>
 
+<!-- ── Link Child Modal ── -->
+<div class="modal-backdrop" id="linkChildModal">
+  <div class="modal-box">
+    <div class="flex items-center justify-between mb-4">
+      <h3 class="font-display text-lg text-ink">Link Child</h3>
+      <button onclick="closeLinkChildModal()"><i data-lucide="x" class="w-5 h-5 text-ink-faint"></i></button>
+    </div>
+    <p class="text-ink-faint text-xs mb-4">Linking for <span class="font-semibold text-ink" id="linkChildParentName"></span></p>
+    <div id="linkChildModalError" class="hidden text-red-600 text-xs bg-red-50 border border-red-200 rounded-lg px-3 py-2 mb-3"></div>
+
+    <label class="field-label">Student</label>
+    <input id="linkChildSearch" type="text" class="field-input" placeholder="Search students by name or email…" oninput="renderStudentOptions()"/>
+    <select id="linkChildSelect" class="field-input" size="6"></select>
+
+    <div class="flex gap-2 mt-2">
+      <button class="btn-primary flex-1" onclick="submitLinkChild()">Save Link</button>
+      <button class="btn-sm btn-danger" id="unlinkChildBtn" onclick="submitUnlinkChild()">Unlink</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
   const API_BASE = 'https://med-clarivo.onrender.com/api';
   const token = localStorage.getItem('mc_token');
   let allUsers = [];
+  let linkChildParentId = null;
 
   if (window.lucide) lucide.createIcons();
 
@@ -327,11 +346,30 @@
     ).length;
   }
 
+  function linkedChildCell(u) {
+    if (u.role !== 'parent') return '<span class="text-ink-faint">—</span>';
+    if (u.childId && u.childId.name) {
+      return `
+        <div class="flex items-center gap-2">
+          <div>
+            <p class="font-semibold text-ink leading-tight">${u.childId.name}</p>
+            <p class="text-ink-faint text-[11px] leading-tight">${u.childId.email || ''}</p>
+          </div>
+          <button class="btn-sm" onclick='openLinkChildModal(${JSON.stringify(u._id)}, ${JSON.stringify(u.name || '')}, ${JSON.stringify(u.childId._id)})'>Change</button>
+        </div>`;
+    }
+    return `
+      <div class="flex items-center gap-2">
+        <span class="chip chip-grey">Not linked</span>
+        <button class="btn-sm" onclick='openLinkChildModal(${JSON.stringify(u._id)}, ${JSON.stringify(u.name || '')}, null)'>Link Child</button>
+      </div>`;
+  }
+
   function renderUsers(list) {
     const body = document.getElementById('usersTableBody');
     document.getElementById('userCountLabel').textContent = `Showing ${list.length} of ${allUsers.length}`;
     if (!list.length) {
-      body.innerHTML = '<tr><td colspan="6" class="text-ink-faint text-center py-6">No users match.</td></tr>';
+      body.innerHTML = '<tr><td colspan="7" class="text-ink-faint text-center py-6">No users match.</td></tr>';
       return;
     }
     body.innerHTML = list.map(u => `
@@ -342,6 +380,7 @@
         <td>${u.isActive
           ? '<span class="chip chip-teal">Active</span>'
           : `<span class="chip chip-red" title="${(u.suspendedReason || '').replace(/"/g,'')}">Suspended</span>`}</td>
+        <td>${linkedChildCell(u)}</td>
         <td class="text-ink-faint">${new Date(u.createdAt).toLocaleDateString()}</td>
         <td class="text-right">
           ${u.isActive
@@ -372,7 +411,7 @@
       const data = await res.json();
       if (!data.success) {
         document.getElementById('usersTableBody').innerHTML =
-          `<tr><td colspan="6" class="text-red-600 text-center py-6">${data.message || 'Failed to load users.'}</td></tr>`;
+          `<tr><td colspan="7" class="text-red-600 text-center py-6">${data.message || 'Failed to load users.'}</td></tr>`;
         showToast(data.message || 'Failed to load users.', true);
         return;
       }
@@ -382,7 +421,7 @@
     } catch (err) {
       console.error('Failed to load users', err);
       document.getElementById('usersTableBody').innerHTML =
-        '<tr><td colspan="6" class="text-red-600 text-center py-6">Network error loading users.</td></tr>';
+        '<tr><td colspan="7" class="text-red-600 text-center py-6">Network error loading users.</td></tr>';
       showToast('Network error loading users.', true);
     }
   }
@@ -476,6 +515,73 @@
       }
     } catch (err) {
       errEl.textContent = 'Network error while creating user.';
+      errEl.classList.remove('hidden');
+    }
+  }
+
+  // ── Link Child ──────────────────────────────────────────────
+  function openLinkChildModal(parentId, parentName, currentChildId) {
+    linkChildParentId = parentId;
+    document.getElementById('linkChildModalError').classList.add('hidden');
+    document.getElementById('linkChildParentName').textContent = parentName || 'this parent';
+    document.getElementById('linkChildSearch').value = '';
+    document.getElementById('unlinkChildBtn').classList.toggle('hidden', !currentChildId);
+    renderStudentOptions(currentChildId);
+    document.getElementById('linkChildModal').classList.add('open');
+  }
+  function closeLinkChildModal() {
+    document.getElementById('linkChildModal').classList.remove('open');
+    linkChildParentId = null;
+  }
+
+  function renderStudentOptions(preselectId) {
+    const q = document.getElementById('linkChildSearch').value.trim().toLowerCase();
+    const select = document.getElementById('linkChildSelect');
+    const students = allUsers.filter(u => u.role === 'student' && (
+      !q || (u.name || '').toLowerCase().includes(q) || (u.email || '').toLowerCase().includes(q)
+    ));
+    const selected = preselectId || select.value;
+    select.innerHTML = students.map(s =>
+      `<option value="${s._id}">${s.name || '(no name)'} — ${s.email}</option>`
+    ).join('') || '<option disabled>No matching students</option>';
+    if (selected) select.value = selected;
+  }
+
+  async function submitLinkChild() {
+    const select = document.getElementById('linkChildSelect');
+    const childId = select.value;
+    const errEl = document.getElementById('linkChildModalError');
+    errEl.classList.add('hidden');
+    if (!childId) {
+      errEl.textContent = 'Select a student to link.';
+      errEl.classList.remove('hidden');
+      return;
+    }
+    await patchLinkChild(childId, errEl);
+  }
+
+  async function submitUnlinkChild() {
+    await patchLinkChild(null, document.getElementById('linkChildModalError'));
+  }
+
+  async function patchLinkChild(childId, errEl) {
+    try {
+      const res = await fetch(`${API_BASE}/admin/users/${linkChildParentId}/link-child`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ childId }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        closeLinkChildModal();
+        showToast(childId ? 'Child linked.' : 'Child unlinked.');
+        loadUsers();
+      } else {
+        errEl.textContent = data.message || 'Failed to update link.';
+        errEl.classList.remove('hidden');
+      }
+    } catch (err) {
+      errEl.textContent = 'Network error while updating link.';
       errEl.classList.remove('hidden');
     }
   }
