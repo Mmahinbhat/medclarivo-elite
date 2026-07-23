@@ -51,7 +51,9 @@ async function createUser(req, res) {
 
 async function listUsers(req, res) {
   const filter = scopeFilter(req, { assignedField: 'mentorId' });
-  const users = await User.find(filter).sort({ createdAt: -1 });
+  const users = await User.find(filter)
+    .sort({ createdAt: -1 })
+    .populate('childId', 'name email');
   res.json({ success: true, users });
 }
 
@@ -143,6 +145,41 @@ async function assignMentor(req, res) {
   res.json({ success: true, student });
 }
 
+async function linkChild(req, res) {
+  const { id } = req.params;
+  const { childId } = req.body; // pass null/omit to unlink
+
+  const parent = await User.findById(id);
+  if (!parent) return res.status(404).json({ success: false, message: 'User not found.' });
+  if (parent.role !== ROLES.PARENT) {
+    return res.status(400).json({ success: false, message: 'Only parent accounts can be linked to a child.' });
+  }
+
+  let child = null;
+  if (childId) {
+    child = await User.findOne({ _id: childId, role: ROLES.STUDENT });
+    if (!child) return res.status(400).json({ success: false, message: 'childId does not reference a valid Student.' });
+  }
+
+  const before = { childId: parent.childId };
+  parent.childId = childId || null;
+  await parent.save();
+
+  await auditService.log({
+    actor: req.user,
+    action: childId ? 'user.link_child' : 'user.unlink_child',
+    module: MODULES.USER,
+    targetType: 'User',
+    targetId: parent._id,
+    before,
+    after: { childId: parent.childId },
+    req,
+  });
+
+  const populated = await User.findById(parent._id).populate('childId', 'name email');
+  res.json({ success: true, user: populated });
+}
+
 async function listStudents(req, res) {
   const filter = scopeFilter(req, { assignedField: 'assignedMentors' });
   filter.role = ROLES.STUDENT;
@@ -190,4 +227,4 @@ async function listStudents(req, res) {
 
   res.json({ success: true, students: result });
 }
-module.exports = { createUser, listUsers, suspendUser, reactivateUser, assignMentor, listStudents };
+module.exports = { createUser, listUsers, suspendUser, reactivateUser, assignMentor, listStudents, linkChild };
