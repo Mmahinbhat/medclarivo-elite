@@ -109,6 +109,23 @@
   .day-bar-fill{ width:100%; border-radius:6px 6px 0 0; background:linear-gradient(180deg, var(--teal-2), var(--teal)); transition:height .5s ease; min-height:2px; }
   .btn-primary{ background:var(--navy); color:#fff; border-radius:14px; font-weight:700; transition:all .2s ease; }
   .btn-primary:hover{ background:var(--navy-2); }
+  .btn-primary:disabled{ opacity:.6; cursor:not-allowed; }
+
+  .field-label{ display:block; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:var(--ink-soft); margin-bottom:6px; }
+  .field-input{ width:100%; padding:10px 14px; border-radius:12px; background:var(--mist-2); border:1px solid var(--line); font-size:14px; }
+  .field-input:focus{ outline:none; border-color:var(--teal); box-shadow:0 0 0 3px rgba(15,168,154,0.12); }
+  .toggle-row{ display:flex; align-items:center; justify-content:space-between; padding:14px 0; border-bottom:1px solid var(--line); }
+  .toggle-row:last-child{ border-bottom:none; }
+  .switch{ position:relative; width:42px; height:24px; flex-shrink:0; }
+  .switch input{ opacity:0; width:0; height:0; }
+  .slider{ position:absolute; cursor:pointer; inset:0; background:rgba(11,18,32,0.15); border-radius:999px; transition:.2s; }
+  .slider::before{ content:''; position:absolute; height:18px; width:18px; left:3px; bottom:3px; background:#fff; border-radius:50%; transition:.2s; }
+  input:checked + .slider{ background:var(--teal); }
+  input:checked + .slider::before{ transform:translateX(18px); }
+
+  .notes-toggle-btn{ font-size:11.5px; font-weight:700; color:var(--teal-deep); background:rgba(15,168,154,0.08); border:1px solid rgba(15,168,154,0.18); border-radius:999px; padding:3px 10px; cursor:pointer; transition:background .15s ease; flex-shrink:0; }
+  .notes-toggle-btn:hover{ background:rgba(15,168,154,0.16); }
+  .notes-panel{ font-size:12.5px; color:var(--ink-soft); background:var(--mist-2); border-radius:10px; padding:10px 12px; margin-top:6px; line-height:1.5; }
 </style>
 </head>
 <body>
@@ -136,6 +153,9 @@
       </a>
       <a class="nav-item" data-target="concernSection">
         <i data-lucide="flag"></i><span class="nav-label">Report a Concern</span>
+      </a>
+      <a class="nav-item" data-target="settingsSection">
+        <i data-lucide="settings"></i><span class="nav-label">Settings</span>
       </a>
     </nav>
     <div class="px-3 pb-6">
@@ -308,10 +328,77 @@
           </div>
         </section>
 
+        <!-- ── Settings ── -->
+        <section id="settingsSection" class="space-y-6">
+          <div class="panel p-6">
+            <h2 class="font-display text-lg text-ink mb-1">Profile</h2>
+            <p class="text-ink-faint text-xs mb-5">Your account information.</p>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+              <div>
+                <label class="field-label">Name</label>
+                <input id="settingsNameInput" type="text" class="field-input"/>
+              </div>
+              <div>
+                <label class="field-label">Phone</label>
+                <input id="settingsPhoneInput" type="text" class="field-input"/>
+              </div>
+            </div>
+            <div class="mb-5">
+              <label class="field-label">Email</label>
+              <input id="settingsEmailInput" type="email" class="field-input"/>
+            </div>
+            <button id="settingsProfileSaveBtn" class="btn-primary px-5 py-2.5 text-sm">Save Profile</button>
+          </div>
+
+          <div class="panel p-6">
+            <h2 class="font-display text-lg text-ink mb-1">Password</h2>
+            <p class="text-ink-faint text-xs mb-5">Change your account password.</p>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+              <div>
+                <label class="field-label">Current Password</label>
+                <input id="settingsCurrentPasswordInput" type="password" class="field-input"/>
+              </div>
+              <div>
+                <label class="field-label">New Password</label>
+                <input id="settingsNewPasswordInput" type="password" class="field-input"/>
+              </div>
+            </div>
+            <button id="settingsPasswordSaveBtn" class="btn-primary px-5 py-2.5 text-sm">Update Password</button>
+          </div>
+
+          <div class="panel p-6">
+            <h2 class="font-display text-lg text-ink mb-1">Notifications</h2>
+            <p class="text-ink-faint text-xs mb-1">Choose what you want to hear about.</p>
+            <div class="toggle-row">
+              <div>
+                <p class="text-ink font-semibold text-sm">Email Updates</p>
+                <p class="text-ink-faint text-xs">General platform announcements</p>
+              </div>
+              <label class="switch"><input type="checkbox" id="settingsPrefEmailUpdates"/><span class="slider"></span></label>
+            </div>
+            <div class="toggle-row">
+              <div>
+                <p class="text-ink font-semibold text-sm">Session Reminders</p>
+                <p class="text-ink-faint text-xs">Reminders before your child's mentor sessions</p>
+              </div>
+              <label class="switch"><input type="checkbox" id="settingsPrefSessionReminders"/><span class="slider"></span></label>
+            </div>
+            <div class="toggle-row">
+              <div>
+                <p class="text-ink font-semibold text-sm">Other Platform Updates</p>
+                <p class="text-ink-faint text-xs">Occasional updates about new features</p>
+              </div>
+              <label class="switch"><input type="checkbox" id="settingsPrefForumReplies"/><span class="slider"></span></label>
+            </div>
+          </div>
+        </section>
+
       </div>
     </div>
   </main>
 </div>
+
+<div id="toast" style="position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);padding:12px 20px;border-radius:10px;font-size:13px;font-weight:600;background:var(--navy);color:#fff;opacity:0;transition:.3s;z-index:999;"></div>
 
 <script>
   const API_BASE = 'https://med-clarivo.onrender.com/api';
@@ -321,6 +408,13 @@
   let lastMessageCount = 0;
 
   if (window.lucide) lucide.createIcons();
+
+  function showToast(msg){
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.style.opacity = '1'; t.style.transform = 'translateX(-50%) translateY(0)';
+    setTimeout(() => { t.style.opacity = '0'; t.style.transform = 'translateX(-50%) translateY(80px)'; }, 2800);
+  }
 
   document.getElementById('signOutLink').addEventListener('click', (e) => {
     e.preventDefault();
@@ -492,13 +586,50 @@
 
       recentEl.innerHTML = data.recent.length
         ? data.recent.map(s => `
-          <div class="flex items-center justify-between p-2.5 rounded-xl bg-mist-2">
-            <span class="text-ink text-sm font-medium">${s.topic || 'Session'}</span>
-            <span class="chip ${s.status === 'completed' ? 'chip-teal' : 'chip-navy'}">${s.status === 'completed' ? 'Completed' : 'Cancelled'}</span>
+          <div class="p-2.5 rounded-xl bg-mist-2">
+            <div class="flex items-center justify-between gap-2">
+              <span class="text-ink text-sm font-medium">${s.topic || 'Session'}</span>
+              <div class="flex items-center gap-2 flex-shrink-0">
+                <span class="chip ${s.status === 'completed' ? 'chip-teal' : 'chip-navy'}">${s.status === 'completed' ? 'Completed' : 'Cancelled'}</span>
+                ${s.status === 'completed' ? `<button class="notes-toggle-btn" onclick="toggleSessionNotes('${s.id}')">Notes</button>` : ''}
+              </div>
+            </div>
+            ${s.status === 'completed' ? `<div id="notes-${s.id}" class="hidden"></div>` : ''}
           </div>`).join('')
         : '<p class="text-ink-faint text-sm">No past sessions yet.</p>';
     } catch (err) {
       console.error('Failed to load sessions', err);
+    }
+  }
+
+  const sessionNotesCache = {};
+  async function toggleSessionNotes(sessionId) {
+    const panel = document.getElementById(`notes-${sessionId}`);
+    if (!panel) return;
+
+    if (!panel.classList.contains('hidden')) {
+      panel.classList.add('hidden');
+      return;
+    }
+    panel.classList.remove('hidden');
+
+    if (sessionNotesCache[sessionId] !== undefined) {
+      panel.innerHTML = sessionNotesCache[sessionId];
+      return;
+    }
+
+    panel.innerHTML = '<div class="notes-panel">Loading notes…</div>';
+    try {
+      const res = await fetch(`${API_BASE}/parent/child/sessions/${sessionId}/notes`, { headers: { Authorization: `Bearer ${token}` } });
+      const data = await res.json();
+      const html = (res.ok && data.success && data.sharedNotes)
+        ? `<div class="notes-panel">${data.sharedNotes.replace(/</g, '&lt;')}</div>`
+        : '<div class="notes-panel">No notes shared for this session yet.</div>';
+      sessionNotesCache[sessionId] = html;
+      panel.innerHTML = html;
+    } catch (err) {
+      console.error('Failed to load session notes', err);
+      panel.innerHTML = '<div class="notes-panel">Could not load notes right now.</div>';
     }
   }
 
@@ -568,14 +699,27 @@
         return;
       }
       const statusChip = { open: 'chip-gold', reviewing: 'chip-navy', resolved: 'chip-teal' };
-      el.innerHTML = data.tickets.map(t => `
-        <div class="flex items-center justify-between p-2.5 rounded-xl bg-mist-2">
-          <div>
-            <p class="text-ink text-sm font-medium">${t.category.replace(/_/g, ' ')}</p>
-            <p class="text-ink-faint text-xs">${new Date(t.createdAt).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })}</p>
+      el.innerHTML = data.tickets.map(t => {
+        const responseHTML = t.adminNotes
+          ? `<div class="notes-panel">
+               <p class="font-semibold text-ink text-xs mb-1">Response from MedClarivo admin${t.resolvedAt ? ` · ${new Date(t.resolvedAt).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })}` : ''}</p>
+               <p>${t.adminNotes.replace(/</g,'&lt;')}</p>
+             </div>`
+          : (t.status !== 'open'
+              ? `<p class="text-ink-faint text-xs mt-1.5">Your report is being looked into — no written response yet.</p>`
+              : '');
+        return `
+        <div class="p-2.5 rounded-xl bg-mist-2">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-ink text-sm font-medium">${t.category.replace(/_/g, ' ')}</p>
+              <p class="text-ink-faint text-xs">${new Date(t.createdAt).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })}</p>
+            </div>
+            <span class="chip ${statusChip[t.status] || 'chip-navy'}">${t.status}</span>
           </div>
-          <span class="chip ${statusChip[t.status] || 'chip-navy'}">${t.status}</span>
-        </div>`).join('');
+          ${responseHTML}
+        </div>`;
+      }).join('');
     } catch (err) {
       console.error('Failed to load concern history', err);
     }
@@ -620,6 +764,104 @@
     }
   });
 
+  // ── Settings ──
+  async function loadSettings() {
+    try {
+      const res = await fetch(`${API_BASE}/settings`, { headers: { Authorization: `Bearer ${token}` } });
+      const data = await res.json();
+      if (!res.ok || !data.success) return;
+      const u = data.user;
+      document.getElementById('settingsNameInput').value = u.name || '';
+      document.getElementById('settingsEmailInput').value = u.email || '';
+      document.getElementById('settingsPhoneInput').value = u.phone || '';
+
+      const prefs = u.notificationPrefs || {};
+      document.getElementById('settingsPrefEmailUpdates').checked = prefs.emailUpdates ?? true;
+      document.getElementById('settingsPrefSessionReminders').checked = prefs.sessionReminders ?? true;
+      document.getElementById('settingsPrefForumReplies').checked = prefs.forumReplies ?? true;
+    } catch (err) {
+      console.error('Failed to load settings', err);
+    }
+  }
+
+  document.getElementById('settingsProfileSaveBtn').addEventListener('click', async () => {
+    const btn = document.getElementById('settingsProfileSaveBtn');
+    btn.disabled = true; btn.textContent = 'Saving…';
+    try {
+      const body = {
+        name: document.getElementById('settingsNameInput').value,
+        email: document.getElementById('settingsEmailInput').value,
+        phone: document.getElementById('settingsPhoneInput').value,
+      };
+      const res = await fetch(`${API_BASE}/settings/profile`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify(body),
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        localStorage.setItem('mc_user', JSON.stringify(data.user));
+        showToast('Profile updated.');
+      } else {
+        showToast(data.message || 'Could not update profile.');
+      }
+    } catch (err) {
+      showToast('Network error.');
+    } finally {
+      btn.disabled = false; btn.textContent = 'Save Profile';
+    }
+  });
+
+  document.getElementById('settingsPasswordSaveBtn').addEventListener('click', async () => {
+    const btn = document.getElementById('settingsPasswordSaveBtn');
+    const currentPassword = document.getElementById('settingsCurrentPasswordInput').value;
+    const newPassword = document.getElementById('settingsNewPasswordInput').value;
+    if (!currentPassword || !newPassword) { showToast('Fill in both password fields.'); return; }
+
+    btn.disabled = true; btn.textContent = 'Updating…';
+    try {
+      const res = await fetch(`${API_BASE}/settings/password`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ currentPassword, newPassword }),
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        showToast('Password updated.');
+        document.getElementById('settingsCurrentPasswordInput').value = '';
+        document.getElementById('settingsNewPasswordInput').value = '';
+      } else {
+        showToast(data.message || 'Could not update password.');
+      }
+    } catch (err) {
+      showToast('Network error.');
+    } finally {
+      btn.disabled = false; btn.textContent = 'Update Password';
+    }
+  });
+
+  async function saveNotificationPrefs() {
+    try {
+      const body = {
+        emailUpdates: document.getElementById('settingsPrefEmailUpdates').checked,
+        sessionReminders: document.getElementById('settingsPrefSessionReminders').checked,
+        forumReplies: document.getElementById('settingsPrefForumReplies').checked,
+      };
+      const res = await fetch(`${API_BASE}/settings/notifications`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify(body),
+      });
+      const data = await res.json();
+      if (res.ok && data.success) showToast('Preferences saved.');
+    } catch (err) {
+      console.error('Failed to save notification preferences', err);
+    }
+  }
+  ['settingsPrefEmailUpdates', 'settingsPrefSessionReminders', 'settingsPrefForumReplies'].forEach(id => {
+    document.getElementById(id).addEventListener('change', saveNotificationPrefs);
+  });
+
   window.addEventListener('beforeunload', () => { if (messagePollTimer) clearInterval(messagePollTimer); });
 
   (async function init() {
@@ -644,6 +886,7 @@
     }
 
     loadChild();
+    loadSettings();
   })();
 </script>
 
