@@ -22,6 +22,7 @@ const sessionNoteRoutes = require('./routes/sessionNotes');
 const evaluationRoutes = require('./routes/evaluations');
 const messageRoutes = require('./routes/messages');
 const studentMessageRoutes = require('./routes/studentMessages');
+const doubtRoutes = require('./routes/doubts');
 const settingsRoutes = require('./routes/settings');
 const achievementRoutes = require('./routes/achievements');
 
@@ -84,6 +85,7 @@ app.use('/api/admin/session-notes', sessionNoteRoutes);
 app.use('/api/admin/evaluations', evaluationRoutes);
 app.use('/api/admin/messages',   messageRoutes);
 app.use('/api/student/messages', studentMessageRoutes);
+app.use('/api/doubts',           doubtRoutes);
 app.use('/api/settings',         settingsRoutes);
 app.use('/api/achievements',     achievementRoutes);
 // Health check
