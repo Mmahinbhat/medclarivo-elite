@@ -25,6 +25,8 @@ const studentMessageRoutes = require('./routes/studentMessages');
 const doubtRoutes = require('./routes/doubts');
 const settingsRoutes = require('./routes/settings');
 const achievementRoutes = require('./routes/achievements');
+const testRoutes = require('./routes/tests');
+const flashcardRoutes = require('./routes/flashcards');
 
 const app  = express();
 const PORT = process.env.PORT || 5000;
@@ -88,6 +90,8 @@ app.use('/api/student/messages', studentMessageRoutes);
 app.use('/api/doubts',           doubtRoutes);
 app.use('/api/settings',         settingsRoutes);
 app.use('/api/achievements',     achievementRoutes);
+app.use('/api/tests',            testRoutes);
+app.use('/api/flashcards',       flashcardRoutes);
 // Health check
 app.get('/health', (req, res) => {
   res.json({

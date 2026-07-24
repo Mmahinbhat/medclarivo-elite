@@ -693,25 +693,25 @@
             <section class="reveal" style="animation-delay:.2s">
               <h2 class="font-display text-[20px] text-ink mb-4">Quick Actions</h2>
               <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                <button class="panel panel-lift p-5 flex flex-col items-center gap-3 text-center">
+                <button class="panel panel-lift p-5 flex flex-col items-center gap-3 text-center" onclick="window.location.href='mock-test.html'">
                   <div class="w-11 h-11 rounded-xl flex items-center justify-center" style="background:rgba(15,168,154,0.1)">
                     <i data-lucide="file-question" class="w-5 h-5 text-teal-deep"></i>
                   </div>
                   <span class="text-ink text-[12.5px] font-semibold">Take Mock Test</span>
                 </button>
-                <button class="panel panel-lift p-5 flex flex-col items-center gap-3 text-center">
+                <button class="panel panel-lift p-5 flex flex-col items-center gap-3 text-center" onclick="window.location.href='flashcards.html'">
                   <div class="w-11 h-11 rounded-xl flex items-center justify-center" style="background:rgba(124,58,237,0.08)">
                     <i data-lucide="layers" class="w-5 h-5" style="color:#7C3AED"></i>
                   </div>
                   <span class="text-ink text-[12.5px] font-semibold">Flashcards</span>
                 </button>
-                <button class="panel panel-lift p-5 flex flex-col items-center gap-3 text-center">
+                <button class="panel panel-lift p-5 flex flex-col items-center gap-3 text-center" onclick="document.getElementById('doubtSection')?.scrollIntoView({behavior:'smooth',block:'start'})">
                   <div class="w-11 h-11 rounded-xl flex items-center justify-center" style="background:var(--gold-soft)">
                     <i data-lucide="message-circle-question" class="w-5 h-5" style="color:var(--gold)"></i>
                   </div>
                   <span class="text-ink text-[12.5px] font-semibold">Ask a Doubt</span>
                 </button>
-                <button class="panel panel-lift p-5 flex flex-col items-center gap-3 text-center">
+                <button class="panel panel-lift p-5 flex flex-col items-center gap-3 text-center" onclick="window.location.href='student-messages.html'">
                   <div class="w-11 h-11 rounded-xl flex items-center justify-center bg-mist">
                     <i data-lucide="calendar-plus" class="w-5 h-5" style="color:var(--navy)"></i>
                   </div>
