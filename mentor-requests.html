@@ -99,40 +99,17 @@
       </div>
     </div>
 
-    <nav class="flex-1 overflow-y-auto no-scrollbar py-1">
-      <p class="px-6 py-2 text-[10px] text-white/25 uppercase tracking-[0.16em] font-bold">Main</p>
-      <a href="mentor-dashboard.html" class="nav-item">
-        <i data-lucide="layout-dashboard"></i><span>Dashboard</span>
-      </a>
-      <a href="mentor-mentees.html" class="nav-item">
-        <i data-lucide="users"></i><span>My Mentees</span>
-      </a>
-      <a href="mentor-requests.html" class="nav-item active">
-        <i data-lucide="user-check"></i><span class="flex-1">Requests</span>
-        <span id="navRequestsBadge" class="chip chip-teal" style="padding:1px 7px;font-size:9.5px;display:none"></span>
-      </a>
-      <a href="mentor-dashboard.html" class="nav-item">
-        <i data-lucide="bar-chart-3"></i><span>Analytics</span>
-      </a>
-
-      <p class="px-6 py-2 mt-3 text-[10px] text-white/25 uppercase tracking-[0.16em] font-bold">Mentorship</p>
-      <a href="mentor-dashboard.html" class="nav-item">
-        <i data-lucide="video"></i><span>Sessions</span>
-      </a>
-      <a href="mentor-dashboard.html" class="nav-item">
-        <i data-lucide="message-circle"></i><span class="flex-1">Doubt Forum</span>
-      </a>
-      <a href="mentor-inbox.html" class="nav-item">
-        <i data-lucide="megaphone"></i><span class="flex-1">Admin Messages</span>
-      </a>
-
-      <p class="px-6 py-2 mt-3 text-[10px] text-white/25 uppercase tracking-[0.16em] font-bold">Account</p>
-      <a href="mentor-dashboard.html" class="nav-item">
-        <i data-lucide="award"></i><span>Recognition</span>
-      </a>
-      <a href="mentor-dashboard.html" class="nav-item">
-        <i data-lucide="settings"></i><span>Settings</span>
-      </a>
+    <nav class="flex-1 px-0 py-4 space-y-0.5">
+      <a href="mentor-dashboard.html" class="nav-item"><i data-lucide="layout-dashboard"></i><span>Dashboard</span></a>
+      <a href="mentor-mentees.html" class="nav-item"><i data-lucide="users"></i><span>My Mentees</span></a>
+      <a href="mentor-requests.html" class="nav-item active"><i data-lucide="user-plus"></i><span>Requests</span></a>
+      <a href="mentor-sessions.html" class="nav-item"><i data-lucide="video"></i><span>Sessions</span></a>
+      <a href="mentor-analytics.html" class="nav-item"><i data-lucide="bar-chart-3"></i><span>Analytics</span></a>
+      <a href="mentor-messages.html" class="nav-item"><i data-lucide="message-circle"></i><span>Messages</span></a>
+      <a href="mentor-inbox.html" class="nav-item"><i data-lucide="megaphone"></i><span>Admin Messages</span></a>
+      <a href="#" class="nav-item" onclick="showToast('Doubt Forum coming soon');return false;"><i data-lucide="message-square"></i><span>Doubt Forum</span></a>
+      <a href="#" class="nav-item" onclick="showToast('Recognition coming soon');return false;"><i data-lucide="award"></i><span>Recognition</span></a>
+      <a href="#" class="nav-item" onclick="showToast('Settings coming soon');return false;"><i data-lucide="settings"></i><span>Settings</span></a>
     </nav>
 
     <button id="signOutBtn" class="nav-item mb-4 text-red-300/70 hover:text-red-300 hover:bg-red-500/10" style="background:none;border:none;cursor:pointer;font:inherit;text-align:left;">
