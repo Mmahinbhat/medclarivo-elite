@@ -44,6 +44,10 @@ app.use(cors({
     process.env.CLIENT_URL,
     'http://localhost:3000',
     'http://127.0.0.1:5500',
+    // Capacitor native app origins (iOS + Android webviews)
+    'capacitor://localhost',
+    'https://localhost',
+    'http://localhost',
   ],
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
