@@ -1,10 +1,9 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"/>
-<meta http-equiv="Pragma" content="no-cache"/>
-<meta http-equiv="Expires" content="0"/>
-
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"/>
+  <meta http-equiv="Pragma" content="no-cache"/>
+  <meta http-equiv="Expires" content="0"/>
 <script src="sessionGuard.js"></script>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
@@ -15,17 +14,31 @@
 <script>
   tailwind.config = {
     darkMode: "class",
-    theme: { extend: {
-      colors: {
-        navy: "#0A1424", "navy-2": "#0F2038", "navy-3": "#16304F",
-        teal: "#0FA89A", "teal-2": "#33D9C8", "teal-deep": "#0A6E64",
-        gold: "#B9924F", "gold-soft": "rgba(185,146,79,0.12)",
-        mist: "#F5F7FA", "mist-2": "#EEF2F6",
-        ink: "#0B1220", "ink-soft": "#56657B", "ink-faint": "#8B97A8",
-        line: "rgba(11,18,32,0.08)",
-      },
-      fontFamily: { display: ["DM Serif Display", "serif"], sans: ["DM Sans", "sans-serif"], mono: ["JetBrains Mono", "monospace"] },
-    }}
+    theme: {
+      extend: {
+        colors: {
+          navy:        "#0A1424",
+          "navy-2":    "#0F2038",
+          "navy-3":    "#16304F",
+          teal:        "#0FA89A",
+          "teal-2":    "#33D9C8",
+          "teal-deep": "#0A6E64",
+          gold:        "#B9924F",
+          "gold-soft": "rgba(185,146,79,0.12)",
+          mist:        "#F5F7FA",
+          "mist-2":    "#EEF2F6",
+          ink:         "#0B1220",
+          "ink-soft":  "#56657B",
+          "ink-faint": "#8B97A8",
+          line:        "rgba(11,18,32,0.08)",
+        },
+        fontFamily: {
+          display: ["DM Serif Display", "serif"],
+          sans:    ["DM Sans", "sans-serif"],
+          mono:    ["JetBrains Mono", "monospace"],
+        },
+      }
+    }
   }
 </script>
 <style>
@@ -285,52 +298,6 @@
     background:var(--navy); color:#fff; font-size:11px; white-space:nowrap; padding:5px 9px;
     border-radius:8px; pointer-events:none; z-index:99; font-weight:500;
   }
-
-/* Page specific */
-  :root{ --navy:#0A1424; --navy-2:#0F2038; --navy-3:#16304F; --teal:#0FA89A; --teal-2:#33D9C8; --teal-deep:#0A6E64; --gold:#B9924F; --mist:#F5F7FA; --ink:#0B1220; --ink-soft:#56657B; }
-  *{box-sizing:border-box;}
-  html{scroll-behavior:smooth;}
-  body{font-family:'DM Sans', sans-serif;background:var(--mist);color:var(--ink);-webkit-font-smoothing:antialiased;min-height:100dvh;}
-  .font-display{font-family:'DM Serif Display', serif;}
-
-  .app-shell{display:flex; min-height:100dvh;}
-  .sidebar{position:fixed; left:16px; top:16px; bottom:16px; width:260px; border-radius:24px; background:linear-gradient(174deg, var(--navy-2) 0%, var(--navy) 78%); box-shadow:0 20px 50px -20px rgba(10,20,36,0.55), 0 0 0 1px rgba(255,255,255,0.04) inset; display:flex; flex-direction:column; z-index:60; transition:transform .35s cubic-bezier(.4,0,.2,1), width .3s ease; overflow:hidden;}
-  .sidebar.collapsed{ width:84px; }
-  .sidebar.collapsed .hide-on-collapse{ display:none; }
-  .sidebar.collapsed .nav-item{ justify-content:center; padding-left:0; padding-right:0; }
-  .sidebar.collapsed .nav-item .nav-label{ display:none; }
-  @media (max-width:1023px){ .sidebar{ transform:translateX(-130%); } .sidebar.open{ transform:translateX(0); } }
-  .main-content{ margin-left:292px; flex:1; min-width:0; transition:margin-left .3s ease; }
-  .main-content.collapsed{ margin-left:116px; }
-  @media (max-width:1023px){ .main-content, .main-content.collapsed{ margin-left:0; } }
-
-  .nav-item{ display:flex; align-items:center; gap:12px; padding:10px 16px; border-radius:14px; color:rgba(255,255,255,0.52); font-size:13.5px; font-weight:500; cursor:pointer; transition:all .2s ease; margin:1px 12px; text-decoration:none; position:relative; }
-  .nav-item:hover{ background:rgba(255,255,255,0.06); color:#fff; transform:translateX(2px); }
-  .nav-item.active{ background:rgba(15,168,154,0.16); color:#7FE9DD; }
-  .nav-item.active::before{ content:''; position:absolute; left:-12px; top:50%; transform:translateY(-50%); width:3px; height:18px; border-radius:3px; background:linear-gradient(180deg, var(--teal-2), var(--teal)); }
-  .nav-item svg{ width:18px; height:18px; flex-shrink:0; }
-  .avatar-ring{ border:2px solid var(--teal); padding:2px; border-radius:999px; }
-
-  .topbar{ position:sticky; top:16px; z-index:50; margin:0 16px 0 0; border-radius:20px; background:rgba(255,255,255,0.78); backdrop-filter:blur(18px) saturate(160%); border:1px solid rgba(255,255,255,0.7); box-shadow:0 8px 28px -16px rgba(11,18,32,0.18); }
-  .panel{ background:#fff; border:1px solid var(--line); border-radius:22px; box-shadow:0 1px 2px rgba(11,18,32,0.04), 0 12px 28px -18px rgba(11,18,32,0.10); }
-
-  .btn-primary{ background:linear-gradient(135deg, var(--teal) 0%, var(--teal-deep) 100%); color:#fff; border:none; border-radius:14px; font-weight:700; box-shadow:0 10px 24px -8px rgba(15,168,154,0.55); transition:all .2s cubic-bezier(.4,0,.2,1); }
-  .btn-primary:hover{ transform:translateY(-2px); box-shadow:0 16px 32px -8px rgba(15,168,154,0.6); }
-  .btn-ghost-icon{ width:38px; height:38px; border-radius:12px; display:flex; align-items:center; justify-content:center; color:var(--ink-soft); transition:all .18s ease; cursor:pointer; }
-  .btn-ghost-icon:hover{ background:rgba(11,18,32,0.05); color:var(--ink); }
-  .chip{ display:inline-flex; align-items:center; gap:4px; border-radius:999px; font-size:11px; font-weight:700; padding:3px 10px; }
-  .chip-teal{ background:rgba(15,168,154,0.12); color:var(--teal-deep); }
-
-  .contact-row{ display:flex; align-items:center; gap:10px; padding:12px; border-radius:14px; cursor:pointer; transition:background .15s ease; }
-  .contact-row:hover{ background:var(--mist-2); }
-  .contact-row.active{ background:rgba(15,168,154,0.1); }
-  .contact-avatar{ width:38px; height:38px; border-radius:12px; display:flex; align-items:center; justify-content:center; color:#fff; font-weight:700; font-size:13px; flex-shrink:0; background:linear-gradient(135deg,var(--teal),var(--teal-deep)); }
-
-  .no-scrollbar::-webkit-scrollbar{ display:none; }
-  .no-scrollbar{ -ms-overflow-style:none; scrollbar-width:none; }
-
-  [data-tip]{ position:relative; }
-  .sidebar.collapsed [data-tip]:hover::after{ content:attr(data-tip); position:absolute; bottom:120%; left:50%; transform:translateX(-50%); background:var(--navy); color:#fff; font-size:11px; white-space:nowrap; padding:5px 9px; border-radius:8px; pointer-events:none; z-index:99; font-weight:500; }
 </style>
 </head>
 <body>
@@ -366,7 +333,7 @@
 
     <nav class="flex-1 overflow-y-auto no-scrollbar py-1">
       <p class="hide-on-collapse px-6 py-2 text-[10px] text-white/25 uppercase tracking-[0.16em] font-bold">Main</p>
-      <a href="dashboard.html" class="nav-item" onclick="setNav(this,event)" data-tip="Dashboard" data-action="page" data-target="dashboard.html">
+      <a href="dashboard.html" class="nav-item" onclick="setNav(this,event)" data-tip="Dashboard" data-action="page" data-target="dashboard.html" data-action="top">
         <i data-lucide="layout-dashboard"></i><span class="nav-label">Dashboard</span>
       </a>
       <a href="progress.html" class="nav-item" onclick="setNav(this,event)" data-tip="Progress" data-action="page" data-target="progress.html">
