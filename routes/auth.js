@@ -19,8 +19,14 @@ const sendToken = (res, user, statusCode = 200) => {
 };
 
 // ── Helper: redirect with token (OAuth flows) ─────────────────
-const redirectWithToken = (res, user) => {
-  const token    = signToken(user);
+const redirectWithToken = (res, user, state) => {
+  const token = signToken(user);
+  // Native app requests pass state=native through the OAuth flow (see /google route
+  // below) so we can redirect back into the app via its custom URL scheme instead
+  // of a regular web URL.
+  if (state === 'native') {
+    return res.redirect(`medclarivo://auth?token=${token}`);
+  }
   const clientUrl = process.env.CLIENT_REDIRECT_URL || process.env.CLIENT_URL || 'http://localhost:3000';
   res.redirect(`${clientUrl}?token=${token}`);
 };
@@ -179,13 +185,15 @@ router.patch('/onboarding', protect, async (req, res) => {
 // ════════════════════════════════════════════════════════════════
 // GOOGLE OAuth
 // ════════════════════════════════════════════════════════════════
-router.get('/google',
-  passport.authenticate('google', { scope: ['profile', 'email'], session: false })
-);
+router.get('/google', (req, res, next) => {
+  console.log('[GOOGLE AUTH START] query:', req.query);
+  const state = req.query.native === '1' ? 'native' : 'web';
+  passport.authenticate('google', { scope: ['profile', 'email'], session: false, state })(req, res, next);
+});
 
 router.get('/google/callback',
-  passport.authenticate('google', { session: false, failureRedirect: `${process.env.CLIENT_URL}?error=google_failed` }),
-  (req, res) => redirectWithToken(res, req.user)
+  (req, res, next) => passport.authenticate('google', { session: false, failureRedirect: `${process.env.CLIENT_URL}?error=google_failed` })(req, res, next),
+  (req, res) => { console.log('[GOOGLE CALLBACK] query.state:', req.query.state); return redirectWithToken(res, req.user, req.query.state); }
 );
 
 // ════════════════════════════════════════════════════════════════
