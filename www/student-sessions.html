@@ -568,19 +568,43 @@ function cardHTML(s, showStatus=false) {
     </div>`;
 }
 
+// Retries a fetch a couple times before giving up -- protects against a
+// slow/cold backend (e.g. Render free tier waking up) being mistaken for
+// an invalid session.
+async function fetchWithRetry(url, options, retries = 2, delayMs = 1500) {
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      const res = await fetch(url, options);
+      return res;
+    } catch (err) {
+      if (attempt === retries) throw err;
+      await new Promise(r => setTimeout(r, delayMs));
+    }
+  }
+}
+
 async function init() {
   const token = getToken();
   if(!token){window.location.href='index.html';return;}
   try {
-    const res = await fetch(`${API}/auth/me`,{headers:{Authorization:`Bearer ${token}`}});
+    const res = await fetchWithRetry(`${API}/auth/me`,{headers:{Authorization:`Bearer ${token}`}});
     const data = await res.json();
     if(res.ok&&data.success){
       const u=data.user;
       document.getElementById('sidebarName').textContent=u.name||u.email;
       document.getElementById('sidebarAvatar').textContent=(u.name||u.email).charAt(0).toUpperCase();
       document.getElementById('sidebarExam').textContent=u.onboarding?.exam||'Student';
-    } else {window.location.href='index.html';return;}
-  } catch(e){window.location.href='index.html';return;}
+    } else if (res.status === 401 || res.status === 404) {
+      // Only a genuinely invalid/expired session should sign the user out.
+      window.location.href='index.html';return;
+    }
+    // Any other non-success status (5xx, etc.) -- don't sign out, just
+    // continue; loadSessions() below will show its own error state.
+  } catch(e){
+    // Network/timeout failure even after retries -- don't sign the user
+    // out for this; show sessions load as failed instead.
+    console.warn('Could not verify session (network issue), continuing without signing out:', e);
+  }
   await loadSessions();
 }
 
