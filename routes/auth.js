@@ -186,14 +186,13 @@ router.patch('/onboarding', protect, async (req, res) => {
 // GOOGLE OAuth
 // ════════════════════════════════════════════════════════════════
 router.get('/google', (req, res, next) => {
-  console.log('[GOOGLE AUTH START] query:', req.query);
   const state = req.query.native === '1' ? 'native' : 'web';
-  passport.authenticate('google', { scope: ['profile', 'email'], session: false, state })(req, res, next);
+  passport.authenticate('google', { scope: ['profile', 'email'], session: false, state, prompt: 'select_account' })(req, res, next);
 });
 
 router.get('/google/callback',
   (req, res, next) => passport.authenticate('google', { session: false, failureRedirect: `${process.env.CLIENT_URL}?error=google_failed` })(req, res, next),
-  (req, res) => { console.log('[GOOGLE CALLBACK] query.state:', req.query.state); return redirectWithToken(res, req.user, req.query.state); }
+  (req, res) => redirectWithToken(res, req.user, req.query.state)
 );
 
 // ════════════════════════════════════════════════════════════════
