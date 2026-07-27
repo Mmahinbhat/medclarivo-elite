@@ -899,20 +899,25 @@ document.querySelectorAll('.btn-social')[0].addEventListener('click', () => {
 });
 
 // ── Catch deep-link redirect after native Google sign-in ──────
-if (window.Capacitor && window.Capacitor.isNativePlatform()) {
-  function handleNativeAuthUrl(urlString) {
+function handleNativeAuthUrl(urlString) {
+    console.log('DEBUG: handleNativeAuthUrl called with:', urlString);
     try {
       const parsed = new URL(urlString);
       const token = parsed.searchParams.get('token');
+      console.log('DEBUG: parsed token =', token);
       if (token) {
+        console.log('DEBUG: token found, logging in');
         localStorage.setItem('mc_token', token);
         window.Capacitor.Plugins.Browser.close();
         showToast('✅ Signed in successfully!', 'success');
         setTimeout(() => redirectToDashboard(), 800);
+      } else {
+        console.log('DEBUG: no token in URL, doing nothing');
       }
-    } catch (e) {}
+    } catch (e) {
+      console.log('DEBUG: ERROR parsing URL:', e.message);
+    }
   }
-
   // Catches the case where the app was already open (warm resume)
   window.Capacitor.Plugins.App.addListener('appUrlOpen', (data) => handleNativeAuthUrl(data.url));
 
