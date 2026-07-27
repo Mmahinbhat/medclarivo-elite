@@ -900,15 +900,25 @@ document.querySelectorAll('.btn-social')[0].addEventListener('click', () => {
 
 // ── Catch deep-link redirect after native Google sign-in ──────
 if (window.Capacitor && window.Capacitor.isNativePlatform()) {
-  window.Capacitor.Plugins.App.addListener('appUrlOpen', (data) => {
-    const url = new URL(data.url);
-    const token = url.searchParams.get('token');
-    if (token) {
-      localStorage.setItem('mc_token', token);
-      window.Capacitor.Plugins.Browser.close();
-      showToast('✅ Signed in successfully!', 'success');
-      setTimeout(() => redirectToDashboard(), 800);
-    }
+  function handleNativeAuthUrl(urlString) {
+    try {
+      const parsed = new URL(urlString);
+      const token = parsed.searchParams.get('token');
+      if (token) {
+        localStorage.setItem('mc_token', token);
+        window.Capacitor.Plugins.Browser.close();
+        showToast('✅ Signed in successfully!', 'success');
+        setTimeout(() => redirectToDashboard(), 800);
+      }
+    } catch (e) {}
+  }
+
+  // Catches the case where the app was already open (warm resume)
+  window.Capacitor.Plugins.App.addListener('appUrlOpen', (data) => handleNativeAuthUrl(data.url));
+
+  // Catches the case where the app had to relaunch fresh (cold start)
+  window.Capacitor.Plugins.App.getLaunchUrl().then((result) => {
+    if (result && result.url) handleNativeAuthUrl(result.url);
   });
 }
 
