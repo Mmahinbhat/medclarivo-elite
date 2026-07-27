@@ -888,9 +888,29 @@ async function redirectToDashboard() {
   });
 
   // ── Google OAuth button ───────────────────────
-  document.querySelectorAll('.btn-social')[0].addEventListener('click', () => {
-    window.location.href = `${API_BASE}/auth/google${window.Capacitor && window.Capacitor.isNativePlatform() ? '?native=1' : ''}`;
+  // ── Google OAuth button ───────────────────────
+document.querySelectorAll('.btn-social')[0].addEventListener('click', () => {
+  const url = `${API_BASE}/auth/google${window.Capacitor && window.Capacitor.isNativePlatform() ? '?native=1' : ''}`;
+  if (window.Capacitor && window.Capacitor.isNativePlatform()) {
+    window.Capacitor.Plugins.Browser.open({ url });
+  } else {
+    window.location.href = url;
+  }
+});
+
+// ── Catch deep-link redirect after native Google sign-in ──────
+if (window.Capacitor && window.Capacitor.isNativePlatform()) {
+  window.Capacitor.Plugins.App.addListener('appUrlOpen', (data) => {
+    const url = new URL(data.url);
+    const token = url.searchParams.get('token');
+    if (token) {
+      localStorage.setItem('mc_token', token);
+      window.Capacitor.Plugins.Browser.close();
+      showToast('✅ Signed in successfully!', 'success');
+      setTimeout(() => redirectToDashboard(), 800);
+    }
   });
+}
 
   // ── Apple Sign-In button ──────────────────────
   document.querySelectorAll('.btn-social')[1].addEventListener('click', () => {
