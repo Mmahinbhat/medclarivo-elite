@@ -24,3 +24,13 @@ header.fixed, .fixed-header {
 .bottom-fixed, .chat-input-bar, footer.fixed {
   padding-bottom: env(safe-area-inset-bottom) !important;
 }
+
+/* On mobile, extend the dashboard hero card's background flush to the
+   true top edge (under the notch/status bar), while keeping its actual
+   text content in the same visual position via compensating padding. */
+@media (max-width: 1023px) {
+  .hero {
+    margin-top: calc(-1 * (env(safe-area-inset-top) + 104px)) !important;
+    padding-top: calc(env(safe-area-inset-top) + 104px + 28px) !important;
+  }
+}
