@@ -324,7 +324,7 @@
     <!-- User pill -->
     <div class="mx-3 mb-3 p-2.5 rounded-2xl bg-white/5 flex items-center gap-3 cursor-pointer hover:bg-white/8 transition-colors">
       <div class="avatar-ring flex-shrink-0">
-        <div class="w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-xs font-display" style="background:linear-gradient(135deg,var(--teal),var(--teal-deep));">M</div>
+        <div id="avatarInitial" class="w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-xs font-display" style="background:linear-gradient(135deg,var(--teal),var(--teal-deep));">M</div>
       </div>
       <div class="hide-on-collapse flex-1 min-w-0">
         <p class="text-white font-semibold text-[13px] truncate" id="sidebarName">Mahin Bhat</p>
@@ -850,9 +850,9 @@ async function loadUser(){
     if(res.ok&&data.success){
       currentUser=data.user;
       const name=data.user.name||'Student';
-      document.getElementById('studentName').textContent=name;
+      document.getElementById('sidebarName').textContent=name;
       document.getElementById('avatarInitial').textContent=name[0].toUpperCase();
-      document.getElementById('studentExam').textContent=data.user.onboarding?.exam||'MedClarivo Elite';
+      document.getElementById('sidebarExamLevel').textContent=data.user.onboarding?.exam||'MedClarivo Elite';
     }
   } catch(e){}
 }
