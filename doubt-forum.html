@@ -125,6 +125,8 @@
     border:1px solid rgba(255,255,255,0.7);
     box-shadow:0 8px 28px -16px rgba(11,18,32,0.18);
   }
+  .btn-teal{background:var(--teal);color:#fff;border:none;border-radius:12px;padding:9px 16px;font-size:13px;font-weight:600;cursor:pointer;transition:opacity .15s;display:inline-flex;align-items:center;gap:6px;}
+  .btn-teal:hover{opacity:0.9;}
 
   /* Cards */
   .panel{
@@ -394,7 +396,8 @@
 
 <!-- ── Main ── -->
 <main class="main-content">
-  <div class="topbar" style="margin:16px 16px 0 0;">
+  <div class="max-w-5xl mx-auto px-4 md:px-6">
+  <div class="topbar mt-4 h-16 flex items-center justify-between px-4 md:px-5">
     <div class="flex items-center gap-3">
       <button class="lg:hidden btn-ghost-icon" onclick="document.getElementById('sidebar').classList.toggle('open')"><i data-lucide="menu" class="w-5 h-5"></i></button>
       <div>
@@ -407,7 +410,7 @@
     </button>
   </div>
 
-  <div class="px-4 md:px-6 pb-16 max-w-5xl mx-auto space-y-5" style="margin-top:24px;">
+  <div class="pb-16 space-y-5" style="margin-top:24px;">
 
     <!-- Stats -->
     <div class="grid grid-cols-3 gap-4">
@@ -462,6 +465,7 @@
     <!-- Doubts list -->
     <div id="doubtsList" class="space-y-3 hidden"></div>
 
+  </div>
   </div>
 </main>
 </div>
