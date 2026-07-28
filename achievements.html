@@ -99,22 +99,26 @@
   </aside>
 
   <main class="main-content" id="mainContent">
-    <div class="topbar">
-      <div>
-        <p class="text-ink font-semibold text-sm">Achievements</p>
-        <p class="text-ink-faint text-xs" id="progressLabel">Loading…</p>
+    <div class="max-w-5xl mx-auto px-4 md:px-6">
+    <div class="topbar mt-4 h-16 flex items-center justify-between px-4 md:px-5">
+      <div class="flex items-center gap-2">
+        <button class="lg:hidden btn-ghost-icon" onclick="document.getElementById('sidebar').classList.toggle('open')">
+          <i data-lucide="menu" class="w-5 h-5"></i>
+        </button>
+        <div>
+          <p class="text-ink font-semibold text-sm">Achievements</p>
+          <p class="text-ink-faint text-xs" id="progressLabel">Loading…</p>
+        </div>
       </div>
-      <button class="lg:hidden" onclick="document.getElementById('sidebar').classList.toggle('open')">
-        <i data-lucide="menu"></i>
-      </button>
     </div>
 
-    <div class="px-4 md:px-6 pb-16 max-w-5xl mx-auto space-y-6">
+    <div class="pb-16 space-y-6" style="margin-top:16px;">
       <section class="panel p-6">
         <div id="achievementsGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           <p class="text-ink-faint text-sm col-span-full text-center py-10">Loading achievements…</p>
         </div>
       </section>
+    </div>
     </div>
   </main>
 </div>
