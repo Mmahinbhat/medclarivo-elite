@@ -10,11 +10,8 @@ fix-sidebars.py
 .vscode/
 .idea/
 coverage/
-<<<<<<< HEAD
 ios/App/App.xcworkspace/xcuserdata/
 ios/App/Pods/
 ios/App/build/
-=======
 /android
-   /ios
->>>>>>> 0ba64177fa8845e7cf2e2fadc41eb97a125a59ed
+/ios
