@@ -10,3 +10,5 @@ fix-sidebars.py
 .vscode/
 .idea/
 coverage/
+/android
+   /ios
