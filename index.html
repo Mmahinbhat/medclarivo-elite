@@ -918,14 +918,17 @@ function handleNativeAuthUrl(urlString) {
       console.log('DEBUG: ERROR parsing URL:', e.message);
     }
   }
-  // Catches the case where the app was already open (warm resume)
-  window.Capacitor.Plugins.App.addListener('appUrlOpen', (data) => handleNativeAuthUrl(data.url));
+  // Only wire up Capacitor listeners inside the native app wrapper —
+  // window.Capacitor doesn't exist on the regular web site.
+  if (window.Capacitor) {
+    // Catches the case where the app was already open (warm resume)
+    window.Capacitor.Plugins.App.addListener('appUrlOpen', (data) => handleNativeAuthUrl(data.url));
 
-  // Catches the case where the app had to relaunch fresh (cold start)
-  window.Capacitor.Plugins.App.getLaunchUrl().then((result) => {
-    if (result && result.url) handleNativeAuthUrl(result.url);
-  });
-}
+    // Catches the case where the app had to relaunch fresh (cold start)
+    window.Capacitor.Plugins.App.getLaunchUrl().then((result) => {
+      if (result && result.url) handleNativeAuthUrl(result.url);
+    });
+  }
 
   // ── Apple Sign-In button ──────────────────────
   document.querySelectorAll('.btn-social')[1].addEventListener('click', () => {
