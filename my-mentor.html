@@ -225,9 +225,30 @@ function authHeaders() {
   return token ? { Authorization: `Bearer ${token}` } : {};
 }
 
+// Retries a fetch a couple times before giving up -- protects against a
+// slow/cold backend (e.g. Render free tier waking up) failing outright.
+async function fetchWithRetry(url, options, retries = 2, delayMs = 1500) {
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      return await fetch(url, options);
+    } catch (err) {
+      if (attempt === retries) throw err;
+      await new Promise(r => setTimeout(r, delayMs));
+    }
+  }
+}
+
 async function loadMentor() {
+  // If this is taking a while, the backend is probably waking up from
+  // sleep (Render free tier) -- let the person know instead of leaving
+  // a static "Loading..." with no feedback.
+  const slowNoticeTimer = setTimeout(() => {
+    const el = document.getElementById('content');
+    if (el) el.innerHTML = `<p class="text-ink-faint text-sm">Still loading&hellip; the server may be waking up, this can take up to a minute.</p>`;
+  }, 4000);
+
   try {
-    const profileRes = await fetch(`${API_BASE}/auth/my-mentor`, { headers: authHeaders() });
+    const profileRes = await fetchWithRetry(`${API_BASE}/auth/my-mentor`, { headers: authHeaders() });
     const profileData = await profileRes.json();
 
     if (!profileData.success || !profileData.mentorAssigned) {
@@ -237,14 +258,17 @@ async function loadMentor() {
 
     let sessionData = { stats: {}, upcomingSessions: [], sessionHistory: [], joinLink: null };
     try {
-      const sessionsRes = await fetch(`${API_BASE}/student/mentor/my-mentor`, { headers: authHeaders() });
+      const sessionsRes = await fetchWithRetry(`${API_BASE}/student/mentor/my-mentor`, { headers: authHeaders() });
       if (sessionsRes.ok) sessionData = await sessionsRes.json();
     } catch (e) {}
 
     render(profileData.mentor, sessionData);
   } catch (err) {
-    renderNoMentor();
+    // A genuine failure to reach the server is not the same thing as
+    // "no mentor assigned" -- don't conflate the two.
+    renderLoadError();
   } finally {
+    clearTimeout(slowNoticeTimer);
     lucide.createIcons();
   }
 }
@@ -356,6 +380,20 @@ function renderNoMentor() {
       <a href="settings.html" class="btn-primary px-6 py-2.5 text-sm inline-flex items-center gap-2">
         <i data-lucide="user-plus" class="w-4 h-4"></i> Request a Mentor
       </a>
+    </div>
+  `;
+  lucide.createIcons();
+}
+
+function renderLoadError() {
+  document.getElementById('content').innerHTML = `
+    <div class="panel p-12 text-center reveal">
+      <i data-lucide="wifi-off" class="w-10 h-10 text-ink-faint mx-auto mb-3"></i>
+      <p class="text-ink-soft text-sm font-semibold mb-1">Couldn't reach the server.</p>
+      <p class="text-ink-faint text-xs mb-5">This can happen if the server just woke up from sleep. Please try again.</p>
+      <button onclick="loadMentor()" class="btn-primary px-6 py-2.5 text-sm inline-flex items-center gap-2">
+        <i data-lucide="refresh-cw" class="w-4 h-4"></i> Retry
+      </button>
     </div>
   `;
   lucide.createIcons();
