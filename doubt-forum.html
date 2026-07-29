@@ -305,6 +305,7 @@
 </head>
 <body>
 <div class="app-shell">
+  <div class="overlay" id="overlay" onclick="closeSidebar()"></div>
 
 <!-- ── Sidebar ── -->
   <aside class="sidebar" id="sidebar">
@@ -399,7 +400,7 @@
   <div class="max-w-5xl mx-auto px-4 md:px-6">
   <div class="topbar mt-4 h-16 flex items-center justify-between px-4 md:px-5">
     <div class="flex items-center gap-3">
-      <button class="lg:hidden btn-ghost-icon" onclick="document.getElementById('sidebar').classList.toggle('open')"><i data-lucide="menu" class="w-5 h-5"></i></button>
+      <button class="lg:hidden btn-ghost-icon" onclick="openSidebar()"><i data-lucide="menu" class="w-5 h-5"></i></button>
       <div>
         <p class="font-display text-lg text-ink leading-none">Doubt Forum</p>
       </div>
@@ -556,6 +557,8 @@
 const API = 'https://med-clarivo.onrender.com/api';
 function getToken(){ return localStorage.getItem('mc_token') || localStorage.getItem('admin_token'); }
 function showToast(msg){ const t=document.getElementById('toast');t.textContent=msg;t.className='toast show';setTimeout(()=>t.classList.remove('show'),3000); }
+function openSidebar(){ document.getElementById('sidebar').classList.add('open'); document.getElementById('overlay').classList.add('open'); }
+function closeSidebar(){ document.getElementById('sidebar').classList.remove('open'); document.getElementById('overlay').classList.remove('open'); }
 
 let allDoubts = [];
 let currentTab = 'all';

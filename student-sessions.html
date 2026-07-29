@@ -303,6 +303,7 @@
 </head>
 <body>
 <div class="app-shell">
+  <div class="overlay" id="overlay" onclick="closeSidebar()"></div>
 
   <aside class="sidebar" id="sidebar">
     <div class="px-5 pt-5 pb-4 flex items-center justify-between">
@@ -395,7 +396,7 @@
     <div class="max-w-5xl mx-auto px-4 md:px-6">
     <div class="topbar mt-4 flex items-center justify-between px-4 md:px-5 py-3">
       <div class="flex items-center gap-3">
-        <button class="lg:hidden btn-ghost-icon" onclick="document.getElementById('sidebar').classList.toggle('open')">
+        <button class="lg:hidden btn-ghost-icon" onclick="openSidebar()">
           <i data-lucide="menu" class="w-5 h-5"></i>
         </button>
         <div>
@@ -476,6 +477,9 @@
 <script>
 const API = 'https://med-clarivo.onrender.com/api';
 let allSessions = [];
+
+function openSidebar(){ document.getElementById('sidebar').classList.add('open'); document.getElementById('overlay').classList.add('open'); }
+function closeSidebar(){ document.getElementById('sidebar').classList.remove('open'); document.getElementById('overlay').classList.remove('open'); }
 
 function toggleCollapse(){
   document.getElementById('sidebar').classList.toggle('collapsed');

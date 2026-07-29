@@ -24,6 +24,8 @@
   .sidebar.collapsed .nav-item{justify-content:center;padding-left:0;padding-right:0;}
   .sidebar.collapsed .nav-item .nav-label{display:none;}
   @media(max-width:1023px){.sidebar{transform:translateX(-130%);}.sidebar.open{transform:translateX(0);}}
+  .overlay{position:fixed;inset:0;background:rgba(7,12,22,0.45);backdrop-filter:blur(2px);z-index:55;display:none;}
+  .overlay.open{display:block;}
   .main-content{margin-left:292px;flex:1;min-width:0;transition:margin-left .3s ease;}
   .main-content.collapsed{margin-left:116px;}
   @media(max-width:1023px){.main-content,.main-content.collapsed{margin-left:0;}}
@@ -52,6 +54,7 @@
 <body>
 
 <div class="app-shell">
+  <div class="overlay" id="overlay" onclick="closeSidebar()"></div>
   <aside class="sidebar" id="sidebar">
     <div class="flex items-center justify-between px-5 pt-6 pb-5">
       <div class="flex items-center gap-2.5 min-w-0">
@@ -106,7 +109,7 @@
     <div class="max-w-5xl mx-auto px-4 md:px-6">
     <div class="topbar mt-4 h-16 flex items-center justify-between px-4 md:px-5">
       <div class="flex items-center gap-2">
-        <button class="lg:hidden btn-ghost-icon" onclick="document.getElementById('sidebar').classList.toggle('open')">
+        <button class="lg:hidden btn-ghost-icon" onclick="openSidebar()">
           <i data-lucide="menu" class="w-5 h-5"></i>
         </button>
         <div>
@@ -131,6 +134,8 @@
   const API = 'https://med-clarivo.onrender.com/api';
   function getToken() { return localStorage.getItem('mc_token'); }
   const token = getToken();
+  function openSidebar(){ document.getElementById('sidebar').classList.add('open'); document.getElementById('overlay').classList.add('open'); }
+  function closeSidebar(){ document.getElementById('sidebar').classList.remove('open'); document.getElementById('overlay').classList.remove('open'); }
   if (!token) window.location.href = 'index.html';
 
   lucide.createIcons();

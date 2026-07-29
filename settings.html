@@ -41,6 +41,8 @@
     display:flex; flex-direction:column; z-index:60;
   }
   @media (max-width:1023px){ .sidebar{ transform:translateX(-130%); transition:transform .3s ease; } .sidebar.open{ transform:translateX(0); } }
+  .overlay{ position:fixed; inset:0; background:rgba(7,12,22,0.45); backdrop-filter:blur(2px); z-index:55; display:none; }
+  .overlay.open{ display:block; }
   .main-content{ margin-left:292px; flex:1; min-width:0; }
   @media (max-width:1023px){ .main-content{ margin-left:0; } }
   .nav-item{ display:flex; align-items:center; gap:12px; padding:10px 16px; border-radius:14px; color:rgba(255,255,255,0.52); font-size:13.5px; font-weight:500; cursor:pointer; transition:all .2s ease; margin:1px 12px; text-decoration:none; position:relative; }
@@ -70,6 +72,7 @@
 <body>
 
 <div class="app-shell">
+  <div class="overlay" id="overlay" onclick="closeSidebar()"></div>
   <aside class="sidebar" id="sidebar">
     <div class="px-5 pt-5 pb-4">
       <p class="font-display text-white text-[17px] leading-none">MedClarivo</p>
@@ -96,7 +99,7 @@
   <div class="main-content">
     <header class="topbar mx-4 mt-4 lg:mx-6 h-16 flex items-center justify-between px-4 md:px-5">
       <p class="font-display text-lg text-ink">Settings</p>
-      <button class="lg:hidden" onclick="document.getElementById('sidebar').classList.toggle('open')"><i data-lucide="menu"></i></button>
+      <button class="lg:hidden" onclick="openSidebar()"><i data-lucide="menu"></i></button>
     </header>
 
     <main class="px-4 md:px-6 pb-16 max-w-3xl mx-auto pt-6 space-y-6">
@@ -188,6 +191,9 @@
   const API_BASE = 'https://med-clarivo.onrender.com/api';
   const token = localStorage.getItem('mc_token');
   if (!token) window.location.href = 'index.html';
+
+  function openSidebar(){ document.getElementById('sidebar').classList.add('open'); document.getElementById('overlay').classList.add('open'); }
+  function closeSidebar(){ document.getElementById('sidebar').classList.remove('open'); document.getElementById('overlay').classList.remove('open'); }
 
   lucide.createIcons();
 

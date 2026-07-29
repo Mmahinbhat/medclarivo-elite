@@ -304,6 +304,7 @@
 <body>
 
 <div class="app-shell">
+  <div class="overlay" id="overlay" onclick="closeSidebar()"></div>
   <aside class="sidebar" id="sidebar">
     <div class="px-5 pt-5 pb-4 flex items-center justify-between">
       <div class="flex items-center gap-3 min-w-0">
@@ -442,8 +443,8 @@
 
   lucide.createIcons();
 
-  function openSidebar(){ document.getElementById('sidebar').classList.add('open'); }
-  function closeSidebar(){ document.getElementById('sidebar').classList.remove('open'); }
+  function openSidebar(){ document.getElementById('sidebar').classList.add('open'); document.getElementById('overlay').classList.add('open'); }
+  function closeSidebar(){ document.getElementById('sidebar').classList.remove('open'); document.getElementById('overlay').classList.remove('open'); }
   function toggleCollapse(){
     document.getElementById('sidebar').classList.toggle('collapsed');
     document.getElementById('mainContent').classList.toggle('collapsed');
