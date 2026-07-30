@@ -29,9 +29,15 @@ header.fixed, .fixed-header {
 }
 
 /* ── BOTTOM NAV BAR: sit above home indicator ── */
-nav.fixed[class*="bottom"] {
-  bottom: calc(12px + env(safe-area-inset-bottom)) !important;
-  padding-bottom: env(safe-area-inset-bottom) !important;
+@media (max-width: 1023px) {
+  nav.fixed {
+    bottom: calc(12px + env(safe-area-inset-bottom)) !important;
+  }
+
+  /* Push page content up so it's not hidden behind the bottom nav + home indicator */
+  main {
+    padding-bottom: calc(96px + env(safe-area-inset-bottom)) !important;
+  }
 }
 
 /* ── Bottom-fixed bars (chat inputs, sticky footers) ── */
