@@ -5,32 +5,44 @@
    is safe to include everywhere without affecting desktop/Android/web.
 */
 
+/* ── BODY: push ALL page content below the Dynamic Island on mobile ── */
+@media (max-width: 1023px) {
+  body {
+    padding-top: env(safe-area-inset-top) !important;
+  }
+}
+
+/* ── SIDEBAR (desktop floating card) ── */
 .sidebar {
   top: calc(16px + env(safe-area-inset-top)) !important;
   bottom: calc(16px + env(safe-area-inset-bottom)) !important;
 }
 
+/* ── TOPBAR: sticky header floats below the notch ── */
 .topbar {
-  top: calc(16px + env(safe-area-inset-top)) !important;
+  top: calc(8px + env(safe-area-inset-top)) !important;
 }
 
-/* Generic fallback for pages that use a plain fixed header instead of .topbar */
+/* ── Generic fallback for pages using a plain fixed header ── */
 header.fixed, .fixed-header {
   padding-top: env(safe-area-inset-top) !important;
 }
 
-/* Bottom-fixed bars (chat inputs, nav bars, sticky footers) shouldn't sit
-   underneath the home indicator */
+/* ── BOTTOM NAV BAR: sit above home indicator ── */
+nav.fixed[class*="bottom"] {
+  bottom: calc(12px + env(safe-area-inset-bottom)) !important;
+  padding-bottom: env(safe-area-inset-bottom) !important;
+}
+
+/* ── Bottom-fixed bars (chat inputs, sticky footers) ── */
 .bottom-fixed, .chat-input-bar, footer.fixed {
   padding-bottom: env(safe-area-inset-bottom) !important;
 }
 
-/* On mobile, extend the dashboard hero card's background flush to the
-   true top edge (under the notch/status bar), while keeping its actual
-   text content in the same visual position via compensating padding. */
+/* ── HERO section: extend flush to true top edge on mobile ── */
 @media (max-width: 1023px) {
   .hero {
-    margin-top: calc(-1 * (env(safe-area-inset-top) + 104px)) !important;
-    padding-top: calc(env(safe-area-inset-top) + 104px + 28px) !important;
+    margin-top: 0 !important;
+    padding-top: calc(env(safe-area-inset-top) + 80px + 28px) !important;
   }
 }
