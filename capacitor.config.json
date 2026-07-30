@@ -1,5 +1,8 @@
 {
   "appId": "com.medclarivo.elite",
   "appName": "MedClarivo Elite",
-  "webDir": "www"
+  "webDir": "www",
+  "ios": {
+    "contentInset": "never"
+  }
 }
