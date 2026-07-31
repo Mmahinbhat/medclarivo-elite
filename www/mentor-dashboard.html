@@ -7,7 +7,7 @@
 
 <script src="sessionGuard.js"></script>
 <meta charset="utf-8"/>
-<meta content="width=device-width, initial-scale=1.0, viewport-fit=cover" name="viewport"/>
+<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"/>
 <title>MedClarivo Elite | Mentor Dashboard</title>
 <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -311,7 +311,7 @@
 <div class="app-shell">
 
   <!-- ════════════════════ SIDEBAR ════════════════════ -->
-  <aside class="sidebar" id="sidebar">
+    <aside class="sidebar" id="sidebar">
     <div class="px-5 pt-5 pb-4 flex items-center justify-between">
       <div class="flex items-center gap-3 min-w-0">
         <div class="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style="background:linear-gradient(135deg,var(--teal),var(--teal-deep));">
@@ -340,13 +340,13 @@
 
     <nav class="flex-1 overflow-y-auto no-scrollbar py-1">
       <p class="hide-on-collapse px-6 py-2 text-[10px] text-white/25 uppercase tracking-[0.16em] font-bold">Main</p>
-      <a href="#" class="nav-item active" onclick="setNav(this,event)" data-tip="Dashboard">
+      <a href="mentor-dashboard.html" class="nav-item active" data-tip="Dashboard">
         <i data-lucide="layout-dashboard"></i><span class="nav-label">Dashboard</span>
       </a>
-      <a href="mentor-mentees.html" class="nav-item" onclick="setNav(this,event)" data-tip="My Mentees" data-action="page" data-target="mentor-mentees.html">
+      <a href="mentor-mentees.html" class="nav-item" data-tip="My Mentees">
         <i data-lucide="users"></i><span class="nav-label">My Mentees</span>
       </a>
-      <a href="mentor-requests.html" class="nav-item" onclick="setNav(this,event)" data-tip="Requests" data-action="page" data-target="mentor-requests.html">
+      <a href="mentor-requests.html" class="nav-item" data-tip="Requests">
         <i data-lucide="user-check"></i><span class="nav-label flex-1">Requests</span>
         <span class="hide-on-collapse chip chip-navy" style="padding:1px 7px;font-size:9.5px">Soon</span>
       </a>
@@ -355,10 +355,10 @@
       </a>
 
       <p class="hide-on-collapse px-6 py-2 mt-3 text-[10px] text-white/25 uppercase tracking-[0.16em] font-bold">Mentorship</p>
-      <a href="mentor-sessions.html" class="nav-item" onclick="setNav(this,event)" data-tip="Sessions" data-action="page" data-target="mentor-sessions.html">
+      <a href="mentor-sessions.html" class="nav-item" data-tip="Sessions">
         <i data-lucide="video"></i><span class="nav-label">Sessions</span>
       </a>
-      <a href="mentor-doubt-forum.html" class="nav-item" onclick="setNav(this,event)" data-tip="Doubt Forum" data-action="page" data-target="mentor-doubt-forum.html">
+      <a href="mentor-doubt-forum.html" class="nav-item" data-tip="Doubt Forum">
         <i data-lucide="message-circle"></i><span class="nav-label flex-1">Doubt Forum</span>
         <span class="hide-on-collapse w-1.5 h-1.5 bg-teal-2 rounded-full pulse-dot"></span>
       </a>
@@ -376,16 +376,7 @@
       </a>
     </nav>
 
-    <div class="hide-on-collapse mx-3 mb-3 p-4 rounded-2xl" style="background:linear-gradient(135deg,rgba(15,168,154,0.22),rgba(15,168,154,0.06));border:1px solid rgba(15,168,154,0.25)">
-      <div class="flex items-center gap-2 mb-2">
-        <i data-lucide="calendar-clock" class="w-4 h-4 text-teal-2"></i>
-        <span class="text-white font-bold text-[13px]">Weekly Availability</span>
-      </div>
-      <p class="text-white/45 text-[11px] leading-snug mb-3">Mentees can only book sessions during hours you've set open.</p>
-      <button onclick="openAvailabilityModal()" class="w-full py-2 rounded-xl text-[11.5px] font-bold btn-primary">Set Availability</button>
-    </div>
-
-    <button id="signOutBtn" class="nav-item mb-4 text-red-300/70 hover:text-red-300 hover:bg-red-500/10" data-tip="Sign Out" style="background:none;border:none;cursor:pointer;font:inherit;text-align:left;">
+    <button id="signOutBtn" onclick="handleLogout(event)" class="nav-item mb-4 text-red-300/70 hover:text-red-300 hover:bg-red-500/10" data-tip="Sign Out" style="background:none;border:none;cursor:pointer;font:inherit;text-align:left;">
       <i data-lucide="log-out"></i><span class="nav-label">Sign Out</span>
     </button>
   </aside>
@@ -754,10 +745,13 @@
 
   // ── Active nav ──
   function setNav(el, e){
-    e.preventDefault();
     document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
     el.classList.add('active');
     closeSidebar();
+    if (el.dataset.action === 'page' && el.dataset.target) {
+      e.preventDefault();
+      window.location.href = el.dataset.target;
+    }
   }
 
   // ── Shared state ──
