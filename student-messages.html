@@ -7,7 +7,7 @@
 <script src="sessionGuard.js"></script>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0, viewport-fit=cover" name="viewport"/>
-<title>MedClarivo Elite | Analytics</title>
+<title>MedClarivo Elite | Messages</title>
 <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://unpkg.com/lucide@latest"></script>
@@ -117,13 +117,13 @@
 
   /* Topbar */
   .topbar{
-    position:sticky; top:0; z-index:50;
-    margin:0; border-radius:0;
-    background:rgba(255,255,255,0.92);
+    position:sticky; top:16px; z-index:50;
+    margin:0 16px 0 0; border-radius:20px;
+    background:rgba(255,255,255,0.78);
     backdrop-filter:blur(18px) saturate(160%);
     -webkit-backdrop-filter:blur(18px) saturate(160%);
-    border:none; border-bottom:1px solid rgba(11,18,32,0.08);
-    box-shadow:0 4px 16px -8px rgba(11,18,32,0.12);
+    border:1px solid rgba(255,255,255,0.7);
+    box-shadow:0 8px 28px -16px rgba(11,18,32,0.18);
   }
 
   /* Cards */
@@ -335,45 +335,45 @@
 
     <nav class="flex-1 overflow-y-auto no-scrollbar py-1">
       <p class="hide-on-collapse px-6 py-2 text-[10px] text-white/25 uppercase tracking-[0.16em] font-bold">Main</p>
-      <a href="dashboard.html" class="nav-item" data-tip="Dashboard">
+      <a href="dashboard.html" class="nav-item" onclick="setNav(this,event)" data-tip="Dashboard" data-action="page" data-target="dashboard.html" data-action="top">
         <i data-lucide="layout-dashboard"></i><span class="nav-label">Dashboard</span>
       </a>
-      <a href="progress.html" class="nav-item" data-tip="Progress">
-        <i data-lucide="trending-up"></i><span class="nav-label flex-1">Progress</span>
+      <a href="progress.html" class="nav-item" onclick="setNav(this,event)" data-tip="Progress" data-action="page" data-target="progress.html">
+        <i data-lucide="trending-up"></i><span class="nav-label">Progress</span>
       </a>
-      <a href="#" class="nav-item" data-tip="Content Library">
+      <a href="#" class="nav-item" onclick="setNav(this,event)" data-tip="Content Library" data-action="soon">
         <i data-lucide="library"></i><span class="nav-label flex-1">Content Library</span>
         <span class="hide-on-collapse chip chip-teal" style="padding:1px 7px;font-size:9.5px">Soon</span>
       </a>
-      <a href="analytics.html" class="nav-item active" data-tip="Analytics">
+      <a href="analytics.html" class="nav-item" onclick="setNav(this,event)" data-tip="Analytics" data-action="page" data-target="analytics.html">
         <i data-lucide="bar-chart-3"></i><span class="nav-label">Analytics</span>
       </a>
 
       <p class="hide-on-collapse px-6 py-2 mt-3 text-[10px] text-white/25 uppercase tracking-[0.16em] font-bold">Mentorship</p>
-      <a href="my-mentor.html" class="nav-item" data-tip="My Mentor">
+      <a href="my-mentor.html" class="nav-item" onclick="setNav(this,event)" data-tip="My Mentor" data-action="page" data-target="my-mentor.html">
         <i data-lucide="users"></i><span class="nav-label">My Mentor</span>
       </a>
-      <a href="student-sessions.html" class="nav-item" data-tip="Sessions">
+      <a href="student-sessions.html" class="nav-item" onclick="setNav(this,event)" data-tip="Sessions" data-action="page" data-target="student-sessions.html">
         <i data-lucide="video"></i><span class="nav-label">Sessions</span>
       </a>
-      <a href="student-messages.html" class="nav-item" data-tip="Messages">
+      <a href="student-messages.html" class="nav-item active" onclick="setNav(this,event)" data-tip="Messages" data-action="page" data-target="student-messages.html">
         <i data-lucide="mail"></i><span class="nav-label">Messages</span>
       </a>
-      <a href="dashboard.html#doubtSection" class="nav-item" data-tip="Doubt Forum">
+      <a href="doubt-forum.html" class="nav-item" onclick="setNav(this,event)" data-tip="Doubt Forum" data-action="page" data-target="doubt-forum.html">
         <i data-lucide="message-circle"></i><span class="nav-label flex-1">Doubt Forum</span>
         <span class="hide-on-collapse w-1.5 h-1.5 bg-teal-2 rounded-full pulse-dot"></span>
       </a>
 
       <p class="hide-on-collapse px-6 py-2 mt-3 text-[10px] text-white/25 uppercase tracking-[0.16em] font-bold">Support</p>
-      <a href="raise-ticket.html" class="nav-item" data-tip="Raise a Ticket">
+      <a href="raise-ticket.html" class="nav-item" onclick="setNav(this,event)" data-tip="Raise a Ticket" data-action="page" data-target="raise-ticket.html">
         <i data-lucide="shield-alert"></i><span class="nav-label">Raise a Ticket</span>
       </a>
 
       <p class="hide-on-collapse px-6 py-2 mt-3 text-[10px] text-white/25 uppercase tracking-[0.16em] font-bold">Account</p>
-      <a href="dashboard.html#achievementsSection" class="nav-item" data-tip="Achievements">
+      <a href="achievements.html" class="nav-item" onclick="setNav(this,event)" data-tip="Achievements" data-action="page" data-target="achievements.html">
         <i data-lucide="award"></i><span class="nav-label">Achievements</span>
       </a>
-      <a href="settings.html" class="nav-item" data-tip="Settings">
+      <a href="settings.html" class="nav-item" onclick="setNav(this,event)" data-tip="Settings" data-action="page" data-target="settings.html">
         <i data-lucide="settings"></i><span class="nav-label">Settings</span>
       </a>
     </nav>
@@ -387,221 +387,250 @@
       <button class="w-full py-2 rounded-xl text-[11.5px] font-bold btn-primary">Upgrade Plan</button>
     </div>
 
-    <a href="index.html" class="nav-item mb-4 text-red-300/70 hover:text-red-300 hover:bg-red-500/10" id="signOutBtn" data-tip="Sign Out">
+    <a href="#" id="signOutBtn" class="nav-item mb-4 text-red-300/70 hover:text-red-300 hover:bg-red-500/10" data-tip="Sign Out">
       <i data-lucide="log-out"></i><span class="nav-label">Sign Out</span>
     </a>
   </aside>
 
   <div class="main-content" id="mainContent">
-    <div class="max-w-[1320px] mx-auto px-4 lg:px-6">
-    <header class="topbar h-16 flex items-center justify-between px-4 md:px-5">
+    <header class="topbar mx-4 mt-4 lg:mx-6 lg:mt-4 h-16 flex items-center justify-between px-4 md:px-5">
       <div class="flex items-center gap-2">
         <button class="lg:hidden btn-ghost-icon" onclick="openSidebar()">
           <i data-lucide="menu" class="w-5 h-5"></i>
         </button>
         <div>
-          <p class="font-display text-ink text-lg leading-none">Analytics</p>
+          <p class="font-display text-ink text-lg leading-none">Messages</p>
         </div>
       </div>
     </header>
 
-    <div class="pb-16 space-y-6" style="margin-top:0;">
+    <div class="px-4 lg:px-6 pb-16 max-w-5xl mx-auto" style="margin-top:56px;">
+      <div class="panel grid grid-cols-1 md:grid-cols-[240px_1fr]" style="height:calc(100vh - 140px);">
 
-      <!-- ── Study Analytics ── -->
-      <section id="analyticsSection" class="panel p-6 md:p-7">
-        <div class="flex items-center justify-between mb-6">
-          <h2 class="font-display text-[20px] text-ink">Study Analytics</h2>
-          <div class="flex gap-1 p-1 rounded-xl bg-mist text-xs font-semibold">
-            <button class="px-3 py-1.5 rounded-lg bg-white shadow-sm text-ink" id="analyticsPeriodWeekBtn" onclick="setAnalyticsPeriod('week')">Week</button>
-            <button class="px-3 py-1.5 rounded-lg text-ink-faint" id="analyticsPeriodMonthBtn" onclick="setAnalyticsPeriod('month')">Month</button>
+        <!-- Contact list -->
+        <div class="border-b md:border-b-0 md:border-r border-line p-4">
+          <p class="text-ink-faint text-[11px] uppercase tracking-wider font-semibold mb-3 px-1">Contacts</p>
+          <div id="contactList" class="space-y-1">
+            <p class="text-ink-faint text-sm px-2">Loading…</p>
           </div>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-7">
-          <div>
-            <p class="text-ink-faint text-[11px] uppercase tracking-wider font-semibold mb-1" id="analyticsHoursLabel">Weekly Hours</p>
-            <p class="font-display text-3xl text-ink"><span id="analyticsWeeklyHours">0.0</span><span class="text-ink-faint text-base font-sans">/<span id="analyticsWeeklyTarget">0</span>h</span></p>
+        <!-- Thread -->
+        <div class="flex flex-col p-5">
+          <div id="threadHeader" class="hidden items-center gap-3 pb-4 mb-4 border-b border-line">
+            <div class="contact-avatar" id="threadAvatar">—</div>
+            <div>
+              <p class="font-semibold text-ink text-sm" id="threadName">—</p>
+              <p class="text-ink-faint text-xs" id="threadRole">—</p>
+            </div>
           </div>
-          <div>
-            <p class="text-ink-faint text-[11px] uppercase tracking-wider font-semibold mb-1">Consistency</p>
-            <p class="font-display text-3xl text-ink"><span id="analyticsConsistency">0</span><span class="text-ink-faint text-base font-sans">%</span></p>
+
+          <div id="threadEmptyState" class="flex-1 flex flex-col items-center justify-center text-center py-12">
+            <i data-lucide="message-circle" class="w-9 h-9 text-ink-faint mb-3"></i>
+            <p class="text-ink-faint text-sm">Choose a contact to start messaging.</p>
           </div>
-          <div>
-            <p class="text-ink-faint text-[11px] uppercase tracking-wider font-semibold mb-1">Avg Session</p>
-            <p class="font-display text-3xl text-ink"><span id="analyticsAvgSession">0</span><span class="text-ink-faint text-base font-sans"> min</span></p>
+
+          <div id="threadBody" class="hidden flex-1 flex flex-col">
+            <div id="thread" class="flex-1 flex flex-col justify-end space-y-4 mb-5 overflow-y-auto" style="max-height:none;">
+            </div>
+            <div class="border-t border-line pt-4 flex gap-2">
+              <input id="replyInput" type="text" placeholder="Type a message…" class="flex-1 border border-line rounded-xl px-3.5 py-2.5 text-sm outline-none" style="border-color:var(--line);"/>
+              <button class="btn-primary flex items-center gap-2 px-5" id="sendBtn">
+                <i data-lucide="send" class="w-4 h-4"></i>Send
+              </button>
+            </div>
           </div>
         </div>
 
-        <!-- Bar chart: Mon-Sun for Week, Wk1-Wk5 for Month. Rebuilt dynamically in JS. -->
-        <div class="grid gap-2 mb-7" id="analyticsBarChart" style="grid-template-columns:repeat(7,minmax(0,1fr))"></div>
-
-        <!-- Heatmap -->
-        <div>
-          <p class="text-ink-faint text-[11px] uppercase tracking-wider font-semibold mb-3">Study Heatmap &middot; Last 9 weeks</p>
-          <div class="flex gap-1 overflow-x-auto no-scrollbar" id="heatmap"></div>
-        </div>
-      </section>
-
-      <!-- ── Achievements ── -->
-      <section id="achievementsSection" class="panel p-6">
-        <h3 class="font-display text-lg text-ink mb-4">Achievements</h3>
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-          <div class="ach-card flex items-center gap-3 p-3 rounded-xl" style="background:var(--gold-soft)">
-            <div class="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style="background:rgba(255,255,255,0.5)">
-              <i data-lucide="flame" class="w-5 h-5" style="color:var(--gold)"></i>
-            </div>
-            <div class="min-w-0">
-              <p class="text-ink font-bold text-[13px]" id="achStreakText">0-Day Streak</p>
-              <p class="text-ink-faint text-[11px]">Unlocked today</p>
-            </div>
-          </div>
-          <div class="ach-card flex items-center gap-3 p-3 rounded-xl" style="background:rgba(15,168,154,0.07)">
-            <div class="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style="background:rgba(255,255,255,0.5)">
-              <i data-lucide="medal" class="w-5 h-5 text-teal-deep"></i>
-            </div>
-            <div class="min-w-0">
-              <p class="text-ink font-bold text-[13px]">Top Performer</p>
-              <p class="text-ink-faint text-[11px]">Top 2% this month</p>
-            </div>
-          </div>
-          <div class="ach-card flex items-center gap-3 p-3 rounded-xl" style="background:rgba(124,58,237,0.06)">
-            <div class="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style="background:rgba(255,255,255,0.5)">
-              <i data-lucide="sparkles" class="w-5 h-5" style="color:#7C3AED"></i>
-            </div>
-            <div class="min-w-0">
-              <p class="text-ink font-bold text-[13px]">Biology Expert</p>
-              <p class="text-ink-faint text-[11px]">94% mastery reached</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-    </div>
+      </div>
     </div>
   </div>
 </div>
 
 <script>
   const API_BASE = 'https://med-clarivo.onrender.com/api';
-  const token = localStorage.getItem('mc_token');
+  function getToken() { return localStorage.getItem('mc_token') || localStorage.getItem('admin_token'); }
+  const token = getToken();
   if (!token) window.location.href = 'index.html';
-
-  lucide.createIcons();
 
   function openSidebar(){ document.getElementById('sidebar').classList.add('open'); document.getElementById('overlay').classList.add('open'); }
   function closeSidebar(){ document.getElementById('sidebar').classList.remove('open'); document.getElementById('overlay').classList.remove('open'); }
+
+  let activeContactId = null;
+  let contacts = [];
+  let meId = null;
+
+  lucide.createIcons();
+
   function toggleCollapse(){
     document.getElementById('sidebar').classList.toggle('collapsed');
     document.getElementById('mainContent').classList.toggle('collapsed');
   }
 
-  (function loadUserBadge(){
-    const me = JSON.parse(localStorage.getItem('mc_user') || '{}');
-    const nameEl = document.getElementById('sidebarName');
-    if (nameEl && me.name) nameEl.textContent = me.name;
-    const examEl = document.getElementById('sidebarExamLevel');
-    if (examEl && me.onboarding && me.onboarding.exam) examEl.textContent = me.onboarding.exam;
-  })();
+  document.getElementById('signOutBtn').addEventListener('click', () => {
+    localStorage.removeItem('mc_token'); localStorage.removeItem('admin_token'); localStorage.removeItem('mc_user');
+    window.location.href = 'index.html';
+  });
 
-  let currentAnalyticsPeriod = 'week';
-
-  function setAnalyticsPeriod(period){
-    if (period === currentAnalyticsPeriod) return;
-    currentAnalyticsPeriod = period;
-    const weekBtn = document.getElementById('analyticsPeriodWeekBtn');
-    const monthBtn = document.getElementById('analyticsPeriodMonthBtn');
-    if (weekBtn && monthBtn) {
-      if (period === 'week') {
-        weekBtn.className = 'px-3 py-1.5 rounded-lg bg-white shadow-sm text-ink';
-        monthBtn.className = 'px-3 py-1.5 rounded-lg text-ink-faint';
-      } else {
-        monthBtn.className = 'px-3 py-1.5 rounded-lg bg-white shadow-sm text-ink';
-        weekBtn.className = 'px-3 py-1.5 rounded-lg text-ink-faint';
-      }
-    }
-    loadAnalytics();
+  function initials(name) { return (name || '?').split(' ').map(p => p[0]).slice(0,2).join('').toUpperCase(); }
+  function roleLabel(role) {
+    const map = { mentor: 'Your Mentor', admin: 'Admin', super_admin: 'Super Admin' };
+    return map[role] || role;
   }
 
-  async function loadAnalytics(){
+  async function loadMe() {
     try {
-      const res = await fetch(`${API_BASE}/study/analytics?period=${currentAnalyticsPeriod}`, {
-        headers: { 'Authorization': `Bearer ${token}` },
+      const res = await fetch(`${API_BASE}/auth/me`, { headers: { Authorization: `Bearer ${token}` } });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        meId = data.user._id;
+        document.getElementById('sidebarName').textContent = data.user.name || data.user.email;
+        document.getElementById('sidebarAvatar').textContent = initials(data.user.name)[0];
+      }
+    } catch (e) {}
+  }
+
+  async function loadUnreadCount() {
+    try {
+      const res = await fetch(`${API_BASE}/student/messages/unread-count`, { headers: { Authorization: `Bearer ${token}` } });
+      const data = await res.json();
+      if (res.ok && data.success && data.count > 0) {
+        const badge = document.getElementById('unreadBadge');
+        badge.textContent = data.count;
+        badge.style.display = 'inline-flex';
+      }
+    } catch (e) {}
+  }
+
+  async function loadContacts() {
+    try {
+      const [contactsRes, convosRes] = await Promise.all([
+        fetch(`${API_BASE}/student/messages/contacts`, { headers: { Authorization: `Bearer ${token}` } }),
+        fetch(`${API_BASE}/student/messages/conversations`, { headers: { Authorization: `Bearer ${token}` } }),
+      ]);
+      const contactsData = await contactsRes.json();
+      const convosData = await convosRes.json();
+
+      if (!contactsRes.ok || !contactsData.success) throw new Error(contactsData.message || 'Failed to load contacts.');
+
+      const unreadByUser = {};
+      if (convosData.success) {
+        (convosData.conversations || []).forEach(c => { unreadByUser[c.otherUser._id] = c.unread; });
+      }
+
+      contacts = contactsData.contacts || [];
+      const listEl = document.getElementById('contactList');
+
+      if (contacts.length === 0) {
+        listEl.innerHTML = '<p class="text-ink-faint text-sm px-2">No contacts available yet.</p>';
+        return;
+      }
+
+      listEl.innerHTML = contacts.map(c => {
+        const unread = unreadByUser[c._id] || 0;
+        return `
+          <div class="contact-row" id="contact-${c._id}" onclick="openThread('${c._id}')">
+            <div class="contact-avatar">${initials(c.name)}</div>
+            <div class="flex-1 min-w-0">
+              <p class="font-semibold text-ink text-sm truncate">${c.name}</p>
+              <p class="text-ink-faint text-xs truncate">${roleLabel(c.role)}</p>
+            </div>
+            ${unread > 0 ? `<span class="chip chip-teal">${unread}</span>` : ''}
+          </div>
+        `;
+      }).join('');
+    } catch (err) {
+      document.getElementById('contactList').innerHTML = `<p class="text-red-600 text-sm px-2">${err.message}</p>`;
+    }
+  }
+
+  function bubbleHTML(m) {
+    const mine = m.sender === meId || m.sender._id === meId;
+    const time = new Date(m.createdAt).toLocaleString('en', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' });
+    return `<div style="display:flex;flex-direction:column;align-items:${mine ? 'flex-end' : 'flex-start'}">
+      <div style="max-width:75%;padding:10px 14px;border-radius:14px;font-size:13.5px;line-height:1.5;
+                  background:${mine ? 'var(--navy)' : 'var(--mist-2)'};color:${mine ? '#fff' : 'var(--ink)'}">
+        ${m.content.replace(/</g, '&lt;')}
+      </div>
+      <span class="text-ink-faint text-[10.5px] mt-1">${time}</span>
+    </div>`;
+  }
+
+  async function openThread(contactId) {
+    activeContactId = contactId;
+    document.querySelectorAll('.contact-row').forEach(el => el.classList.remove('active'));
+    const row = document.getElementById(`contact-${contactId}`);
+    if (row) row.classList.add('active');
+
+    const contact = contacts.find(c => c._id === contactId);
+    document.getElementById('threadHeader').classList.remove('hidden');
+    document.getElementById('threadHeader').classList.add('flex');
+    document.getElementById('threadAvatar').textContent = initials(contact.name);
+    document.getElementById('threadName').textContent = contact.name;
+    document.getElementById('threadRole').textContent = roleLabel(contact.role);
+    document.getElementById('threadEmptyState').classList.add('hidden');
+    document.getElementById('threadBody').classList.remove('hidden');
+    document.getElementById('threadBody').classList.add('flex');
+
+    const threadEl = document.getElementById('thread');
+    threadEl.innerHTML = '<p class="text-ink-faint text-sm text-center py-8">Loading…</p>';
+
+    try {
+      const res = await fetch(`${API_BASE}/student/messages/with/${contactId}`, { headers: { Authorization: `Bearer ${token}` } });
+      const data = await res.json();
+      if (!res.ok || !data.success) throw new Error(data.message || 'Failed to load conversation.');
+
+      if (data.messages.length === 0) {
+        threadEl.innerHTML = '<p class="text-ink-faint text-sm text-center py-8">No messages yet — say hello!</p>';
+      } else {
+        threadEl.innerHTML = data.messages.map(bubbleHTML).join('');
+        threadEl.scrollTop = threadEl.scrollHeight;
+      }
+
+      loadUnreadCount();
+      loadContacts();
+    } catch (err) {
+      threadEl.innerHTML = `<p class="text-red-600 text-sm text-center py-8">${err.message}</p>`;
+    }
+  }
+
+  async function sendMessage() {
+    const input = document.getElementById('replyInput');
+    const content = input.value.trim();
+    if (!content || !activeContactId) return;
+
+    try {
+      const res = await fetch(`${API_BASE}/student/messages`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ recipientId: activeContactId, content }),
       });
       const data = await res.json();
-      if (!data.success) return;
-      const a = data.analytics;
-      const isMonth = data.period === 'month';
+      if (!res.ok || !data.success) throw new Error(data.message || 'Failed to send message.');
 
-      const set = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
-
-      set('analyticsHoursLabel', isMonth ? 'Monthly Hours' : 'Weekly Hours');
-      if (isMonth) {
-        set('analyticsWeeklyHours', a.monthlyHours.toFixed(1));
-        set('analyticsWeeklyTarget', Math.round(a.monthlyTargetHours));
-      } else {
-        set('analyticsWeeklyHours', a.weeklyHours.toFixed(1));
-        set('analyticsWeeklyTarget', Math.round(a.weeklyTargetHours));
-      }
-      set('analyticsConsistency', a.consistencyPct);
-      set('analyticsAvgSession', a.avgSessionMinutes);
-
-      const bars = isMonth
-        ? a.weeklyBuckets.map(b => ({ label: b.label, minutes: b.minutes }))
-        : a.dailyMinutes.map(d => ({ label: d.day, minutes: d.minutes }));
-
-      const chart = document.getElementById('analyticsBarChart');
-      if (chart) {
-        chart.style.gridTemplateColumns = `repeat(${bars.length},minmax(0,1fr))`;
-        const maxMinutes = Math.max(a.dailyTargetMinutes, ...bars.map(b => b.minutes), 1);
-
-        let highlightIdx = -1;
-        if (!isMonth) {
-          const dow = new Date().getDay();
-          highlightIdx = dow === 0 ? 6 : dow - 1;
-        } else {
-          highlightIdx = Math.floor((new Date().getDate() - 1) / 7);
-        }
-
-        chart.innerHTML = bars.map((b, i) => {
-          const pct = Math.min(100, Math.round((b.minutes / maxMinutes) * 100));
-          const isToday = i === highlightIdx;
-          return `
-            <div class="flex flex-col items-center gap-2">
-              <div class="w-full h-20 bg-mist rounded-lg relative overflow-hidden flex items-end">
-                <div class="w-full rounded-lg fill" style="height:${pct}%;${isToday ? 'background:var(--gold)' : ''}"></div>
-              </div>
-              <span class="text-[10px] font-semibold${isToday ? ' font-bold' : ' text-ink-faint'}" style="${isToday ? 'color:var(--gold)' : ''}">${b.label}</span>
-            </div>`;
-        }).join('');
-      }
-
-      const wrap = document.getElementById('heatmap');
-      if (wrap) {
-        wrap.innerHTML = '';
-        const heat = a.heatmap;
-        for (let w = 0; w < 9; w++){
-          const col = document.createElement('div');
-          col.className = 'flex flex-col gap-1';
-          for (let d = 0; d < 7; d++){
-            const idx = w * 7 + d;
-            const entry = heat[idx];
-            const cell = document.createElement('div');
-            const level = entry ? entry.level : 0;
-            cell.className = 'heat-cell heat-' + level;
-            if (entry) cell.title = entry.date + ' \u00b7 ' + entry.minutes + ' min';
-            col.appendChild(cell);
-          }
-          wrap.appendChild(col);
-        }
-      }
-
-      lucide.createIcons();
+      input.value = '';
+      openThread(activeContactId);
     } catch (err) {
-      console.error('Failed to load analytics', err);
+      alert(err.message);
     }
   }
 
-  loadAnalytics();
+  document.getElementById('sendBtn').addEventListener('click', sendMessage);
+  document.getElementById('replyInput').addEventListener('keydown', e => { if (e.key === 'Enter') sendMessage(); });
+
+  async function init() {
+    await loadMe();
+    await loadContacts();
+    loadUnreadCount();
+
+    const params = new URLSearchParams(window.location.search);
+    const mentorId = params.get('mentor');
+    if (mentorId && contacts.some(c => c._id === mentorId)) {
+      openThread(mentorId);
+    }
+  }
+
+  init();
 </script>
 
 
@@ -612,13 +641,13 @@
     <i data-lucide="layout-dashboard" class="w-5 h-5"></i>
     <span class="text-[9px] font-semibold">Home</span>
   </button>
-  <button class="flex flex-col items-center gap-1 p-2 text-teal-deep" onclick="window.location.href='progress.html'">
+  <button class="flex flex-col items-center gap-1 p-2 text-ink-faint" onclick="window.location.href='progress.html'">
     <i data-lucide="trending-up" class="w-5 h-5"></i>
-    <span class="text-[9px] font-bold">Progress</span>
+    <span class="text-[9px] font-semibold">Progress</span>
   </button>
-  <button class="flex flex-col items-center gap-1 p-2 text-ink-faint" onclick="window.location.href='student-messages.html'">
+  <button class="flex flex-col items-center gap-1 p-2 text-teal-deep" onclick="window.location.href='student-messages.html'">
     <i data-lucide="message-circle" class="w-5 h-5"></i>
-    <span class="text-[9px] font-semibold">Messages</span>
+    <span class="text-[9px] font-bold">Messages</span>
   </button>
   <button class="flex flex-col items-center gap-1 p-2 text-ink-faint" onclick="window.location.href='my-mentor.html'">
     <i data-lucide="users" class="w-5 h-5"></i>
@@ -634,20 +663,5 @@
     main, .main-content { padding-bottom: calc(72px + env(safe-area-inset-bottom)) !important; }
   }
 </style>
-
-<script>
-(function(){
-  var btn = document.getElementById('signOutBtn');
-  if (btn) {
-    btn.addEventListener('click', function(e){
-      e.preventDefault();
-      localStorage.removeItem('mc_token');
-      localStorage.removeItem('mc_user');
-      localStorage.removeItem('admin_token');
-      window.location.href = 'index.html';
-    });
-  }
-})();
-</script>
 </body>
 </html>

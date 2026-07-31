@@ -7,7 +7,7 @@
 <script src="sessionGuard.js"></script>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0, viewport-fit=cover" name="viewport"/>
-<title>MedClarivo Elite | Analytics</title>
+<title>MedClarivo Elite | Sessions</title>
 <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://unpkg.com/lucide@latest"></script>
@@ -117,13 +117,13 @@
 
   /* Topbar */
   .topbar{
-    position:sticky; top:0; z-index:50;
-    margin:0; border-radius:0;
-    background:rgba(255,255,255,0.92);
+    position:sticky; top:16px; z-index:50;
+    margin:0 16px 0 0; border-radius:20px;
+    background:rgba(255,255,255,0.78);
     backdrop-filter:blur(18px) saturate(160%);
     -webkit-backdrop-filter:blur(18px) saturate(160%);
-    border:none; border-bottom:1px solid rgba(11,18,32,0.08);
-    box-shadow:0 4px 16px -8px rgba(11,18,32,0.12);
+    border:1px solid rgba(255,255,255,0.7);
+    box-shadow:0 8px 28px -16px rgba(11,18,32,0.18);
   }
 
   /* Cards */
@@ -302,9 +302,9 @@
 <link rel="stylesheet" href="ios-safe-area.css">
 </head>
 <body>
-
 <div class="app-shell">
   <div class="overlay" id="overlay" onclick="closeSidebar()"></div>
+
   <aside class="sidebar" id="sidebar">
     <div class="px-5 pt-5 pb-4 flex items-center justify-between">
       <div class="flex items-center gap-3 min-w-0">
@@ -335,45 +335,45 @@
 
     <nav class="flex-1 overflow-y-auto no-scrollbar py-1">
       <p class="hide-on-collapse px-6 py-2 text-[10px] text-white/25 uppercase tracking-[0.16em] font-bold">Main</p>
-      <a href="dashboard.html" class="nav-item" data-tip="Dashboard">
+      <a href="dashboard.html" class="nav-item" onclick="setNav(this,event)" data-tip="Dashboard" data-action="page" data-target="dashboard.html" data-action="top">
         <i data-lucide="layout-dashboard"></i><span class="nav-label">Dashboard</span>
       </a>
-      <a href="progress.html" class="nav-item" data-tip="Progress">
-        <i data-lucide="trending-up"></i><span class="nav-label flex-1">Progress</span>
+      <a href="progress.html" class="nav-item" onclick="setNav(this,event)" data-tip="Progress" data-action="page" data-target="progress.html">
+        <i data-lucide="trending-up"></i><span class="nav-label">Progress</span>
       </a>
-      <a href="#" class="nav-item" data-tip="Content Library">
+      <a href="#" class="nav-item" onclick="setNav(this,event)" data-tip="Content Library" data-action="soon">
         <i data-lucide="library"></i><span class="nav-label flex-1">Content Library</span>
         <span class="hide-on-collapse chip chip-teal" style="padding:1px 7px;font-size:9.5px">Soon</span>
       </a>
-      <a href="analytics.html" class="nav-item active" data-tip="Analytics">
+      <a href="analytics.html" class="nav-item" onclick="setNav(this,event)" data-tip="Analytics" data-action="page" data-target="analytics.html">
         <i data-lucide="bar-chart-3"></i><span class="nav-label">Analytics</span>
       </a>
 
       <p class="hide-on-collapse px-6 py-2 mt-3 text-[10px] text-white/25 uppercase tracking-[0.16em] font-bold">Mentorship</p>
-      <a href="my-mentor.html" class="nav-item" data-tip="My Mentor">
+      <a href="my-mentor.html" class="nav-item" onclick="setNav(this,event)" data-tip="My Mentor" data-action="page" data-target="my-mentor.html">
         <i data-lucide="users"></i><span class="nav-label">My Mentor</span>
       </a>
-      <a href="student-sessions.html" class="nav-item" data-tip="Sessions">
+      <a href="student-sessions.html" class="nav-item active" onclick="setNav(this,event)" data-tip="Sessions" data-action="page" data-target="student-sessions.html">
         <i data-lucide="video"></i><span class="nav-label">Sessions</span>
       </a>
-      <a href="student-messages.html" class="nav-item" data-tip="Messages">
+      <a href="student-messages.html" class="nav-item" onclick="setNav(this,event)" data-tip="Messages" data-action="page" data-target="student-messages.html">
         <i data-lucide="mail"></i><span class="nav-label">Messages</span>
       </a>
-      <a href="dashboard.html#doubtSection" class="nav-item" data-tip="Doubt Forum">
+      <a href="doubt-forum.html" class="nav-item" onclick="setNav(this,event)" data-tip="Doubt Forum" data-action="page" data-target="doubt-forum.html">
         <i data-lucide="message-circle"></i><span class="nav-label flex-1">Doubt Forum</span>
         <span class="hide-on-collapse w-1.5 h-1.5 bg-teal-2 rounded-full pulse-dot"></span>
       </a>
 
       <p class="hide-on-collapse px-6 py-2 mt-3 text-[10px] text-white/25 uppercase tracking-[0.16em] font-bold">Support</p>
-      <a href="raise-ticket.html" class="nav-item" data-tip="Raise a Ticket">
+      <a href="raise-ticket.html" class="nav-item" onclick="setNav(this,event)" data-tip="Raise a Ticket" data-action="page" data-target="raise-ticket.html">
         <i data-lucide="shield-alert"></i><span class="nav-label">Raise a Ticket</span>
       </a>
 
       <p class="hide-on-collapse px-6 py-2 mt-3 text-[10px] text-white/25 uppercase tracking-[0.16em] font-bold">Account</p>
-      <a href="dashboard.html#achievementsSection" class="nav-item" data-tip="Achievements">
+      <a href="achievements.html" class="nav-item" onclick="setNav(this,event)" data-tip="Achievements" data-action="page" data-target="achievements.html">
         <i data-lucide="award"></i><span class="nav-label">Achievements</span>
       </a>
-      <a href="settings.html" class="nav-item" data-tip="Settings">
+      <a href="settings.html" class="nav-item" onclick="setNav(this,event)" data-tip="Settings" data-action="page" data-target="settings.html">
         <i data-lucide="settings"></i><span class="nav-label">Settings</span>
       </a>
     </nav>
@@ -387,223 +387,310 @@
       <button class="w-full py-2 rounded-xl text-[11.5px] font-bold btn-primary">Upgrade Plan</button>
     </div>
 
-    <a href="index.html" class="nav-item mb-4 text-red-300/70 hover:text-red-300 hover:bg-red-500/10" id="signOutBtn" data-tip="Sign Out">
+    <a href="#" id="signOutBtn" class="nav-item mb-4 text-red-300/70 hover:text-red-300 hover:bg-red-500/10" data-tip="Sign Out">
       <i data-lucide="log-out"></i><span class="nav-label">Sign Out</span>
     </a>
   </aside>
 
-  <div class="main-content" id="mainContent">
-    <div class="max-w-[1320px] mx-auto px-4 lg:px-6">
-    <header class="topbar h-16 flex items-center justify-between px-4 md:px-5">
-      <div class="flex items-center gap-2">
+  <main class="main-content" id="mainContent">
+    <div class="max-w-5xl mx-auto px-4 md:px-6">
+    <div class="topbar mt-4 flex items-center justify-between px-4 md:px-5 py-3">
+      <div class="flex items-center gap-3">
         <button class="lg:hidden btn-ghost-icon" onclick="openSidebar()">
           <i data-lucide="menu" class="w-5 h-5"></i>
         </button>
         <div>
-          <p class="font-display text-ink text-lg leading-none">Analytics</p>
+          <p style="font-weight:600;font-size:14px;">My Sessions</p>
         </div>
       </div>
-    </header>
+      <a href="student-messages.html" class="flex items-center gap-2 px-4 py-2.5 text-sm font-semibold rounded-xl" style="background:var(--navy);color:white;">
+        <i data-lucide="message-circle" class="w-4 h-4"></i> Message Mentor
+      </a>
+    </div>
 
-    <div class="pb-16 space-y-6" style="margin-top:0;">
+    <div class="pt-8 pb-16 space-y-8">
 
-      <!-- ── Study Analytics ── -->
-      <section id="analyticsSection" class="panel p-6 md:p-7">
-        <div class="flex items-center justify-between mb-6">
-          <h2 class="font-display text-[20px] text-ink">Study Analytics</h2>
-          <div class="flex gap-1 p-1 rounded-xl bg-mist text-xs font-semibold">
-            <button class="px-3 py-1.5 rounded-lg bg-white shadow-sm text-ink" id="analyticsPeriodWeekBtn" onclick="setAnalyticsPeriod('week')">Week</button>
-            <button class="px-3 py-1.5 rounded-lg text-ink-faint" id="analyticsPeriodMonthBtn" onclick="setAnalyticsPeriod('month')">Month</button>
+      <!-- Next session hero -->
+      <div id="nextSessionHero" class="hidden">
+        <div class="rounded-2xl p-6 text-white relative overflow-hidden" style="background:linear-gradient(135deg,var(--navy-2) 0%,var(--navy-3) 100%);">
+          <div class="absolute -right-8 -top-8 w-40 h-40 rounded-full" style="background:rgba(15,168,154,0.12);"></div>
+          <div class="relative flex items-start justify-between gap-4 flex-wrap">
+            <div>
+              <p style="color:var(--teal-2);font-size:11px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;margin-bottom:4px;">Next Session</p>
+              <h2 style="font-family:'DM Serif Display',serif;font-size:22px;margin-bottom:4px;" id="nextTitle">—</h2>
+              <p style="color:rgba(255,255,255,0.6);font-size:14px;margin-bottom:12px;" id="nextMentor">—</p>
+              <div class="flex items-center gap-3 flex-wrap">
+                <span class="flex items-center gap-1.5" style="color:rgba(255,255,255,0.8);font-size:14px;">
+                  <i data-lucide="clock" class="w-4 h-4"></i>
+                  <span id="nextTime">—</span>
+                </span>
+                <span class="chip" style="background:rgba(15,168,154,0.2);color:#7FE9DD;" id="nextCat">—</span>
+              </div>
+            </div>
+            <div id="nextJoinBtn" class="hidden">
+              <a id="nextJoinLink" href="#" target="_blank" class="flex items-center gap-2 px-5 py-3 rounded-xl font-semibold text-sm" style="background:var(--teal);color:white;">
+                <i data-lucide="video" class="w-4 h-4"></i> Join Session
+              </a>
+            </div>
+          </div>
+          <div class="mt-4 pt-4 flex items-center gap-2" style="border-top:1px solid rgba(255,255,255,0.08);">
+            <i data-lucide="info" class="w-3.5 h-3.5" style="color:rgba(255,255,255,0.4);"></i>
+            <p style="color:rgba(255,255,255,0.4);font-size:12px;">Your mentor will share the meeting link before the session starts.</p>
           </div>
         </div>
+      </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-7">
-          <div>
-            <p class="text-ink-faint text-[11px] uppercase tracking-wider font-semibold mb-1" id="analyticsHoursLabel">Weekly Hours</p>
-            <p class="font-display text-3xl text-ink"><span id="analyticsWeeklyHours">0.0</span><span class="text-ink-faint text-base font-sans">/<span id="analyticsWeeklyTarget">0</span>h</span></p>
-          </div>
-          <div>
-            <p class="text-ink-faint text-[11px] uppercase tracking-wider font-semibold mb-1">Consistency</p>
-            <p class="font-display text-3xl text-ink"><span id="analyticsConsistency">0</span><span class="text-ink-faint text-base font-sans">%</span></p>
-          </div>
-          <div>
-            <p class="text-ink-faint text-[11px] uppercase tracking-wider font-semibold mb-1">Avg Session</p>
-            <p class="font-display text-3xl text-ink"><span id="analyticsAvgSession">0</span><span class="text-ink-faint text-base font-sans"> min</span></p>
-          </div>
+      <!-- Stats -->
+      <div class="grid grid-cols-3 gap-4">
+        <div class="panel p-5 text-center">
+          <p style="font-family:'DM Serif Display',serif;font-size:30px;" class="text-ink mb-1" id="statTotal">—</p>
+          <p style="color:var(--ink-faint);font-size:12px;">Total sessions</p>
         </div>
-
-        <!-- Bar chart: Mon-Sun for Week, Wk1-Wk5 for Month. Rebuilt dynamically in JS. -->
-        <div class="grid gap-2 mb-7" id="analyticsBarChart" style="grid-template-columns:repeat(7,minmax(0,1fr))"></div>
-
-        <!-- Heatmap -->
-        <div>
-          <p class="text-ink-faint text-[11px] uppercase tracking-wider font-semibold mb-3">Study Heatmap &middot; Last 9 weeks</p>
-          <div class="flex gap-1 overflow-x-auto no-scrollbar" id="heatmap"></div>
+        <div class="panel p-5 text-center">
+          <p style="font-family:'DM Serif Display',serif;font-size:30px;color:var(--teal);" class="mb-1" id="statUpcoming">—</p>
+          <p style="color:var(--ink-faint);font-size:12px;">Upcoming</p>
         </div>
-      </section>
-
-      <!-- ── Achievements ── -->
-      <section id="achievementsSection" class="panel p-6">
-        <h3 class="font-display text-lg text-ink mb-4">Achievements</h3>
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-          <div class="ach-card flex items-center gap-3 p-3 rounded-xl" style="background:var(--gold-soft)">
-            <div class="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style="background:rgba(255,255,255,0.5)">
-              <i data-lucide="flame" class="w-5 h-5" style="color:var(--gold)"></i>
-            </div>
-            <div class="min-w-0">
-              <p class="text-ink font-bold text-[13px]" id="achStreakText">0-Day Streak</p>
-              <p class="text-ink-faint text-[11px]">Unlocked today</p>
-            </div>
-          </div>
-          <div class="ach-card flex items-center gap-3 p-3 rounded-xl" style="background:rgba(15,168,154,0.07)">
-            <div class="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style="background:rgba(255,255,255,0.5)">
-              <i data-lucide="medal" class="w-5 h-5 text-teal-deep"></i>
-            </div>
-            <div class="min-w-0">
-              <p class="text-ink font-bold text-[13px]">Top Performer</p>
-              <p class="text-ink-faint text-[11px]">Top 2% this month</p>
-            </div>
-          </div>
-          <div class="ach-card flex items-center gap-3 p-3 rounded-xl" style="background:rgba(124,58,237,0.06)">
-            <div class="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style="background:rgba(255,255,255,0.5)">
-              <i data-lucide="sparkles" class="w-5 h-5" style="color:#7C3AED"></i>
-            </div>
-            <div class="min-w-0">
-              <p class="text-ink font-bold text-[13px]">Biology Expert</p>
-              <p class="text-ink-faint text-[11px]">94% mastery reached</p>
-            </div>
-          </div>
+        <div class="panel p-5 text-center">
+          <p style="font-family:'DM Serif Display',serif;font-size:30px;" class="text-ink mb-1" id="statCompleted">—</p>
+          <p style="color:var(--ink-faint);font-size:12px;">Completed</p>
         </div>
-      </section>
+      </div>
+
+      <!-- Tabs -->
+      <div class="flex items-center gap-1 p-1 rounded-xl w-fit" style="background:var(--mist-2);">
+        <button class="tab-btn active" id="tabUpcoming" onclick="switchTab('upcoming')">Upcoming</button>
+        <button class="tab-btn" id="tabCompleted" onclick="switchTab('completed')">Completed</button>
+        <button class="tab-btn" id="tabAll" onclick="switchTab('all')">All</button>
+      </div>
+
+      <div id="panelUpcoming"><div id="upcomingList" class="space-y-4"><div class="panel p-8 text-center"><p style="color:var(--ink-faint);font-size:14px;">Loading...</p></div></div></div>
+      <div id="panelCompleted" class="hidden"><div id="completedList" class="space-y-4"><div class="panel p-8 text-center"><p style="color:var(--ink-faint);font-size:14px;">Loading...</p></div></div></div>
+      <div id="panelAll" class="hidden"><div id="allList" class="space-y-4"><div class="panel p-8 text-center"><p style="color:var(--ink-faint);font-size:14px;">Loading...</p></div></div></div>
 
     </div>
     </div>
-  </div>
+  </main>
 </div>
 
+<div class="toast" id="toast"></div>
+
 <script>
-  const API_BASE = 'https://med-clarivo.onrender.com/api';
-  const token = localStorage.getItem('mc_token');
-  if (!token) window.location.href = 'index.html';
+const API = 'https://med-clarivo.onrender.com/api';
+let allSessions = [];
+
+function openSidebar(){ document.getElementById('sidebar').classList.add('open'); document.getElementById('overlay').classList.add('open'); }
+function closeSidebar(){ document.getElementById('sidebar').classList.remove('open'); document.getElementById('overlay').classList.remove('open'); }
+
+function toggleCollapse(){
+  document.getElementById('sidebar').classList.toggle('collapsed');
+  document.getElementById('mainContent').classList.toggle('collapsed');
+}
+function getToken() { return localStorage.getItem('mc_token'); }
+
+function showToast(msg, type='') {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.className = `toast ${type} show`;
+  setTimeout(() => t.classList.remove('show'), 3500);
+}
+
+function switchTab(tab) {
+  ['Upcoming','Completed','All'].forEach(t => {
+    document.getElementById(`panel${t}`).classList.toggle('hidden', t.toLowerCase() !== tab);
+    document.getElementById(`tab${t}`).classList.toggle('active', t.toLowerCase() === tab);
+  });
+}
+
+function catLabel(c) { return {academic:'Academic',doubt:'Doubt Clearing',exam:'Exam Prep',behavioral:'Behavioral'}[c]||c; }
+function catCls(c) { return {academic:'cat-academic',doubt:'cat-doubt',exam:'cat-exam',behavioral:'cat-behavioral'}[c]||'chip-grey'; }
+
+function fmt(dateStr) {
+  const d = new Date(dateStr), now = new Date();
+  const diff = d - now, days = Math.floor(diff/86400000);
+  const time = d.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'});
+  const date = d.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});
+  if(days===0&&diff>0) return `Today · ${time}`;
+  if(days===1) return `Tomorrow · ${time}`;
+  return `${date} · ${time}`;
+}
+
+function until(dateStr) {
+  const diff = new Date(dateStr)-new Date();
+  if(diff<0) return 'Now';
+  const h=Math.floor(diff/3600000), m=Math.floor((diff%3600000)/60000);
+  if(h===0) return `in ${m}m`;
+  if(h<24) return `in ${h}h ${m}m`;
+  return `in ${Math.floor(h/24)}d`;
+}
+
+function cardHTML(s, showStatus=false) {
+  const mentor = s.mentor||{};
+  const mName = mentor.name||mentor.email||'Your Mentor';
+  const isUp = s.status==='scheduled';
+  const isDone = s.status==='completed';
+  const isCancelled = s.status==='cancelled';
+  const soon = isUp && (new Date(s.startTime)-new Date()) <= 15*60000 && (new Date(s.startTime)-new Date()) >= -5*60000;
+  return `
+    <div class="session-card ${isUp?'upcoming':''} ${isCancelled?'cancelled':''}">
+      <div class="flex items-start justify-between gap-3 mb-3 flex-wrap">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm shrink-0 text-white" style="background:var(--navy);">${mName.charAt(0).toUpperCase()}</div>
+          <div>
+            <p style="font-weight:600;font-size:14px;">${mName}</p>
+            <p style="color:var(--ink-faint);font-size:12px;">${mentor.email||''}</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-2 flex-wrap">
+          <span class="chip ${catCls(s.category)}" style="font-size:10px;">${catLabel(s.category)}</span>
+          ${showStatus?`<span class="chip ${isDone?'chip-green':isCancelled?'chip-red':'chip-teal'}" style="font-size:10px;">${s.status.charAt(0).toUpperCase()+s.status.slice(1)}</span>`:''}
+          ${soon?'<span class="chip chip-green" style="font-size:10px;">Starting Soon!</span>':''}
+        </div>
+      </div>
+      ${s.topic?`<p style="font-size:14px;font-weight:500;margin-bottom:12px;">${s.topic}</p>`:''}
+      <div class="flex items-center gap-2 mb-4">
+        <i data-lucide="clock" class="w-3.5 h-3.5" style="color:var(--ink-faint);"></i>
+        <p style="font-size:12px;color:var(--ink-soft);">${fmt(s.startTime)}</p>
+        ${isUp?`<span style="font-size:12px;font-weight:600;color:var(--teal);">${until(s.startTime)}</span>`:''}
+      </div>
+      ${isUp?`
+        <div class="flex gap-2">
+          ${s.meetingLink?`
+            <a href="${s.meetingLink}" target="_blank" class="flex-1 py-2.5 text-white text-xs font-bold rounded-xl text-center flex items-center justify-center gap-1.5" style="background:var(--teal);">
+              <i data-lucide="video" class="w-3.5 h-3.5"></i> Join Session
+            </a>`:`
+            <div class="flex-1 py-2.5 text-xs font-bold rounded-xl text-center flex items-center justify-center gap-1.5 cursor-not-allowed" style="background:var(--mist-2);color:var(--ink-faint);">
+              <i data-lucide="video-off" class="w-3.5 h-3.5"></i> Link Not Added Yet
+            </div>`}
+          <a href="student-messages.html" class="px-4 py-2.5 border text-xs font-bold rounded-xl flex items-center justify-center gap-1.5 hover:bg-mist" style="border-color:var(--line);color:var(--ink-soft);">
+            <i data-lucide="message-circle" class="w-3.5 h-3.5"></i> Message
+          </a>
+        </div>`:''}
+      ${isDone&&s.notes?`
+        <div class="mt-3 p-3 rounded-xl" style="background:var(--mist);border:1px solid var(--line);">
+          <p style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--ink-faint);margin-bottom:4px;">Mentor Notes</p>
+          <p style="font-size:13px;color:var(--ink-soft);line-height:1.6;">${s.notes}</p>
+        </div>`:''}
+      ${isCancelled?`<p style="color:#DC2626;font-size:12px;margin-top:8px;">This session was cancelled.</p>`:''}
+    </div>`;
+}
+
+// Retries a fetch a couple times before giving up -- protects against a
+// slow/cold backend (e.g. Render free tier waking up) being mistaken for
+// an invalid session.
+async function fetchWithRetry(url, options, retries = 2, delayMs = 1500) {
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      const res = await fetch(url, options);
+      return res;
+    } catch (err) {
+      if (attempt === retries) throw err;
+      await new Promise(r => setTimeout(r, delayMs));
+    }
+  }
+}
+
+async function init() {
+  const token = getToken();
+  if(!token){window.location.href='index.html';return;}
+  try {
+    const res = await fetchWithRetry(`${API}/auth/me`,{headers:{Authorization:`Bearer ${token}`}});
+    const data = await res.json();
+    if(res.ok&&data.success){
+      const u=data.user;
+      document.getElementById('sidebarName').textContent=u.name||u.email;
+      document.getElementById('sidebarAvatar').textContent=(u.name||u.email).charAt(0).toUpperCase();
+      document.getElementById('sidebarExam').textContent=u.onboarding?.exam||'Student';
+    } else if (res.status === 401 || res.status === 404) {
+      // Only a genuinely invalid/expired session should sign the user out.
+      window.location.href='index.html';return;
+    }
+    // Any other non-success status (5xx, etc.) -- don't sign out, just
+    // continue; loadSessions() below will show its own error state.
+  } catch(e){
+    // Network/timeout failure even after retries -- don't sign the user
+    // out for this; show sessions load as failed instead.
+    console.warn('Could not verify session (network issue), continuing without signing out:', e);
+  }
+  await loadSessions();
+}
+
+async function loadSessions() {
+  try {
+    const res = await fetch(`${API}/student/mentor/my-mentor`,{headers:{Authorization:`Bearer ${getToken()}`}});
+    const data = await res.json();
+    if(res.ok&&data.success){
+      const upcoming = (data.upcomingSessions||[]).map(s=>({...s, status:'scheduled'}));
+      const history = (data.sessionHistory||[]).map(s=>({...s, status: s.status||'completed'}));
+      allSessions=[...upcoming,...history];
+      renderAll();
+    } else if(res.status===404){
+      allSessions=[];
+      renderAll();
+    } else {
+      showToast(data.message||'Failed to load sessions.','error');
+    }
+  } catch(e){ showToast('Cannot reach server.','error'); }
+}
+
+function renderAll() {
+  const now = new Date();
+  const upcoming = allSessions.filter(s=>s.status==='scheduled'&&new Date(s.startTime)>=new Date(now-5*60000));
+  const completed = allSessions.filter(s=>s.status==='completed');
+  const sorted = [...allSessions].sort((a,b)=>new Date(b.startTime)-new Date(a.startTime));
+
+  document.getElementById('statTotal').textContent=allSessions.length;
+  document.getElementById('statUpcoming').textContent=upcoming.length;
+  document.getElementById('statCompleted').textContent=completed.length;
+
+  if(upcoming.length){
+    const next=upcoming.sort((a,b)=>new Date(a.startTime)-new Date(b.startTime))[0];
+    const m=next.mentor||{};
+    document.getElementById('nextTitle').textContent=next.topic||catLabel(next.category)+' Session';
+    document.getElementById('nextMentor').textContent=`with ${m.name||m.email||'your mentor'}`;
+    document.getElementById('nextTime').textContent=fmt(next.startTime);
+    document.getElementById('nextCat').textContent=catLabel(next.category);
+    document.getElementById('nextSessionHero').classList.remove('hidden');
+    if(next.meetingLink){
+      document.getElementById('nextJoinLink').href=next.meetingLink;
+      document.getElementById('nextJoinBtn').classList.remove('hidden');
+    }
+  }
+
+  const upEl=document.getElementById('upcomingList');
+  upEl.innerHTML=upcoming.length
+    ?upcoming.sort((a,b)=>new Date(a.startTime)-new Date(b.startTime)).map(s=>cardHTML(s)).join('')
+    :`<div class="panel p-10 text-center">
+        <div class="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-4" style="background:rgba(15,168,154,0.1);">
+          <i data-lucide="calendar-off" class="w-7 h-7" style="color:var(--teal);"></i>
+        </div>
+        <p style="font-family:'DM Serif Display',serif;font-size:18px;margin-bottom:8px;">No upcoming sessions</p>
+        <p style="color:var(--ink-faint);font-size:14px;margin-bottom:20px;">Your mentor schedules sessions with you. Send them a message to request one.</p>
+        <a href="student-messages.html" class="inline-flex items-center gap-2 px-5 py-2.5 text-white text-sm font-semibold rounded-xl" style="background:var(--navy);">
+          <i data-lucide="message-circle" class="w-4 h-4"></i> Message Your Mentor
+        </a>
+      </div>`;
+
+  const coEl=document.getElementById('completedList');
+  coEl.innerHTML=completed.length
+    ?completed.sort((a,b)=>new Date(b.startTime)-new Date(a.startTime)).map(s=>cardHTML(s,true)).join('')
+    :`<div class="panel p-8 text-center"><p style="color:var(--ink-faint);font-size:14px;">No completed sessions yet.</p></div>`;
+
+  const allEl=document.getElementById('allList');
+  allEl.innerHTML=sorted.length
+    ?sorted.map(s=>cardHTML(s,true)).join('')
+    :`<div class="panel p-8 text-center"><p style="color:var(--ink-faint);font-size:14px;">No sessions yet.</p></div>`;
 
   lucide.createIcons();
+}
 
-  function openSidebar(){ document.getElementById('sidebar').classList.add('open'); document.getElementById('overlay').classList.add('open'); }
-  function closeSidebar(){ document.getElementById('sidebar').classList.remove('open'); document.getElementById('overlay').classList.remove('open'); }
-  function toggleCollapse(){
-    document.getElementById('sidebar').classList.toggle('collapsed');
-    document.getElementById('mainContent').classList.toggle('collapsed');
-  }
+document.getElementById('signOutBtn').addEventListener('click',e=>{
+  e.preventDefault();
+  localStorage.removeItem('mc_token');
+  localStorage.removeItem('mc_user');
+  window.location.href='index.html';
+});
 
-  (function loadUserBadge(){
-    const me = JSON.parse(localStorage.getItem('mc_user') || '{}');
-    const nameEl = document.getElementById('sidebarName');
-    if (nameEl && me.name) nameEl.textContent = me.name;
-    const examEl = document.getElementById('sidebarExamLevel');
-    if (examEl && me.onboarding && me.onboarding.exam) examEl.textContent = me.onboarding.exam;
-  })();
-
-  let currentAnalyticsPeriod = 'week';
-
-  function setAnalyticsPeriod(period){
-    if (period === currentAnalyticsPeriod) return;
-    currentAnalyticsPeriod = period;
-    const weekBtn = document.getElementById('analyticsPeriodWeekBtn');
-    const monthBtn = document.getElementById('analyticsPeriodMonthBtn');
-    if (weekBtn && monthBtn) {
-      if (period === 'week') {
-        weekBtn.className = 'px-3 py-1.5 rounded-lg bg-white shadow-sm text-ink';
-        monthBtn.className = 'px-3 py-1.5 rounded-lg text-ink-faint';
-      } else {
-        monthBtn.className = 'px-3 py-1.5 rounded-lg bg-white shadow-sm text-ink';
-        weekBtn.className = 'px-3 py-1.5 rounded-lg text-ink-faint';
-      }
-    }
-    loadAnalytics();
-  }
-
-  async function loadAnalytics(){
-    try {
-      const res = await fetch(`${API_BASE}/study/analytics?period=${currentAnalyticsPeriod}`, {
-        headers: { 'Authorization': `Bearer ${token}` },
-      });
-      const data = await res.json();
-      if (!data.success) return;
-      const a = data.analytics;
-      const isMonth = data.period === 'month';
-
-      const set = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
-
-      set('analyticsHoursLabel', isMonth ? 'Monthly Hours' : 'Weekly Hours');
-      if (isMonth) {
-        set('analyticsWeeklyHours', a.monthlyHours.toFixed(1));
-        set('analyticsWeeklyTarget', Math.round(a.monthlyTargetHours));
-      } else {
-        set('analyticsWeeklyHours', a.weeklyHours.toFixed(1));
-        set('analyticsWeeklyTarget', Math.round(a.weeklyTargetHours));
-      }
-      set('analyticsConsistency', a.consistencyPct);
-      set('analyticsAvgSession', a.avgSessionMinutes);
-
-      const bars = isMonth
-        ? a.weeklyBuckets.map(b => ({ label: b.label, minutes: b.minutes }))
-        : a.dailyMinutes.map(d => ({ label: d.day, minutes: d.minutes }));
-
-      const chart = document.getElementById('analyticsBarChart');
-      if (chart) {
-        chart.style.gridTemplateColumns = `repeat(${bars.length},minmax(0,1fr))`;
-        const maxMinutes = Math.max(a.dailyTargetMinutes, ...bars.map(b => b.minutes), 1);
-
-        let highlightIdx = -1;
-        if (!isMonth) {
-          const dow = new Date().getDay();
-          highlightIdx = dow === 0 ? 6 : dow - 1;
-        } else {
-          highlightIdx = Math.floor((new Date().getDate() - 1) / 7);
-        }
-
-        chart.innerHTML = bars.map((b, i) => {
-          const pct = Math.min(100, Math.round((b.minutes / maxMinutes) * 100));
-          const isToday = i === highlightIdx;
-          return `
-            <div class="flex flex-col items-center gap-2">
-              <div class="w-full h-20 bg-mist rounded-lg relative overflow-hidden flex items-end">
-                <div class="w-full rounded-lg fill" style="height:${pct}%;${isToday ? 'background:var(--gold)' : ''}"></div>
-              </div>
-              <span class="text-[10px] font-semibold${isToday ? ' font-bold' : ' text-ink-faint'}" style="${isToday ? 'color:var(--gold)' : ''}">${b.label}</span>
-            </div>`;
-        }).join('');
-      }
-
-      const wrap = document.getElementById('heatmap');
-      if (wrap) {
-        wrap.innerHTML = '';
-        const heat = a.heatmap;
-        for (let w = 0; w < 9; w++){
-          const col = document.createElement('div');
-          col.className = 'flex flex-col gap-1';
-          for (let d = 0; d < 7; d++){
-            const idx = w * 7 + d;
-            const entry = heat[idx];
-            const cell = document.createElement('div');
-            const level = entry ? entry.level : 0;
-            cell.className = 'heat-cell heat-' + level;
-            if (entry) cell.title = entry.date + ' \u00b7 ' + entry.minutes + ' min';
-            col.appendChild(cell);
-          }
-          wrap.appendChild(col);
-        }
-      }
-
-      lucide.createIcons();
-    } catch (err) {
-      console.error('Failed to load analytics', err);
-    }
-  }
-
-  loadAnalytics();
+window.addEventListener('load',()=>{lucide.createIcons();init();});
 </script>
-
 
 
 <!-- BOTTOM NAV -->
@@ -612,17 +699,17 @@
     <i data-lucide="layout-dashboard" class="w-5 h-5"></i>
     <span class="text-[9px] font-semibold">Home</span>
   </button>
-  <button class="flex flex-col items-center gap-1 p-2 text-teal-deep" onclick="window.location.href='progress.html'">
+  <button class="flex flex-col items-center gap-1 p-2 text-ink-faint" onclick="window.location.href='progress.html'">
     <i data-lucide="trending-up" class="w-5 h-5"></i>
-    <span class="text-[9px] font-bold">Progress</span>
+    <span class="text-[9px] font-semibold">Progress</span>
   </button>
   <button class="flex flex-col items-center gap-1 p-2 text-ink-faint" onclick="window.location.href='student-messages.html'">
     <i data-lucide="message-circle" class="w-5 h-5"></i>
     <span class="text-[9px] font-semibold">Messages</span>
   </button>
-  <button class="flex flex-col items-center gap-1 p-2 text-ink-faint" onclick="window.location.href='my-mentor.html'">
+  <button class="flex flex-col items-center gap-1 p-2 text-teal-deep" onclick="window.location.href='my-mentor.html'">
     <i data-lucide="users" class="w-5 h-5"></i>
-    <span class="text-[9px] font-semibold">Mentor</span>
+    <span class="text-[9px] font-bold">Mentor</span>
   </button>
   <button class="flex flex-col items-center gap-1 p-2 text-ink-faint" onclick="window.location.href='settings.html'">
     <i data-lucide="user" class="w-5 h-5"></i>
@@ -634,20 +721,5 @@
     main, .main-content { padding-bottom: calc(72px + env(safe-area-inset-bottom)) !important; }
   }
 </style>
-
-<script>
-(function(){
-  var btn = document.getElementById('signOutBtn');
-  if (btn) {
-    btn.addEventListener('click', function(e){
-      e.preventDefault();
-      localStorage.removeItem('mc_token');
-      localStorage.removeItem('mc_user');
-      localStorage.removeItem('admin_token');
-      window.location.href = 'index.html';
-    });
-  }
-})();
-</script>
 </body>
 </html>
