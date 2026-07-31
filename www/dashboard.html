@@ -211,6 +211,16 @@
   }
   @keyframes float1{ 0%,100%{ transform:translate(0,0); } 50%{ transform:translate(-24px,18px); } }
   @keyframes float2{ 0%,100%{ transform:translate(0,0); } 50%{ transform:translate(20px,-14px); } }
+  @keyframes slideDown{from{opacity:0;transform:translateY(-10px);}to{opacity:1;transform:translateY(0);}}
+  .notif-item{display:flex;gap:12px;padding:14px 20px;cursor:pointer;transition:background .15s;border-bottom:1px solid rgba(11,18,32,0.05);}
+  .notif-item:hover{background:var(--mist);}
+  .notif-item.unread{background:rgba(15,168,154,0.04);}
+  .notif-icon{width:38px;height:38px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;}
+  .notif-body{flex:1;min-width:0;}
+  .notif-title{font-size:13.5px;font-weight:700;color:var(--ink);margin-bottom:2px;}
+  .notif-desc{font-size:12px;color:var(--ink-soft);line-height:1.4;margin-bottom:3px;}
+  .notif-time{font-size:11px;color:var(--ink-faint);}
+  .notif-item.unread .notif-title::after{content:'';display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--teal);margin-left:6px;vertical-align:middle;}
 
   /* Orbit ring (signature element) */
   .orbit-wrap{ position:relative; width:188px; height:188px; flex-shrink:0; }
@@ -360,19 +370,66 @@
           <i data-lucide="flame" class="w-[15px] h-[15px]" style="color:var(--gold)"></i>
           <span class="font-mono font-bold text-[13px]" style="color:#8A6B36" id="streakBadge">0</span>
         </div>
-        <button class="btn-ghost-icon" onclick="toggleDark()" data-tip="Toggle theme">
-          <i data-lucide="moon" class="w-[18px] h-[18px]"></i>
+        <button class="btn-ghost-icon" onclick="toggleDark()" id="darkBtn" data-tip="Toggle theme">
+          <i data-lucide="moon" class="w-[18px] h-[18px]" id="darkIcon"></i>
         </button>
-        <button class="relative btn-ghost-icon" data-tip="Notifications">
+        <button class="relative btn-ghost-icon" data-tip="Notifications" onclick="toggleNotifications()">
           <i data-lucide="bell" class="w-[18px] h-[18px]"></i>
-          <span class="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
+          <span class="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-white" id="notifDot"></span>
         </button>
         <div class="w-px h-6 bg-line mx-1 hidden sm:block"></div>
-        <div class="avatar-ring cursor-pointer">
-          <div class="w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-[12px] font-display" style="background:var(--navy)">M</div>
+        <div class="avatar-ring cursor-pointer" onclick="window.location.href='profile.html'" data-tip="Profile">
+          <div class="w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-[12px] font-display" style="background:var(--navy)" id="topbarAvatar">M</div>
         </div>
       </div>
     </header>
+
+    <!-- NOTIFICATIONS PANEL -->
+    <div id="notifPanel" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;z-index:90;" onclick="closeNotifications()">
+      <div style="position:absolute;top:80px;right:16px;width:320px;background:#fff;border-radius:20px;box-shadow:0 20px 60px rgba(11,18,32,0.18);border:1px solid rgba(11,18,32,0.08);overflow:hidden;animation:slideDown .2s ease;" onclick="event.stopPropagation()">
+        <div style="padding:18px 20px;border-bottom:1px solid rgba(11,18,32,0.07);display:flex;align-items:center;justify-content:space-between;">
+          <span style="font-weight:700;font-size:15px;color:var(--ink);">Notifications</span>
+          <button onclick="markAllRead()" style="font-size:12px;font-weight:600;color:var(--teal);background:none;border:none;cursor:pointer;">Mark all read</button>
+        </div>
+        <div style="max-height:360px;overflow-y:auto;" id="notifList">
+          <div class="notif-item unread" onclick="closeNotifications()">
+            <div class="notif-icon" style="background:rgba(15,168,154,0.12);">📅</div>
+            <div class="notif-body">
+              <div class="notif-title">Session Tomorrow</div>
+              <div class="notif-desc">Biology with Dr. Arjun Mehta — 7:00 PM</div>
+              <div class="notif-time">2 hours ago</div>
+            </div>
+          </div>
+          <div class="notif-item unread" onclick="closeNotifications()">
+            <div class="notif-icon" style="background:rgba(185,146,79,0.12);">🏆</div>
+            <div class="notif-body">
+              <div class="notif-title">Achievement Unlocked</div>
+              <div class="notif-desc">You earned "Top Performer" — Top 2% this month</div>
+              <div class="notif-time">Yesterday</div>
+            </div>
+          </div>
+          <div class="notif-item" onclick="closeNotifications()">
+            <div class="notif-icon" style="background:rgba(124,58,237,0.1);">📝</div>
+            <div class="notif-body">
+              <div class="notif-title">Evaluation Published</div>
+              <div class="notif-desc">Your mentor published your term evaluation</div>
+              <div class="notif-time">2 days ago</div>
+            </div>
+          </div>
+          <div class="notif-item" onclick="closeNotifications()">
+            <div class="notif-icon" style="background:rgba(15,168,154,0.12);">💬</div>
+            <div class="notif-body">
+              <div class="notif-title">Doubt Answered</div>
+              <div class="notif-desc">Dr. Mehta replied to your question on Genetics</div>
+              <div class="notif-time">3 days ago</div>
+            </div>
+          </div>
+        </div>
+        <div style="padding:14px 20px;border-top:1px solid rgba(11,18,32,0.06);text-align:center;">
+          <button onclick="closeNotifications()" style="font-size:13px;font-weight:600;color:var(--ink-soft);background:none;border:none;cursor:pointer;">See all notifications</button>
+        </div>
+      </div>
+    </div>
 
     <main class="px-4 md:px-6 pb-28 lg:pb-10">
       <div class="max-w-[1320px] mx-auto pt-6 space-y-7">
@@ -1074,6 +1131,8 @@
     const greetingNameEl = document.getElementById('greetingName');
     if (sidebarNameEl) sidebarNameEl.textContent = name || 'there';
     if (greetingNameEl) greetingNameEl.textContent = firstName;
+    const topbarAvatarEl = document.getElementById('topbarAvatar');
+    if (topbarAvatarEl && name) topbarAvatarEl.textContent = name[0].toUpperCase();
 
     const levelEl = document.getElementById('sidebarExamLevel');
     if (levelEl) levelEl.textContent = `${cfg.displayLabel}${onboarding && onboarding.level ? ' · ' + onboarding.level : ''}`;
@@ -1498,7 +1557,34 @@
   });
 
   // ── Dark mode toggle (visual only placeholder) ──
-  function toggleDark(){ document.documentElement.classList.toggle('dark'); }
+  function toggleDark(){
+    document.documentElement.classList.toggle('dark');
+    const isDark = document.documentElement.classList.contains('dark');
+    const icon = document.getElementById('darkIcon');
+    if(icon){ icon.setAttribute('data-lucide', isDark ? 'sun' : 'moon'); lucide.createIcons(); }
+    localStorage.setItem('mc_theme', isDark ? 'dark' : 'light');
+  }
+  // Restore theme on load
+  if(localStorage.getItem('mc_theme') === 'dark'){
+    document.documentElement.classList.add('dark');
+    document.addEventListener('DOMContentLoaded', ()=>{
+      const icon = document.getElementById('darkIcon');
+      if(icon){ icon.setAttribute('data-lucide','sun'); lucide.createIcons(); }
+    });
+  }
+
+  function toggleNotifications(){
+    const p = document.getElementById('notifPanel');
+    p.style.display = p.style.display === 'none' ? 'block' : 'none';
+  }
+  function closeNotifications(){
+    document.getElementById('notifPanel').style.display = 'none';
+  }
+  function markAllRead(){
+    document.querySelectorAll('.notif-item.unread').forEach(el => el.classList.remove('unread'));
+    document.getElementById('notifDot').style.display = 'none';
+    closeNotifications();
+  }
 
   // ── AI Quick Doubt ──
   async function askDoubt(){
