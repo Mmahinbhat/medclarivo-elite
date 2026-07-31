@@ -431,38 +431,7 @@
           <button onclick="markAllRead()" style="font-size:12px;font-weight:600;color:var(--teal);background:none;border:none;cursor:pointer;">Mark all read</button>
         </div>
         <div style="max-height:360px;overflow-y:auto;" id="notifList">
-          <div class="notif-item unread" onclick="closeNotifications()">
-            <div class="notif-icon" style="background:rgba(15,168,154,0.12);">📅</div>
-            <div class="notif-body">
-              <div class="notif-title">Session Tomorrow</div>
-              <div class="notif-desc">Biology with Dr. Arjun Mehta — 7:00 PM</div>
-              <div class="notif-time">2 hours ago</div>
-            </div>
-          </div>
-          <div class="notif-item unread" onclick="closeNotifications()">
-            <div class="notif-icon" style="background:rgba(185,146,79,0.12);">🏆</div>
-            <div class="notif-body">
-              <div class="notif-title">Achievement Unlocked</div>
-              <div class="notif-desc">You earned "Top Performer" — Top 2% this month</div>
-              <div class="notif-time">Yesterday</div>
-            </div>
-          </div>
-          <div class="notif-item" onclick="closeNotifications()">
-            <div class="notif-icon" style="background:rgba(124,58,237,0.1);">📝</div>
-            <div class="notif-body">
-              <div class="notif-title">Evaluation Published</div>
-              <div class="notif-desc">Your mentor published your term evaluation</div>
-              <div class="notif-time">2 days ago</div>
-            </div>
-          </div>
-          <div class="notif-item" onclick="closeNotifications()">
-            <div class="notif-icon" style="background:rgba(15,168,154,0.12);">💬</div>
-            <div class="notif-body">
-              <div class="notif-title">Doubt Answered</div>
-              <div class="notif-desc">Dr. Mehta replied to your question on Genetics</div>
-              <div class="notif-time">3 days ago</div>
-            </div>
-          </div>
+          <div style="padding:24px;text-align:center;color:var(--ink-faint);font-size:13px;">Loading…</div>
         </div>
         <div style="padding:14px 20px;border-top:1px solid rgba(11,18,32,0.06);text-align:center;">
           <button onclick="closeNotifications()" style="font-size:13px;font-weight:600;color:var(--ink-soft);background:none;border:none;cursor:pointer;">See all notifications</button>
@@ -1613,16 +1582,55 @@
     });
   }
 
-  function toggleNotifications(){
+    function toggleNotifications(){
     const p = document.getElementById('notifPanel');
-    p.style.display = p.style.display === 'none' ? 'block' : 'none';
+    if(p.style.display === 'none' || p.style.display === ''){
+      p.style.display = 'block';
+      loadNotifications();
+    } else {
+      p.style.display = 'none';
+    }
   }
   function closeNotifications(){
     document.getElementById('notifPanel').style.display = 'none';
   }
-  function markAllRead(){
+  async function loadNotifications(){
+    const list = document.getElementById('notifList');
+    list.innerHTML = '<div style="padding:24px;text-align:center;color:var(--ink-faint);font-size:13px;">Loading…</div>';
+    try {
+      const r = await fetch(`${API_BASE}/notifications`, {
+        headers: { Authorization: `Bearer ${localStorage.getItem('mc_token')}` }
+      });
+      const d = await r.json();
+      if(!r.ok || !d.success) throw new Error(d.message || 'Failed');
+      const dot = document.getElementById('notifDot');
+      if(dot) dot.style.display = d.unreadCount > 0 ? 'block' : 'none';
+      if(!d.notifications.length){
+        list.innerHTML = '<div style="padding:32px;text-align:center;color:var(--ink-faint);font-size:13px;">You\'re all caught up! 🎉</div>';
+        return;
+      }
+      list.innerHTML = d.notifications.map(n => `
+        <div class="notif-item ${n.read ? '' : 'unread'}" onclick="closeNotifications()">
+          <div class="notif-icon" style="background:${iconBg(n.type)}">${n.icon}</div>
+          <div class="notif-body">
+            <div class="notif-title">${n.title}</div>
+            <div class="notif-desc">${n.desc}</div>
+            <div class="notif-time">${n.timeAgo}</div>
+          </div>
+        </div>`).join('');
+    } catch(e) {
+      list.innerHTML = '<div style="padding:24px;text-align:center;color:var(--ink-faint);font-size:13px;">Could not load notifications.<br>Check your connection.</div>';
+    }
+  }
+  function iconBg(type){
+    return {session:'rgba(15,168,154,0.12)',doubt:'rgba(15,168,154,0.12)',evaluation:'rgba(124,58,237,0.1)',ticket:'rgba(185,146,79,0.12)'}[type] || 'rgba(11,18,32,0.06)';
+  }
+  async function markAllRead(){
     document.querySelectorAll('.notif-item.unread').forEach(el => el.classList.remove('unread'));
     document.getElementById('notifDot').style.display = 'none';
+    await fetch(`${API_BASE}/notifications/mark-read`, {
+      method:'POST', headers:{ Authorization:`Bearer ${localStorage.getItem('mc_token')}` }
+    }).catch(()=>{});
     closeNotifications();
   }
 

@@ -27,6 +27,7 @@ const settingsRoutes = require('./routes/settings');
 const achievementRoutes = require('./routes/achievements');
 const testRoutes = require('./routes/tests');
 const flashcardRoutes = require('./routes/flashcards');
+const notificationRoutes = require('./routes/notifications');
 
 const app  = express();
 const PORT = process.env.PORT || 5000;
@@ -96,6 +97,7 @@ app.use('/api/settings',         settingsRoutes);
 app.use('/api/achievements',     achievementRoutes);
 app.use('/api/tests',            testRoutes);
 app.use('/api/flashcards',       flashcardRoutes);
+app.use('/api/notifications',    notificationRoutes);
 // Health check
 app.get('/health', (req, res) => {
   res.json({
