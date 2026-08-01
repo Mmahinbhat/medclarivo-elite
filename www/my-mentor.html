@@ -10,6 +10,8 @@
 <title>My Mentor — MedClarivo Elite</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://unpkg.com/lucide@latest"></script>
+<script src="shared/auth-common.js"></script>
+<script src="shared/nav-student.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
   :root{
@@ -118,77 +120,7 @@
 <div class="app-shell">
   <div class="overlay" id="overlay" onclick="closeSidebar()"></div>
 
-  <aside class="sidebar" id="sidebar">
-    <div class="px-5 pt-5 pb-4 flex items-center justify-between">
-      <div class="flex items-center gap-3 min-w-0">
-        <div class="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style="background:linear-gradient(135deg,var(--teal),var(--teal-deep));">
-          <i data-lucide="cross" class="w-[18px] h-[18px] text-white"></i>
-        </div>
-        <div class="min-w-0">
-          <p class="font-display text-white text-[17px] leading-none tracking-tight">MedClarivo</p>
-          <p class="text-[9.5px] text-teal-2 font-bold tracking-[0.18em] uppercase mt-1" style="color:var(--teal-2)">Elite</p>
-        </div>
-      </div>
-    </div>
-
-    <div class="mx-3 mb-3 p-2.5 rounded-2xl bg-white/5 flex items-center gap-3">
-      <div class="avatar-ring flex-shrink-0">
-        <div class="w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-xs font-display" style="background:linear-gradient(135deg,var(--teal),var(--teal-deep));">M</div>
-      </div>
-      <div class="flex-1 min-w-0">
-        <p class="text-white font-semibold text-[13px] truncate" id="sidebarName">Mmahin Bhat</p>
-        <p class="text-white/35 text-[10.5px] truncate">NEET UG</p>
-      </div>
-    </div>
-
-    <nav class="flex-1 overflow-y-auto no-scrollbar py-1">
-      <p class="px-6 py-2 text-[10px] text-white/25 uppercase tracking-[0.16em] font-bold">Main</p>
-      <a href="dashboard.html" class="nav-item">
-        <i data-lucide="layout-dashboard"></i><span>Dashboard</span>
-      </a>
-      <a href="progress.html" class="nav-item">
-        <i data-lucide="trending-up"></i><span>Progress</span>
-      </a>
-      <a href="#" class="nav-item">
-        <i data-lucide="library"></i><span class="flex-1">Content Library</span>
-        <span class="chip chip-teal" style="padding:1px 7px;font-size:9.5px">Soon</span>
-      </a>
-      <a href="analytics.html" class="nav-item">
-        <i data-lucide="bar-chart-3"></i><span>Analytics</span>
-      </a>
-
-      <p class="px-6 py-2 mt-3 text-[10px] text-white/25 uppercase tracking-[0.16em] font-bold">Mentorship</p>
-      <a href="my-mentor.html" class="nav-item active">
-        <i data-lucide="users"></i><span>My Mentor</span>
-      </a>
-      <a href="student-sessions.html" class="nav-item">
-        <i data-lucide="video"></i><span>Sessions</span>
-      </a>
-      <a href="student-messages.html" class="nav-item">
-        <i data-lucide="mail"></i><span>Messages</span>
-      </a>
-      <a href="dashboard.html#doubtSection" class="nav-item">
-        <i data-lucide="message-circle"></i><span class="flex-1">Doubt Forum</span>
-      </a>
-
-      <p class="px-6 py-2 mt-3 text-[10px] text-white/25 uppercase tracking-[0.16em] font-bold">Support</p>
-      <a href="raise-ticket.html" class="nav-item">
-        <i data-lucide="shield-alert"></i><span>Raise a Ticket</span>
-      </a>
-
-      <p class="px-6 py-2 mt-3 text-[10px] text-white/25 uppercase tracking-[0.16em] font-bold">Account</p>
-      <a href="dashboard.html#achievementsSection" class="nav-item">
-        <i data-lucide="award"></i><span>Achievements</span>
-      </a>
-      <a href="settings.html" class="nav-item">
-        <i data-lucide="settings"></i><span>Settings</span>
-      </a>
-    </nav>
-
-    <a href="#" id="signOutBtn" onclick="handleLogout(event)" class="nav-item mb-4 text-red-300/70 hover:text-red-300 hover:bg-red-500/10">
-      <i data-lucide="log-out"></i><span>Sign Out</span>
-    </a>
-  </aside>
+  <div id="sidebar-mount"></div>
 
   <div class="main-content">
     <div class="max-w-6xl mx-auto px-4">

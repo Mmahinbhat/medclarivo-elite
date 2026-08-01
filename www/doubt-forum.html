@@ -11,6 +11,8 @@
 <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://unpkg.com/lucide@latest"></script>
+<script src="shared/auth-common.js"></script>
+<script src="shared/nav-student.js"></script>
 <script>
   tailwind.config = {
     darkMode: "class",
@@ -308,92 +310,7 @@
   <div class="overlay" id="overlay" onclick="closeSidebar()"></div>
 
 <!-- ── Sidebar ── -->
-  <aside class="sidebar" id="sidebar">
-    <div class="px-5 pt-5 pb-4 flex items-center justify-between">
-      <div class="flex items-center gap-3 min-w-0">
-        <div class="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style="background:linear-gradient(135deg,var(--teal),var(--teal-deep));">
-          <i data-lucide="cross" class="w-[18px] h-[18px] text-white"></i>
-        </div>
-        <div class="hide-on-collapse min-w-0">
-          <p class="font-display text-white text-[17px] leading-none tracking-tight">MedClarivo</p>
-          <p class="text-[9.5px] text-teal-2 font-bold tracking-[0.18em] uppercase mt-1">Elite</p>
-        </div>
-      </div>
-      <button class="hide-on-collapse btn-ghost-icon text-white/40 hover:text-white hover:bg-white/8" id="collapseBtn" onclick="toggleCollapse()" data-tip="Collapse">
-        <i data-lucide="panel-left-close" class="w-[17px] h-[17px]"></i>
-      </button>
-    </div>
-
-    <!-- User pill -->
-    <div class="mx-3 mb-3 p-2.5 rounded-2xl bg-white/5 flex items-center gap-3 cursor-pointer hover:bg-white/8 transition-colors">
-      <div class="avatar-ring flex-shrink-0">
-        <div id="avatarInitial" class="w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-xs font-display" style="background:linear-gradient(135deg,var(--teal),var(--teal-deep));">M</div>
-      </div>
-      <div class="hide-on-collapse flex-1 min-w-0">
-        <p class="text-white font-semibold text-[13px] truncate" id="sidebarName">Mahin Bhat</p>
-        <p class="text-white/35 text-[10.5px] truncate" id="sidebarExamLevel">NEET UG &middot; Final Year</p>
-      </div>
-      <i data-lucide="chevrons-up-down" class="hide-on-collapse w-3.5 h-3.5 text-white/25 flex-shrink-0"></i>
-    </div>
-
-    <nav class="flex-1 overflow-y-auto no-scrollbar py-1">
-      <p class="hide-on-collapse px-6 py-2 text-[10px] text-white/25 uppercase tracking-[0.16em] font-bold">Main</p>
-      <a href="dashboard.html" class="nav-item" onclick="setNav(this,event)" data-tip="Dashboard" data-action="page" data-target="dashboard.html" data-action="top">
-        <i data-lucide="layout-dashboard"></i><span class="nav-label">Dashboard</span>
-      </a>
-      <a href="progress.html" class="nav-item" onclick="setNav(this,event)" data-tip="Progress" data-action="page" data-target="progress.html">
-        <i data-lucide="trending-up"></i><span class="nav-label">Progress</span>
-      </a>
-      <a href="#" class="nav-item" onclick="setNav(this,event)" data-tip="Content Library" data-action="soon">
-        <i data-lucide="library"></i><span class="nav-label flex-1">Content Library</span>
-        <span class="hide-on-collapse chip chip-teal" style="padding:1px 7px;font-size:9.5px">Soon</span>
-      </a>
-      <a href="analytics.html" class="nav-item" onclick="setNav(this,event)" data-tip="Analytics" data-action="page" data-target="analytics.html">
-        <i data-lucide="bar-chart-3"></i><span class="nav-label">Analytics</span>
-      </a>
-
-      <p class="hide-on-collapse px-6 py-2 mt-3 text-[10px] text-white/25 uppercase tracking-[0.16em] font-bold">Mentorship</p>
-      <a href="my-mentor.html" class="nav-item" onclick="setNav(this,event)" data-tip="My Mentor" data-action="page" data-target="my-mentor.html">
-        <i data-lucide="users"></i><span class="nav-label">My Mentor</span>
-      </a>
-      <a href="student-sessions.html" class="nav-item" onclick="setNav(this,event)" data-tip="Sessions" data-action="page" data-target="student-sessions.html">
-        <i data-lucide="video"></i><span class="nav-label">Sessions</span>
-      </a>
-      <a href="student-messages.html" class="nav-item" onclick="setNav(this,event)" data-tip="Messages" data-action="page" data-target="student-messages.html">
-        <i data-lucide="mail"></i><span class="nav-label">Messages</span>
-      </a>
-      <a href="doubt-forum.html" class="nav-item active" onclick="setNav(this,event)" data-tip="Doubt Forum" data-action="page" data-target="doubt-forum.html">
-        <i data-lucide="message-circle"></i><span class="nav-label flex-1">Doubt Forum</span>
-        <span class="hide-on-collapse w-1.5 h-1.5 bg-teal-2 rounded-full pulse-dot"></span>
-      </a>
-
-      <p class="hide-on-collapse px-6 py-2 mt-3 text-[10px] text-white/25 uppercase tracking-[0.16em] font-bold">Support</p>
-      <a href="raise-ticket.html" class="nav-item" onclick="setNav(this,event)" data-tip="Raise a Ticket" data-action="page" data-target="raise-ticket.html">
-        <i data-lucide="shield-alert"></i><span class="nav-label">Raise a Ticket</span>
-      </a>
-
-      <p class="hide-on-collapse px-6 py-2 mt-3 text-[10px] text-white/25 uppercase tracking-[0.16em] font-bold">Account</p>
-      <a href="achievements.html" class="nav-item" onclick="setNav(this,event)" data-tip="Achievements" data-action="page" data-target="achievements.html">
-        <i data-lucide="award"></i><span class="nav-label">Achievements</span>
-      </a>
-      <a href="settings.html" class="nav-item" onclick="setNav(this,event)" data-tip="Settings" data-action="page" data-target="settings.html">
-        <i data-lucide="settings"></i><span class="nav-label">Settings</span>
-      </a>
-    </nav>
-
-    <div class="hide-on-collapse mx-3 mb-3 p-4 rounded-2xl" style="background:linear-gradient(135deg,rgba(15,168,154,0.22),rgba(15,168,154,0.06));border:1px solid rgba(15,168,154,0.25)">
-      <div class="flex items-center gap-2 mb-2">
-        <i data-lucide="sparkles" class="w-4 h-4 text-teal-2"></i>
-        <span class="text-white font-bold text-[13px]">Elite Access</span>
-      </div>
-      <p class="text-white/45 text-[11px] leading-snug mb-3">Free early access active. Upgrade for unlimited 1:1 sessions.</p>
-      <button class="w-full py-2 rounded-xl text-[11.5px] font-bold btn-primary">Upgrade Plan</button>
-    </div>
-
-    <a href="#" id="signOutBtn" onclick="handleLogout(event)" class="nav-item mb-4 text-red-300/70 hover:text-red-300 hover:bg-red-500/10" data-tip="Sign Out">
-      <i data-lucide="log-out"></i><span class="nav-label">Sign Out</span>
-    </a>
-  </aside>
+  <div id="sidebar-mount"></div>
 
 <!-- ── Main ── -->
 <main class="main-content">
@@ -862,12 +779,6 @@ async function loadUser(){
     }
   } catch(e){}
 }
-
-document.getElementById('signOutBtn').addEventListener('click',e=>{
-  e.preventDefault();
-  ['mc_token','admin_token','mc_user'].forEach(k=>localStorage.removeItem(k));
-  window.location.href='index.html';
-});
 
 window.addEventListener('load',()=>{ lucide.createIcons(); loadUser(); loadDoubts(); });
 </script>
