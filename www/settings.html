@@ -12,6 +12,8 @@
 <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://unpkg.com/lucide@latest"></script>
+<script src="shared/auth-common.js"></script>
+<script src="shared/nav-student.js"></script>
 <script>
   tailwind.config = {
     darkMode: "class",
@@ -73,28 +75,7 @@
 
 <div class="app-shell">
   <div class="overlay" id="overlay" onclick="closeSidebar()"></div>
-  <aside class="sidebar" id="sidebar">
-    <div class="px-5 pt-5 pb-4">
-      <p class="font-display text-white text-[17px] leading-none">MedClarivo</p>
-      <p class="text-[9.5px] text-teal-2 font-bold tracking-[0.18em] uppercase mt-1">Elite</p>
-    </div>
-    <nav class="flex-1 overflow-y-auto py-1">
-      <a href="dashboard.html" class="nav-item"><i data-lucide="layout-dashboard"></i><span>Dashboard</span></a>
-      <a href="progress.html" class="nav-item"><i data-lucide="trending-up"></i><span>Progress</span></a>
-      <a href="#" class="nav-item"><i data-lucide="library"></i><span>Content Library</span></a>
-      <a href="analytics.html" class="nav-item"><i data-lucide="bar-chart-3"></i><span>Analytics</span></a>
-      <a href="my-mentor.html" class="nav-item"><i data-lucide="users"></i><span>My Mentor</span></a>
-      <a href="student-sessions.html" class="nav-item"><i data-lucide="video"></i><span>Sessions</span></a>
-      <a href="student-messages.html" class="nav-item"><i data-lucide="mail"></i><span>Messages</span></a>
-      <a href="dashboard.html#doubtSection" class="nav-item"><i data-lucide="message-circle"></i><span>Doubt Forum</span></a>
-      <a href="raise-ticket.html" class="nav-item"><i data-lucide="shield-alert"></i><span>Raise a Ticket</span></a>
-      <a href="dashboard.html#achievementsSection" class="nav-item"><i data-lucide="award"></i><span>Achievements</span></a>
-      <a href="settings.html" class="nav-item active"><i data-lucide="settings"></i><span>Settings</span></a>
-    </nav>
-    <a href="#" id="signOutBtn" class="nav-item mb-4 text-red-300/70 hover:text-red-300 hover:bg-red-500/10">
-      <i data-lucide="log-out"></i><span>Sign Out</span>
-    </a>
-  </aside>
+  <div id="sidebar-mount"></div>
 
   <div class="main-content">
     <header class="topbar mx-4 mt-4 lg:mx-6 h-16 flex items-center justify-between px-4 md:px-5">
