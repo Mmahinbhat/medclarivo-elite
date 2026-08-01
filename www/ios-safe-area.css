@@ -48,3 +48,71 @@ header.fixed, .fixed-header {
     padding-top: calc(env(safe-area-inset-top) + 80px + 28px) !important;
   }
 }
+
+/* ── MENTOR INBOX: WhatsApp-style mobile list/conversation split ── */
+.chat-back-btn { display: none; }
+@media (max-width: 767px) {
+  #inboxPanel > div:nth-child(1) { width: 100% !important; }
+  #inboxPanel > div:nth-child(2) { display: none !important; }
+  #inboxPanel.chat-open > div:nth-child(1) { display: none !important; }
+  #inboxPanel.chat-open > div:nth-child(2) { display: flex !important; }
+  .chat-back-btn { display: block !important; }
+}
+
+/* ── STUDENT MESSAGES: WhatsApp-style mobile list/conversation split ── */
+@media (max-width: 767px) {
+  #msgPanel > div:nth-child(1) { display: block !important; }
+  #msgPanel > div:nth-child(2) { display: none !important; }
+  #msgPanel.chat-open > div:nth-child(1) { display: none !important; }
+  #msgPanel.chat-open > div:nth-child(2) { display: flex !important; }
+}
+
+/* ── STUDENT MESSAGES: hide app chrome while a conversation is open ── */
+body.chat-open .topbar,
+body.chat-open nav.lg\:hidden.fixed.bottom-0 { display: none !important; }
+body.chat-open .main-content,
+body.chat-open #msgPanel { padding-bottom: 0 !important; }
+
+/* ── STUDENT MESSAGES: true full-screen chat, no card/margins ── */
+body.chat-open .px-4.lg\:px-6.pb-16.max-w-5xl.mx-auto {
+  padding: 0 !important;
+  margin: 0 !important;
+  max-width: 100% !important;
+}
+body.chat-open #msgPanel {
+  border-radius: 0 !important;
+  border: none !important;
+  box-shadow: none !important;
+  height: 100dvh !important;
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 100 !important;
+  padding-top: env(safe-area-inset-top) !important;
+}
+
+/* ── STUDENT MESSAGES: contact row + avatar styling ── */
+.contact-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 8px;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.contact-row:hover, .contact-row.active {
+  background: var(--mist, #f3f4f6);
+}
+.contact-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 15px;
+  color: #fff;
+  background: linear-gradient(135deg, var(--teal), var(--teal-deep));
+}

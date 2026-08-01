@@ -7,7 +7,7 @@
 
 <script src="sessionGuard.js"></script>
 <meta charset="utf-8"/>
-<meta content="width=device-width, initial-scale=1.0, viewport-fit=cover" name="viewport"/>
+<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"/>
 <title>MedClarivo Elite | Settings</title>
 <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -91,7 +91,7 @@
       <a href="dashboard.html#achievementsSection" class="nav-item"><i data-lucide="award"></i><span>Achievements</span></a>
       <a href="settings.html" class="nav-item active"><i data-lucide="settings"></i><span>Settings</span></a>
     </nav>
-    <a href="#" id="signOutBtn" class="nav-item mb-4 text-red-300/70 hover:text-red-300 hover:bg-red-500/10">
+    <a href="#" id="signOutBtn" onclick="handleLogout(event)" class="nav-item mb-4 text-red-300/70 hover:text-red-300 hover:bg-red-500/10">
       <i data-lucide="log-out"></i><span>Sign Out</span>
     </a>
   </aside>

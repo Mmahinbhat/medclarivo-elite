@@ -6,7 +6,7 @@
   <meta http-equiv="Expires" content="0"/>
 <script src="sessionGuard.js"></script>
 <meta charset="utf-8"/>
-<meta content="width=device-width, initial-scale=1.0, viewport-fit=cover" name="viewport"/>
+<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"/>
 <title>MedClarivo Elite | Messages</title>
 <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -387,28 +387,32 @@
       <button class="w-full py-2 rounded-xl text-[11.5px] font-bold btn-primary">Upgrade Plan</button>
     </div>
 
-    <a href="#" id="signOutBtn" class="nav-item mb-4 text-red-300/70 hover:text-red-300 hover:bg-red-500/10" data-tip="Sign Out">
+    <a href="#" id="signOutBtn" onclick="handleLogout(event)" class="nav-item mb-4 text-red-300/70 hover:text-red-300 hover:bg-red-500/10" data-tip="Sign Out">
       <i data-lucide="log-out"></i><span class="nav-label">Sign Out</span>
     </a>
   </aside>
 
-  <div class="main-content" id="mainContent">
-    <header class="topbar mx-4 mt-4 lg:mx-6 lg:mt-4 h-16 flex items-center justify-between px-4 md:px-5">
-      <div class="flex items-center gap-2">
+
+<div class="main-content" id="mainContent">
+
+  <header class="topbar mx-4 mt-4 lg:mx-6 lg:mt-4 h-16 flex items-center justify-between px-4 md:px-5">
+      <div class="flex items-center gap-3">
         <button class="lg:hidden btn-ghost-icon" onclick="openSidebar()">
           <i data-lucide="menu" class="w-5 h-5"></i>
         </button>
-        <div>
-          <p class="font-display text-ink text-lg leading-none">Messages</p>
-        </div>
+        <h1 class="font-display text-ink text-xl">Messages</h1>
       </div>
     </header>
 
-    <div class="px-4 lg:px-6 pb-16 max-w-5xl mx-auto" style="margin-top:56px;">
-      <div class="panel grid grid-cols-1 md:grid-cols-[240px_1fr]" style="height:calc(100vh - 140px);">
+    <div class="px-4 lg:px-6 pb-16 max-w-5xl mx-auto" style="margin-top:16px;">
+      <div class="panel grid grid-cols-1 md:grid-cols-[240px_1fr]" id="msgPanel" style="height:calc(100vh - 140px);">
 
         <!-- Contact list -->
         <div class="border-b md:border-b-0 md:border-r border-line p-4">
+          <div class="relative mb-4">
+            <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-ink-faint"></i>
+            <input type="text" placeholder="Search messages or contacts" class="w-full pl-9 pr-3 py-2.5 rounded-xl bg-mist border border-line text-sm focus:outline-none focus:ring-2 focus:ring-teal/30" />
+          </div>
           <p class="text-ink-faint text-[11px] uppercase tracking-wider font-semibold mb-3 px-1">Contacts</p>
           <div id="contactList" class="space-y-1">
             <p class="text-ink-faint text-sm px-2">Loading…</p>
@@ -418,6 +422,9 @@
         <!-- Thread -->
         <div class="flex flex-col p-5">
           <div id="threadHeader" class="hidden items-center gap-3 pb-4 mb-4 border-b border-line">
+            <button onclick="closeThread()" class="chat-back-btn" style="background:none;border:none;padding:4px;cursor:pointer;">
+              <i data-lucide="arrow-left" class="w-5 h-5"></i>
+            </button>
             <div class="contact-avatar" id="threadAvatar">—</div>
             <div>
               <p class="font-semibold text-ink text-sm" id="threadName">—</p>
@@ -435,8 +442,8 @@
             </div>
             <div class="border-t border-line pt-4 flex gap-2">
               <input id="replyInput" type="text" placeholder="Type a message…" class="flex-1 border border-line rounded-xl px-3.5 py-2.5 text-sm outline-none" style="border-color:var(--line);"/>
-              <button class="btn-primary flex items-center gap-2 px-5" id="sendBtn">
-                <i data-lucide="send" class="w-4 h-4"></i>Send
+              <button class="btn-primary flex items-center justify-center p-3 rounded-full" id="sendBtn">
+                <i data-lucide="send" class="w-4 h-4"></i>
               </button>
             </div>
           </div>
@@ -533,7 +540,6 @@
             <div class="contact-avatar">${initials(c.name)}</div>
             <div class="flex-1 min-w-0">
               <p class="font-semibold text-ink text-sm truncate">${c.name}</p>
-              <p class="text-ink-faint text-xs truncate">${roleLabel(c.role)}</p>
             </div>
             ${unread > 0 ? `<span class="chip chip-teal">${unread}</span>` : ''}
           </div>
@@ -556,7 +562,15 @@
     </div>`;
   }
 
+  function closeThread(){
+    document.getElementById('msgPanel').classList.remove('chat-open');
+    document.body.classList.remove('chat-open');
+    activeContactId = null;
+  }
+
   async function openThread(contactId) {
+    document.getElementById('msgPanel').classList.add('chat-open');
+    document.body.classList.add('chat-open');
     activeContactId = contactId;
     document.querySelectorAll('.contact-row').forEach(el => el.classList.remove('active'));
     const row = document.getElementById(`contact-${contactId}`);
@@ -635,7 +649,6 @@
 
 
 
-<!-- BOTTOM NAV -->
 <nav class="lg:hidden fixed bottom-0 left-0 right-0 z-40 flex items-center justify-around px-2 shadow-lg" style="background:#fff;border-top:1px solid rgba(11,18,32,0.08);height:calc(56px + env(safe-area-inset-bottom));padding-bottom:env(safe-area-inset-bottom);">
   <button class="flex flex-col items-center gap-1 p-2 text-ink-faint" onclick="window.location.href='dashboard.html'">
     <i data-lucide="layout-dashboard" class="w-5 h-5"></i>
@@ -658,6 +671,7 @@
     <span class="text-[9px] font-semibold">Profile</span>
   </button>
 </nav>
+<script>lucide.createIcons();</script>
 <style>
   @media(max-width:1023px){
     main, .main-content { padding-bottom: calc(72px + env(safe-area-inset-bottom)) !important; }

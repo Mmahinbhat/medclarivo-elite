@@ -5,7 +5,7 @@
   <meta http-equiv="Pragma" content="no-cache"/>
   <meta http-equiv="Expires" content="0"/>
   <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"/>
   <meta name="description" content="MedClarivo Elite — Elite mentorship for medical aspirants."/>
   <title>MedClarivo Elite</title>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
@@ -603,7 +603,7 @@
                 <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/>
               </svg>
             </span>
-            <input class="field-input" id="identifier" name="identifier" type="text" placeholder="you@example.com" autocomplete="username"/>
+            <input class="field-input" id="identifier" name="identifier" type="text" placeholder="you@example.com" autocomplete="username" autocapitalize="none" autocorrect="off"/>
             <span class="field-error" id="identifierError">Please enter your email or phone.</span>
           </div>
         </div>
@@ -906,6 +906,11 @@ function handleNativeAuthUrl(urlString) {
       const token = parsed.searchParams.get('token');
       console.log('DEBUG: parsed token =', token);
       if (token) {
+        if (token === sessionStorage.getItem('mc_last_oauth_token')) {
+          console.log('DEBUG: duplicate OAuth callback ignored');
+          return;
+        }
+        sessionStorage.setItem('mc_last_oauth_token', token);
         console.log('DEBUG: token found, logging in');
         localStorage.setItem('mc_token', token);
         window.Capacitor.Plugins.Browser.close();
