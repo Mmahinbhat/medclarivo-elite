@@ -16,10 +16,10 @@ let io = null;
  */
 function init(httpServer) {
   io = new Server(httpServer, {
-    cors: {
-      origin: process.env.CLIENT_ORIGIN || '*',
-      credentials: true,
-    },
+   cors: {
+  origin: process.env.CLIENT_URL || '*',
+  credentials: true,
+},
   });
 
   // Auth handshake: client connects with `io(url, { auth: { token: jwt } })`
