@@ -6,6 +6,7 @@ const helmet     = require('helmet');
 const morgan     = require('morgan');
 const rateLimit  = require('express-rate-limit');
 const passport   = require('./config/passport');
+const http       = require('http');
 
 const authRoutes       = require('./routes/auth');
 const studyRoutes      = require('./routes/study');
@@ -28,6 +29,11 @@ const achievementRoutes = require('./routes/achievements');
 const testRoutes = require('./routes/tests');
 const flashcardRoutes = require('./routes/flashcards');
 const notificationRoutes = require('./routes/notifications');
+const pushRoutes = require('./routes/push');
+const myMentorRoutes = require('./routes/myMentor');
+
+const { init: initNotifySocket } = require('./utils/notifySocket');
+const { init: initWebPush } = require('./utils/webPush');
 
 const app  = express();
 const PORT = process.env.PORT || 5000;
@@ -76,6 +82,9 @@ app.use('/api/auth/forgot-password', rateLimit({
 
 app.use(passport.initialize());
 
+// Serves sw.js, /js/*, /css/* for the notification widget + push service worker
+app.use(express.static('public'));
+
 // ── Routes ───────────────────────────────────────────────────
 app.use('/api/auth',       authRoutes);
 app.use('/api/study',      studyRoutes);
@@ -98,6 +107,9 @@ app.use('/api/achievements',     achievementRoutes);
 app.use('/api/tests',            testRoutes);
 app.use('/api/flashcards',       flashcardRoutes);
 app.use('/api/notifications',    notificationRoutes);
+app.use('/api/push',             pushRoutes);
+app.use('/api/student/mentor',   myMentorRoutes);
+
 // Health check
 app.get('/health', (req, res) => {
   res.json({
@@ -121,10 +133,14 @@ app.use((err, req, res, next) => {
 });
 
 // ── Database & Start ─────────────────────────────────────────
+const server = http.createServer(app);
+initNotifySocket(server);
+initWebPush();
+
 mongoose.connect(process.env.MONGO_URI)
   .then(() => {
     console.log('✅ MongoDB connected');
-    app.listen(PORT, () => {
+    server.listen(PORT, () => {
       console.log(`🚀 MedClarivo API running on port ${PORT}`);
       console.log(`   Health: http://localhost:${PORT}/health`);
     });
@@ -135,6 +151,3 @@ mongoose.connect(process.env.MONGO_URI)
   });
 
 module.exports = app;
-
-const myMentorRoutes = require('./routes/myMentor');
-app.use('/api/student/mentor', myMentorRoutes);
