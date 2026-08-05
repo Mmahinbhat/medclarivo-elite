@@ -82,9 +82,6 @@ app.use('/api/auth/forgot-password', rateLimit({
 
 app.use(passport.initialize());
 
-// Serves sw.js, /js/*, /css/* for the notification widget + push service worker
-app.use(express.static('public'));
-
 // ── Routes ───────────────────────────────────────────────────
 app.use('/api/auth',       authRoutes);
 app.use('/api/study',      studyRoutes);
