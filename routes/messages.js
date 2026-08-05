@@ -5,6 +5,7 @@ const { authorize } = require('../middleware/rbac');
 const { MODULES, ACTIONS } = require('../utils/rbacConstants');
 const Message = require('../models/Message');
 const User = require('../models/User');
+const { notify } = require('../utils/notifySocket');
 
 router.use(protect);
 
@@ -97,11 +98,19 @@ router.post('/', authorize(MODULES.MESSAGE, ACTIONS.CREATE), async (req, res) =>
     const recipient = await User.findById(recipientId);
     if (!recipient) return res.status(404).json({ success: false, message: 'Recipient not found.' });
 
-    const message = await Message.create({
+   const message = await Message.create({
       sender: req.user._id,
       recipient: recipientId,
       content: content.trim(),
     });
+
+    notify({
+      recipient: recipientId,
+      type: 'message',
+      title: `New message from ${req.user.name}`,
+      body: content.trim().slice(0, 120),
+      sender: req.user._id,
+    }).catch(err => console.error('notify failed:', err));
 
     res.status(201).json({ success: true, message });
   } catch (err) {
