@@ -5,6 +5,8 @@ const Session    = require('../models/Session');
 const Doubt      = require('../models/Doubt');
 const Evaluation = require('../models/Evaluation');
 const Ticket     = require('../models/Ticket');
+const Notification     = require('../models/Notification');
+const NotificationRead = require('../models/NotificationRead');
 
 router.use(protect);
 
@@ -152,6 +154,38 @@ router.get('/', async (req, res) => {
       });
     });
 
+    // ── 7. MESSAGES & ANNOUNCEMENTS (new — persisted, real-time-capable) ─
+    const [personalNotifs, broadcasts, dismissedIds] = await Promise.all([
+      Notification.find({ recipient: userId })
+        .sort({ createdAt: -1 })
+        .limit(10)
+        .lean(),
+      Notification.find({ isBroadcast: true })
+        .sort({ createdAt: -1 })
+        .limit(10)
+        .lean(),
+      NotificationRead.find({ user: userId }).distinct('notification'),
+    ]);
+
+    const dismissedSet = new Set(dismissedIds.map(String));
+    const iconMap = { message: '💬', system: '⚙️', feature: '✨', mention: '📣' };
+
+    [...personalNotifs, ...broadcasts.map(n => ({
+      ...n,
+      read: dismissedSet.has(String(n._id)),
+    }))].forEach(n => {
+      notifications.push({
+        id: `notif-${n._id}`,
+        type: n.type,
+        icon: iconMap[n.type] || '🔔',
+        title: n.title,
+        desc: n.body || '',
+        link: n.link || null,
+        time: new Date(n.createdAt),
+        read: n.read,
+      });
+    });
+
     // ── Sort by time descending, cap at 15 ──────────────────────────────
     notifications.sort((a, b) => new Date(b.time) - new Date(a.time));
     const final = notifications.slice(0, 15).map(n => ({
@@ -168,11 +202,56 @@ router.get('/', async (req, res) => {
   }
 });
 
-// POST /api/notifications/mark-read  — mark all as read (future: store read state per user)
+// POST /api/notifications/mark-read  — mark all as read
 router.post('/mark-read', async (req, res) => {
-  // For now returns success — persisting read state requires a Notification model
-  // which can be added in a future migration without breaking this endpoint.
-  res.json({ success: true });
+  try {
+    const userId = req.user._id;
+
+    await Notification.updateMany({ recipient: userId, read: false }, { $set: { read: true } });
+
+    const allBroadcasts = await Notification.find({ isBroadcast: true }).select('_id').lean();
+    const alreadyRead = await NotificationRead.find({ user: userId }).distinct('notification');
+    const alreadyReadSet = new Set(alreadyRead.map(String));
+    const toInsert = allBroadcasts
+      .filter(n => !alreadyReadSet.has(String(n._id)))
+      .map(n => ({ user: userId, notification: n._id }));
+
+    if (toInsert.length) {
+      await NotificationRead.insertMany(toInsert, { ordered: false }).catch(() => {});
+    }
+
+    res.json({ success: true });
+  } catch (err) {
+    console.error('Mark-read error:', err);
+    res.status(500).json({ success: false, message: 'Failed to mark as read.' });
+  }
+});
+
+// POST /api/notifications/broadcast  — admin/mentor sends a system/feature announcement to everyone
+router.post('/broadcast', async (req, res) => {
+  try {
+    // ⚠️ Gate this to admins once role checks are confirmed, e.g.:
+    // const { restrictTo } = require('../middleware/auth');
+    // router.post('/broadcast', restrictTo('admin'), async (req, res) => { ... })
+
+    const { title, body, link, type = 'feature' } = req.body;
+    if (!title) return res.status(400).json({ success: false, message: 'title is required' });
+
+    const { notify } = require('../utils/notifySocket');
+    const notification = await notify({
+      isBroadcast: true,
+      type,
+      title,
+      body,
+      link,
+      sender: req.user._id,
+    });
+
+    res.status(201).json({ success: true, notification });
+  } catch (err) {
+    console.error('Broadcast error:', err);
+    res.status(500).json({ success: false, message: 'Failed to send broadcast.' });
+  }
 });
 
 // ── Helper ───────────────────────────────────────────────────────────────────
