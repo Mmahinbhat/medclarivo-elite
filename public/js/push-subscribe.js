@@ -11,7 +11,7 @@
 
 function getToken() {
   // ⚠️ Match this to however the app stores the JWT (same as notifications-widget.js)
-  return localStorage.getItem('token');
+  return localStorage.getItem('mc_token');
 }
 
 function urlBase64ToUint8Array(base64String) {
