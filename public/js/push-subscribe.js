@@ -69,7 +69,7 @@ async function enablePush() {
 
 async function disablePush() {
   try {
-    const registration = await navigator.serviceWorker.getRegistration('/sw.js');
+    const registration = await navigator.serviceWorker.getRegistration('sw.js');
     const subscription = await registration?.pushManager.getSubscription();
     if (!subscription) return;
 
