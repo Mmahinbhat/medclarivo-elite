@@ -7,6 +7,7 @@ const Evaluation = require('../models/Evaluation');
 const Ticket     = require('../models/Ticket');
 const Notification     = require('../models/Notification');
 const NotificationRead = require('../models/NotificationRead');
+const { protect, restrictTo } = require('../middleware/auth');
 
 router.use(protect);
 
@@ -228,7 +229,8 @@ router.post('/mark-read', async (req, res) => {
 });
 
 // POST /api/notifications/broadcast  — admin/mentor sends a system/feature announcement to everyone
-router.post('/broadcast', async (req, res) => {
+// POST /api/notifications/broadcast  — admin sends a system/feature announcement to everyone
+router.post('/broadcast', restrictTo('admin', 'super_admin'), async (req, res) => {
   try {
     // ⚠️ Gate this to admins once role checks are confirmed, e.g.:
     // const { restrictTo } = require('../middleware/auth');
