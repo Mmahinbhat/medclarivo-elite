@@ -13,6 +13,8 @@
 <script src="https://unpkg.com/lucide@latest"></script>
 <script src="shared/auth-common.js"></script>
 <script src="shared/nav-student.js"></script>
+<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+<script src="push-subscribe.js"></script>
 <script>
   tailwind.config = {
     darkMode: "class",
@@ -429,7 +431,8 @@
         <div style="max-height:360px;overflow-y:auto;" id="notifList">
           <div style="padding:24px;text-align:center;color:var(--ink-faint);font-size:13px;">Loading…</div>
         </div>
-        <div style="padding:14px 20px;border-top:1px solid rgba(11,18,32,0.06);text-align:center;">
+        <div style="padding:14px 20px;border-top:1px solid rgba(11,18,32,0.06);text-align:center;display:flex;flex-direction:column;gap:8px;">
+          <button onclick="enableNotificationsPrompt()" style="font-size:12px;font-weight:600;color:var(--teal);background:none;border:none;cursor:pointer;">Enable phone notifications</button>
           <button onclick="closeNotifications()" style="font-size:13px;font-weight:600;color:var(--ink-soft);background:none;border:none;cursor:pointer;">See all notifications</button>
         </div>
       </div>
@@ -1627,6 +1630,33 @@
       method:'POST', headers:{ Authorization:`Bearer ${localStorage.getItem('mc_token')}` }
     }).catch(()=>{});
     closeNotifications();
+  }
+// ── Live notifications via Socket.io ──
+  (function initLiveNotifications(){
+    const mcToken = localStorage.getItem('mc_token');
+    if (!mcToken || !window.io) return;
+
+    const socketOrigin = API_BASE.replace(/\/api\/?$/, ''); // strip trailing /api
+    const socket = io(socketOrigin, { auth: { token: mcToken } });
+
+    socket.on('notification', (n) => {
+      const dot = document.getElementById('notifDot');
+      if (dot) dot.style.display = 'block';
+
+      // If the panel is currently open, refresh it so the new item appears immediately
+      const panel = document.getElementById('notifPanel');
+      if (panel && panel.style.display === 'block') {
+        loadNotifications();
+      }
+
+      showToast(n.title || 'New notification');
+    });
+  })();
+
+  // ── Enable push notifications (phone/browser tray) ──
+  async function enableNotificationsPrompt(){
+    const ok = await enablePush(); // from push-subscribe.js
+    showToast(ok ? 'Notifications enabled' : 'Could not enable notifications');
   }
 
   // ── AI Quick Doubt ──

@@ -3,6 +3,7 @@ const router  = express.Router();
 const { protect } = require('../middleware/auth');
 const Message = require('../models/Message');
 const User    = require('../models/User');
+const { notify } = require('../utils/notifySocket');
 
 router.use(protect);
 
@@ -98,11 +99,20 @@ router.post('/', async (req, res) => {
       return res.status(403).json({ success: false, message: 'You can only message your assigned mentor.' });
     }
 
-    const message = await Message.create({
+   const message = await Message.create({
       sender:    req.user._id,
       recipient: recipientId,
       content:   content.trim(),
     });
+
+    notify({
+      recipient: recipientId,
+      type: 'message',
+      link: `student-messages.html?mentor=${req.user._id}`,
+      title: `New message from ${req.user.name}`,
+      body: content.trim().slice(0, 120),
+      sender: req.user._id,
+    }).catch(err => console.error('notify failed:', err));
 
     res.status(201).json({ success: true, message });
   } catch (err) {

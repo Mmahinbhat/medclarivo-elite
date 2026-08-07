@@ -12,6 +12,7 @@ const Message = require('../models/Message');
 const MentorAvailability = require('../models/MentorAvailability');
 const DailyMission = require('../models/DailyMission');
 const { draftReply } = require('../services/anthropic.service');
+const { notify } = require('../utils/notifySocket');
 
 // ════════════════════════════════════════════════════════════════
 // GET /api/mentor/mentees  (mentor/admin only)
@@ -369,11 +370,19 @@ router.post('/messages', protect, restrictTo('mentor', 'admin'), async (req, res
       return res.status(404).json({ success: false, message: 'Student not found.' });
     }
 
-    const message = await Message.create({
+   const message = await Message.create({
       sender: req.user._id,
       recipient: menteeId,
       content: content.trim(),
     });
+
+    notify({
+      recipient: menteeId,
+      type: 'message',
+      title: `New message from ${req.user.name}`,
+      body: content.trim().slice(0, 120),
+      sender: req.user._id,
+    }).catch(err => console.error('notify failed:', err));
 
     res.status(201).json({ success: true, message });
   } catch (err) {
@@ -550,11 +559,19 @@ router.post('/admin-messages', protect, restrictTo('mentor'), async (req, res) =
     const admin = await User.findOne({ _id: adminId, role: { $in: ['admin', 'super_admin'] } });
     if (!admin) return res.status(404).json({ success: false, message: 'Admin not found.' });
 
-    const message = await Message.create({
+   const message = await Message.create({
       sender: req.user._id,
       recipient: adminId,
       content: content.trim(),
     });
+
+    notify({
+      recipient: adminId,
+      type: 'message',
+      title: `New message from ${req.user.name}`,
+      body: content.trim().slice(0, 120),
+      sender: req.user._id,
+    }).catch(err => console.error('notify failed:', err));
 
     res.status(201).json({ success: true, message });
   } catch (err) {
@@ -564,7 +581,7 @@ router.post('/admin-messages', protect, restrictTo('mentor'), async (req, res) =
 });
 
 // ════════════════════════════════════════════════════════════════
-// GET /api/mentor/students/:id/mission  (mentor/admin only)
+// GET /api/mentor/students/:id/mission
 // View a student's mission for today (to edit it).
 // ════════════════════════════════════════════════════════════════
 router.get('/students/:id/mission', protect, restrictTo('mentor', 'admin'), async (req, res) => {
