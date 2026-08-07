@@ -12,6 +12,8 @@
 <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+<script src="push-subscribe.js"></script>
 <script>
   tailwind.config = {
     darkMode: "class",
@@ -410,6 +412,9 @@
         </div>
         <button class="btn-ghost-icon" onclick="toggleDark()" data-tip="Toggle theme">
           <i data-lucide="moon" class="w-[18px] h-[18px]" id="darkIcon"></i>
+        </button>
+        <button class="btn-ghost-icon" onclick="enableNotificationsPrompt()" data-tip="Enable phone notifications">
+          <i data-lucide="bell" class="w-[18px] h-[18px]"></i>
         </button>
                 <div class="w-px h-6 bg-line mx-1 hidden sm:block"></div>
         <div class="avatar-ring cursor-pointer">
@@ -1858,7 +1863,26 @@ async function submitAvailability(){
     localStorage.removeItem('mc_user');
     window.location.href = 'index.html';
   });
+  
+// ── Live notifications via Socket.io ──
+  (function initLiveNotifications(){
+    const mcToken = localStorage.getItem('mc_token');
+    if (!mcToken || !window.io) return;
 
+    const socketOrigin = API_BASE.replace(/\/api\/?$/, '');
+    const socket = io(socketOrigin, { auth: { token: mcToken } });
+
+    socket.on('notification', (n) => {
+      showToast(n.title || 'New notification');
+      checkAdminMessagesUnread(); // refresh the sidebar badge in case it applies
+    });
+  })();
+
+  // ── Enable push notifications (phone/browser tray) ──
+  async function enableNotificationsPrompt(){
+    const ok = await enablePush(); // from push-subscribe.js
+    showToast(ok ? 'Notifications enabled' : 'Could not enable notifications');
+  }
   function showToast(msg) {
     var t = document.getElementById('toast');
     if (t) {
