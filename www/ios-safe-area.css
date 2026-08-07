@@ -45,7 +45,7 @@ header.fixed, .fixed-header {
 @media (max-width: 1023px) {
   .hero {
     margin-top: 0 !important;
-    padding-top: calc(env(safe-area-inset-top) + 80px + 28px) !important;
+    padding-top: 28px !important;
   }
 }
 
@@ -115,4 +115,13 @@ body.chat-open #msgPanel {
   font-size: 15px;
   color: #fff;
   background: linear-gradient(135deg, var(--teal), var(--teal-deep));
+}
+
+/* ── BOTTOM NAV: force dark, bold icons everywhere, no per-page variation ── */
+nav.lg\:hidden.fixed.bottom-0 .text-ink-faint {
+  color: #374151 !important;
+  font-weight: 700 !important;
+}
+nav.lg\:hidden.fixed.bottom-0 svg {
+  stroke-width: 2.4 !important;
 }

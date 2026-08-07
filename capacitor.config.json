@@ -3,6 +3,7 @@
   "appName": "MedClarivo Elite",
   "webDir": "www",
   "ios": {
-    "contentInset": "never"
+    "contentInset": "never",
+    "allowsBackForwardNavigationGestures": true
   }
 }

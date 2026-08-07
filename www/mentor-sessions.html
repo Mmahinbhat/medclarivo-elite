@@ -62,7 +62,7 @@
   }
   @media(max-width:1023px){.sidebar{transform:translateX(-130%);transition:transform .3s ease;}.sidebar.open{transform:translateX(0);}}
   .main-content{margin-left:292px;flex:1;min-width:0;}
-  @media(max-width:1023px){.main-content{margin-left:0;}}
+  @media(max-width:1023px){.main-content{margin-left:0;}} @media(max-width:1023px){ main.main-content{ padding-bottom: calc(72px + env(safe-area-inset-bottom)) !important; } }
 
   .nav-item{
     display:flex;align-items:center;gap:12px;padding:10px 16px;border-radius:14px;
@@ -684,5 +684,28 @@ document.getElementById('signOutBtn').addEventListener('click', e => {
 
 window.addEventListener('load', () => { lucide.createIcons(); init(); });
 </script>
+<nav class="lg:hidden fixed bottom-0 left-0 right-0 z-40 flex items-center justify-around px-2 shadow-lg" style="background:#fff;border-top:1px solid rgba(11,18,32,0.08);height:calc(56px + env(safe-area-inset-bottom));padding-bottom:env(safe-area-inset-bottom);">
+  <button onclick="window.location.href='mentor-dashboard.html'" class="flex flex-col items-center gap-1 p-2 text-ink-faint">
+    <i data-lucide="layout-dashboard" class="w-5 h-5"></i>
+    <span class="text-[9px] font-bold">Home</span>
+  </button>
+  <button onclick="window.location.href='mentor-mentees.html'" class="flex flex-col items-center gap-1 p-2 text-ink-faint">
+    <i data-lucide="users" class="w-5 h-5"></i>
+    <span class="text-[9px] font-semibold">Mentees</span>
+  </button>
+  <button onclick="window.location.href='mentor-requests.html'" class="flex flex-col items-center gap-1 p-2 text-ink-faint relative">
+    <i data-lucide="user-check" class="w-5 h-5"></i>
+    <span class="text-[9px] font-semibold">Requests</span>
+    <span class="absolute top-1 right-2.5 w-1.5 h-1.5 bg-teal rounded-full"></span>
+  </button>
+  <button onclick="window.location.href='mentor-sessions.html'" class="flex flex-col items-center gap-1 p-2 text-teal-deep">
+    <i data-lucide="video" class="w-5 h-5"></i>
+    <span class="text-[9px] font-semibold">Sessions</span>
+  </button>
+  <button onclick="showToast('Mentor profile page coming soon')" class="flex flex-col items-center gap-1 p-2 text-ink-faint">
+    <i data-lucide="user" class="w-5 h-5"></i>
+    <span class="text-[9px] font-semibold">Profile</span>
+  </button>
+</nav>
 </body>
 </html>
