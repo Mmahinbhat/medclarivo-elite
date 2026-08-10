@@ -31,6 +31,8 @@ const flashcardRoutes = require('./routes/flashcards');
 const notificationRoutes = require('./routes/notifications');
 const pushRoutes = require('./routes/push');
 const myMentorRoutes = require('./routes/myMentor');
+const paymentsRoutes = require('./routes/payments');
+const paymentsWebhookHandler = require('./routes/paymentsWebhook');
 
 const { init: initNotifySocket } = require('./utils/notifySocket');
 const { init: initWebPush } = require('./utils/webPush');
@@ -42,6 +44,11 @@ const PORT = process.env.PORT || 5000;
 app.set('trust proxy', 1);
 app.use(helmet());
 app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'));
+
+// Razorpay webhook needs the raw body for signature verification — must be
+// registered BEFORE express.json(), and only for this one exact path.
+app.post('/api/payments/webhook', express.raw({ type: 'application/json' }), paymentsWebhookHandler);
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -106,6 +113,7 @@ app.use('/api/flashcards',       flashcardRoutes);
 app.use('/api/notifications',    notificationRoutes);
 app.use('/api/push',             pushRoutes);
 app.use('/api/student/mentor',   myMentorRoutes);
+app.use('/api/payments',         paymentsRoutes);
 
 // Health check
 app.get('/health', (req, res) => {
