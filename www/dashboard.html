@@ -845,8 +845,17 @@
   lucide.createIcons();
 
   // ── Sidebar (mobile) ──
-  function openSidebar(){ document.getElementById('sidebar').classList.add('open'); document.getElementById('overlay').classList.add('open'); }
-  function closeSidebar(){ document.getElementById('sidebar').classList.remove('open'); document.getElementById('overlay').classList.remove('open'); }
+  function openSidebar(){
+    const sb = document.getElementById('sidebar');
+    const ov = document.getElementById('overlay');
+    if (sb && ov) { sb.classList.add('open'); ov.classList.add('open'); }
+    else { setTimeout(openSidebar, 50); }
+  }
+  function closeSidebar(){
+    const sb = document.getElementById('sidebar');
+    const ov = document.getElementById('overlay');
+    if (sb && ov) { sb.classList.remove('open'); ov.classList.remove('open'); }
+  }
 
   // ── Sidebar collapse (desktop) ──
   function toggleCollapse(){
