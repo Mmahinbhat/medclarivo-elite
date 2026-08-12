@@ -16,6 +16,16 @@
 <script src="shared/nav-student.js"></script>
 <style>
   :root{ --navy:#0A1424; --navy-2:#0F2038; --navy-3:#16304F; --teal:#0FA89A; --teal-2:#33D9C8; --teal-deep:#0A6E64; --gold:#B9924F; --mist:#F5F7FA; --mist-2:#EEF2F6; --ink:#0B1220; --ink-soft:#56657B; --ink-faint:#8B97A8; --line:rgba(11,18,32,0.08); }
+  [data-theme="dark"]{ --mist:#0D1117; --mist-2:#161B22; --ink:#F0F6FC; --ink-soft:#8B97A8; --ink-faint:#4A5568; --line:rgba(255,255,255,0.08); }
+  [data-theme="dark"] .panel{ background:#161B22; border-color:rgba(255,255,255,0.08); }
+  [data-theme="dark"] .topbar{ background:rgba(13,17,23,0.85); border-color:rgba(255,255,255,0.06); }
+  [data-theme="dark"] nav.lg\:hidden.fixed.bottom-0{
+    background:#161B22 !important;
+    border-color:rgba(255,255,255,0.08) !important;
+  }
+  [data-theme="dark"] nav.lg\:hidden.fixed.bottom-0 .text-ink-faint{
+    color:#8B97A8 !important;
+  }
   *{box-sizing:border-box;} html{scroll-behavior:smooth;}
   body{font-family:'DM Sans',sans-serif;background:var(--mist);color:var(--ink);-webkit-font-smoothing:antialiased;min-height:100dvh;}
   .font-display{font-family:'DM Serif Display',serif;}
@@ -71,6 +81,11 @@
           <p class="text-ink-faint text-xs" id="progressLabel">Loading…</p>
         </div>
       </div>
+      <div class="flex items-center gap-1.5 md:gap-2">
+        <button class="btn-ghost-icon" onclick="toggleDark()" id="darkBtn" data-tip="Toggle theme">
+          <i data-lucide="moon" class="w-[18px] h-[18px]" id="darkIcon"></i>
+        </button>
+      </div>
     </div>
 
     <div class="pb-16 space-y-6" style="margin-top:16px;">
@@ -88,6 +103,22 @@
   const API = 'https://med-clarivo.onrender.com/api';
   function getToken() { return localStorage.getItem('mc_token'); }
   const token = getToken();
+
+  function toggleDark(){
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+    const newTheme = isDark ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', newTheme);
+    const icon = document.getElementById('darkIcon');
+    if(icon){ icon.setAttribute('data-lucide', isDark ? 'moon' : 'sun'); lucide.createIcons(); }
+    localStorage.setItem('mc_theme', newTheme);
+  }
+  if(localStorage.getItem('mc_theme') === 'dark'){
+    document.documentElement.setAttribute('data-theme','dark');
+    document.addEventListener('DOMContentLoaded', ()=>{
+      const icon = document.getElementById('darkIcon');
+      if(icon){ icon.setAttribute('data-lucide','sun'); lucide.createIcons(); }
+    });
+  }
   function openSidebar(){ document.getElementById('sidebar').classList.add('open'); document.getElementById('overlay').classList.add('open'); }
   function closeSidebar(){ document.getElementById('sidebar').classList.remove('open'); document.getElementById('overlay').classList.remove('open'); }
   if (!token) window.location.href = 'index.html';

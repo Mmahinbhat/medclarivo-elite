@@ -12,7 +12,7 @@
 <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://unpkg.com/lucide@latest"></script>
-  <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+  <script src="https://cdn.socket.io/4.7.5/socket.io.min.js" defer></script>
 <script src="push-subscribe.js"></script>
 <script>
   tailwind.config = {
@@ -58,6 +58,7 @@
   [data-theme="dark"] .topbar{ background:rgba(13,17,23,0.85); border-color:rgba(255,255,255,0.06); }
   [data-theme="dark"] .glass{ background:rgba(22,27,34,0.85); border-color:rgba(255,255,255,0.08); }
   [data-theme="dark"] input, [data-theme="dark"] textarea, [data-theme="dark"] select{ background:#161B22; color:#F0F6FC; border-color:rgba(255,255,255,0.1); }
+  [data-theme="dark"] .bg-white.text-ink{ color:#0B1220 !important; }
   *{box-sizing:border-box;}
   html{scroll-behavior:smooth;}
   body{
@@ -1206,7 +1207,7 @@
     loadAnalytics();
     loadRequests(token);
     checkAdminMessagesUnread();
-  })();
+  });
 
   // ── Real Mentoring Analytics: sessions held, response rate, satisfaction,
   //    weekly bar chart, 9-week heatmap, and recognition milestones ──
@@ -1865,7 +1866,7 @@ async function submitAvailability(){
   });
   
 // ── Live notifications via Socket.io ──
-  (function initLiveNotifications(){
+  window.addEventListener('load', function initLiveNotifications(){
     const mcToken = localStorage.getItem('mc_token');
     if (!mcToken || !window.io) return;
 
@@ -1876,7 +1877,7 @@ async function submitAvailability(){
       showToast(n.title || 'New notification');
       checkAdminMessagesUnread(); // refresh the sidebar badge in case it applies
     });
-  })();
+  });
 
   // ── Enable push notifications (phone/browser tray) ──
   async function enableNotificationsPrompt(){

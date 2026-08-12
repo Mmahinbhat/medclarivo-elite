@@ -2,8 +2,10 @@
   "appId": "com.medclarivo.elite",
   "appName": "MedClarivo Elite",
   "webDir": "www",
+  "backgroundColor": "#0d0f14",
   "ios": {
     "contentInset": "never",
-    "allowsBackForwardNavigationGestures": true
+    "allowsBackForwardNavigationGestures": true,
+    "backgroundColor": "#0d0f14"
   }
 }

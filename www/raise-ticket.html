@@ -20,12 +20,12 @@
           "teal-light":"#14B8A8",
           "teal-dim":  "#E6F7F5",
           "teal-text": "#0B7A70",
-          surface:     "#F7F9FC",
-          card:        "#FFFFFF",
-          ink:         "#0C1B2E",
-          "ink-muted": "#5B6B7F",
-          "ink-faint": "#94A3B8",
-          outline:     "#E4E9F0",
+          surface:     "var(--surface)",
+          card:        "var(--card)",
+          ink:         "var(--ink)",
+          "ink-muted": "var(--ink-muted)",
+          "ink-faint": "var(--ink-faint)",
+          outline:     "var(--outline)",
           red:         "#DC2626",
           "red-dim":   "#FEF2F2",
           amber:       "#D97706",
@@ -42,14 +42,28 @@
   }
 </script>
 <style>
-  body { font-family: 'DM Sans', sans-serif; background: #F7F9FC; min-height: 100dvh; }
-  .card { background: #fff; border: 1px solid #E4E9F0; border-radius: 1.25rem; }
+  :root{
+    --surface:#F7F9FC; --card:#FFFFFF; --ink:#0C1B2E; --ink-muted:#5B6B7F; --ink-faint:#94A3B8; --outline:#E4E9F0;
+  }
+  [data-theme="dark"]{
+    --surface:#0D1117; --card:#161B22; --ink:#F0F6FC; --ink-muted:#8B97A8; --ink-faint:#5A6678; --outline:rgba(255,255,255,0.08);
+  }
+  [data-theme="dark"] nav.lg\:hidden.fixed.bottom-0{
+    background:#161B22 !important;
+    border-color:rgba(255,255,255,0.08) !important;
+  }
+  [data-theme="dark"] nav.lg\:hidden.fixed.bottom-0 .text-ink-faint{
+    color:#5A6678 !important;
+  }
+  [data-theme="dark"] .bg-white.text-ink{ color:#0C1B2E !important; }
+  body { font-family: 'DM Sans', sans-serif; background: var(--surface); min-height: 100dvh; }
+  .card { background: var(--card); border: 1px solid var(--outline); border-radius: 1.25rem; }
   .step-line { transition: width 0.4s ease; }
-  .category-card { cursor: pointer; border: 2px solid #E4E9F0; border-radius: 1rem; padding: 16px; transition: all 0.2s; background: white; }
+  .category-card { cursor: pointer; border: 2px solid var(--outline); border-radius: 1rem; padding: 16px; transition: all 0.2s; background: var(--card); }
   .category-card:hover { border-color: #0D9488; background: #E6F7F5; }
   .category-card.selected { border-color: #0D9488; background: #E6F7F5; }
   .category-card.selected .cat-dot { background: #0D9488; }
-  .cat-dot { width: 10px; height: 10px; border-radius: 50%; background: #E4E9F0; flex-shrink: 0; transition: background 0.2s; }
+  .cat-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--outline); flex-shrink: 0; transition: background 0.2s; }
   .status-badge { display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px; border-radius: 999px; font-size: 12px; font-weight: 700; }
   .status-open { background: #FEF3E2; color: #D97706; }
   .status-reviewing { background: #EFF6FF; color: #2563EB; }
@@ -71,6 +85,9 @@
     </a>
   </div>
   <div class="flex items-center gap-3">
+    <button class="btn-ghost-icon" onclick="toggleDark()" id="darkBtn" data-tip="Toggle theme" style="color:rgba(255,255,255,0.7);">
+      <i data-lucide="moon" class="w-[18px] h-[18px]" id="darkIcon"></i>
+    </button>
     <div class="w-8 h-8 rounded-lg bg-teal flex items-center justify-center">
       <i data-lucide="shield-alert" class="w-4 h-4 text-white"></i>
     </div>
@@ -273,6 +290,22 @@ function showToast(msg, type = '') {
   t.textContent = msg;
   t.className = `toast ${type} show`;
   setTimeout(() => t.classList.remove('show'), 3500);
+}
+
+function toggleDark(){
+  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+  const newTheme = isDark ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', newTheme);
+  const icon = document.getElementById('darkIcon');
+  if(icon){ icon.setAttribute('data-lucide', isDark ? 'moon' : 'sun'); lucide.createIcons(); }
+  localStorage.setItem('mc_theme', newTheme);
+}
+if(localStorage.getItem('mc_theme') === 'dark'){
+  document.documentElement.setAttribute('data-theme','dark');
+  document.addEventListener('DOMContentLoaded', ()=>{
+    const icon = document.getElementById('darkIcon');
+    if(icon){ icon.setAttribute('data-lucide','sun'); lucide.createIcons(); }
+  });
 }
 
 function switchView(view) {

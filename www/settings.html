@@ -22,16 +22,27 @@
         navy:"#0A1424","navy-2":"#0F2038","navy-3":"#16304F",
         teal:"#0FA89A","teal-2":"#33D9C8","teal-deep":"#0A6E64",
         gold:"#B9924F","gold-soft":"rgba(185,146,79,0.12)",
-        mist:"#F5F7FA","mist-2":"#EEF2F6",
-        ink:"#0B1220","ink-soft":"#56657B","ink-faint":"#8B97A8",
-        line:"rgba(11,18,32,0.08)",
+        mist:"var(--mist)","mist-2":"var(--mist-2)",
+        ink:"var(--ink)","ink-soft":"var(--ink-soft)","ink-faint":"var(--ink-faint)",
+        line:"var(--line)",
       },
       fontFamily: { display:["DM Serif Display","serif"], sans:["DM Sans","sans-serif"], mono:["JetBrains Mono","monospace"] },
     }}
   }
 </script>
 <style>
-  :root{ --navy:#0A1424; --navy-2:#0F2038; --navy-3:#16304F; --teal:#0FA89A; --teal-2:#33D9C8; --teal-deep:#0A6E64; --gold:#B9924F; --mist:#F5F7FA; --ink:#0B1220; --ink-soft:#56657B; --ink-faint:#8A93A3; }
+  :root{ --navy:#0A1424; --navy-2:#0F2038; --navy-3:#16304F; --teal:#0FA89A; --teal-2:#33D9C8; --teal-deep:#0A6E64; --gold:#B9924F; --mist:#F5F7FA; --mist-2:#EEF2F6; --ink:#0B1220; --ink-soft:#56657B; --ink-faint:#8A93A3; --line:rgba(11,18,32,0.08); }
+  [data-theme="dark"]{ --mist:#0D1117; --mist-2:#161B22; --ink:#F0F6FC; --ink-soft:#8B97A8; --ink-faint:#4A5568; --line:rgba(255,255,255,0.08); }
+  [data-theme="dark"] .panel{ background:#161B22; border-color:rgba(255,255,255,0.08); }
+  [data-theme="dark"] .topbar{ background:rgba(13,17,23,0.85); border-color:rgba(255,255,255,0.06); }
+  [data-theme="dark"] nav.lg\:hidden.fixed.bottom-0{
+    background:#161B22 !important;
+    border-color:rgba(255,255,255,0.08) !important;
+  }
+  [data-theme="dark"] nav.lg\:hidden.fixed.bottom-0 .text-ink-faint{
+    color:#8B97A8 !important;
+  }
+  [data-theme="dark"] .field-input{ background:#161B22 !important; color:#F0F6FC !important; border-color:rgba(255,255,255,0.1) !important; }
   *{box-sizing:border-box;}
   body{ font-family:'DM Sans', sans-serif; background:var(--mist); color:var(--ink); min-height:100dvh; -webkit-font-smoothing:antialiased; }
   .font-display{font-family:'DM Serif Display', serif;}
@@ -57,7 +68,7 @@
   .btn-primary:hover{ transform:translateY(-2px); }
   .btn-primary:disabled{ opacity:.6; cursor:not-allowed; transform:none; }
   .field-label{ display:block; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:var(--ink-soft); margin-bottom:6px; }
-  .field-input{ width:100%; padding:10px 14px; border-radius:12px; background:var(--mist); border:1px solid var(--line); font-size:14px; }
+  .field-input{ width:100%; padding:10px 14px; border-radius:12px; background:var(--mist); border:1px solid var(--line); font-size:14px; color:var(--ink); -webkit-appearance:none; appearance:none; }
   .field-input:focus{ outline:none; border-color:var(--teal); box-shadow:0 0 0 3px rgba(15,168,154,0.12); }
   .toggle-row{ display:flex; align-items:center; justify-content:space-between; padding:14px 0; border-bottom:1px solid var(--line); }
   .toggle-row:last-child{ border-bottom:none; }
@@ -80,7 +91,12 @@
   <div class="main-content">
     <header class="topbar mx-4 mt-4 lg:mx-6 h-16 flex items-center justify-between px-4 md:px-5">
       <p class="font-display text-lg text-ink">Settings</p>
-      <button class="lg:hidden" onclick="openSidebar()"><i data-lucide="menu"></i></button>
+      <div class="flex items-center gap-1.5 md:gap-2">
+        <button class="btn-ghost-icon" onclick="toggleDark()" id="darkBtn" data-tip="Toggle theme">
+          <i data-lucide="moon" class="w-[18px] h-[18px]" id="darkIcon"></i>
+        </button>
+        <button class="lg:hidden" onclick="openSidebar()"><i data-lucide="menu"></i></button>
+      </div>
     </header>
 
     <main class="px-4 md:px-6 pb-16 max-w-3xl mx-auto pt-6 space-y-6">
@@ -172,6 +188,22 @@
   const API_BASE = 'https://med-clarivo.onrender.com/api';
   const token = localStorage.getItem('mc_token');
   if (!token) window.location.href = 'index.html';
+
+  function toggleDark(){
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+    const newTheme = isDark ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', newTheme);
+    const icon = document.getElementById('darkIcon');
+    if(icon){ icon.setAttribute('data-lucide', isDark ? 'moon' : 'sun'); lucide.createIcons(); }
+    localStorage.setItem('mc_theme', newTheme);
+  }
+  if(localStorage.getItem('mc_theme') === 'dark'){
+    document.documentElement.setAttribute('data-theme','dark');
+    document.addEventListener('DOMContentLoaded', ()=>{
+      const icon = document.getElementById('darkIcon');
+      if(icon){ icon.setAttribute('data-lucide','sun'); lucide.createIcons(); }
+    });
+  }
 
   function openSidebar(){ document.getElementById('sidebar').classList.add('open'); document.getElementById('overlay').classList.add('open'); }
   function closeSidebar(){ document.getElementById('sidebar').classList.remove('open'); document.getElementById('overlay').classList.remove('open'); }

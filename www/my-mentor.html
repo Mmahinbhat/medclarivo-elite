@@ -19,6 +19,18 @@
     --teal:#0FA89A; --teal-2:#33D9C8; --teal-deep:#0A6E64;
     --gold:#B9924F; --gold-soft:rgba(185,146,79,0.14); --mist:#F5F7FA; --ink:#0B1220; --ink-soft:#56657B; --ink-faint:#8A93A3; --line:rgba(11,18,32,0.08);
   }
+  [data-theme="dark"]{
+    --mist:#0D1117; --ink:#F0F6FC; --ink-soft:#8B97A8; --ink-faint:#4A5568; --line:rgba(255,255,255,0.08);
+  }
+  [data-theme="dark"] .panel{ background:#161B22; border-color:rgba(255,255,255,0.08); }
+  [data-theme="dark"] .topbar{ background:rgba(13,17,23,0.85); border-color:rgba(255,255,255,0.06); }
+  [data-theme="dark"] nav.lg\:hidden.fixed.bottom-0{
+    background:#161B22 !important;
+    border-color:rgba(255,255,255,0.08) !important;
+  }
+  [data-theme="dark"] nav.lg\:hidden.fixed.bottom-0 .text-ink-faint{
+    color:#8B97A8 !important;
+  }
   *{box-sizing:border-box;}
   html{scroll-behavior:smooth;}
   body{
@@ -133,6 +145,11 @@
         <h1 class="font-display text-2xl text-ink">My Mentor</h1>
       </div>
       </div>
+      <div class="flex items-center gap-1.5 md:gap-2">
+        <button class="btn-ghost-icon" onclick="toggleDark()" id="darkBtn" data-tip="Toggle theme">
+          <i data-lucide="moon" class="w-[18px] h-[18px]" id="darkIcon"></i>
+        </button>
+      </div>
     </div>
 
     <main class="pt-6 pb-10">
@@ -144,6 +161,22 @@
 
 <script>
 const API_BASE = 'https://med-clarivo.onrender.com/api';
+
+function toggleDark(){
+  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+  const newTheme = isDark ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', newTheme);
+  const icon = document.getElementById('darkIcon');
+  if(icon){ icon.setAttribute('data-lucide', isDark ? 'moon' : 'sun'); lucide.createIcons(); }
+  localStorage.setItem('mc_theme', newTheme);
+}
+if(localStorage.getItem('mc_theme') === 'dark'){
+  document.documentElement.setAttribute('data-theme','dark');
+  document.addEventListener('DOMContentLoaded', ()=>{
+    const icon = document.getElementById('darkIcon');
+    if(icon){ icon.setAttribute('data-lucide','sun'); lucide.createIcons(); }
+  });
+}
 
 function openSidebar(){ document.getElementById('sidebar').classList.add('open'); document.getElementById('overlay').classList.add('open'); }
 function closeSidebar(){ document.getElementById('sidebar').classList.remove('open'); document.getElementById('overlay').classList.remove('open'); }
