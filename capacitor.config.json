@@ -7,5 +7,8 @@
     "contentInset": "never",
     "allowsBackForwardNavigationGestures": true,
     "backgroundColor": "#0d0f14"
+  },
+  "android": {
+    "backgroundColor": "#0d0f14"
   }
 }
