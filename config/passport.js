@@ -41,6 +41,20 @@ if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
 }
 
 // ── Apple (only initialize if credentials are provided) ─────────
+// ---- TEMP DIAGNOSTIC (remove after debugging) ----
+{
+  const k = process.env.APPLE_PRIVATE_KEY || '';
+  console.log('APPLE DIAG | keyLength:', k.length);
+  console.log('APPLE DIAG | startsOK:', k.trim().startsWith('-----BEGIN PRIVATE KEY-----'));
+  console.log('APPLE DIAG | endsOK:', k.trim().endsWith('-----END PRIVATE KEY-----'));
+  console.log('APPLE DIAG | realNewlines:', (k.match(/\n/g) || []).length);
+  console.log('APPLE DIAG | clientId:', process.env.APPLE_CLIENT_ID);
+  console.log('APPLE DIAG | teamId:', process.env.APPLE_TEAM_ID);
+  console.log('APPLE DIAG | keyId:', process.env.APPLE_KEY_ID);
+  console.log('APPLE DIAG | callback:', process.env.APPLE_CALLBACK_URL);
+}
+// ---- END TEMP DIAGNOSTIC ----
+
 if (process.env.APPLE_CLIENT_ID && process.env.APPLE_TEAM_ID && process.env.APPLE_KEY_ID && process.env.APPLE_PRIVATE_KEY) {
   passport.use(new AppleStrategy({
     clientID:    process.env.APPLE_CLIENT_ID,
