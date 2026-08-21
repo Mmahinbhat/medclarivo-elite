@@ -198,13 +198,14 @@ router.get('/google/callback',
 // ════════════════════════════════════════════════════════════════
 // APPLE Sign-In
 // ════════════════════════════════════════════════════════════════
-router.get('/apple',
-  passport.authenticate('apple', { session: false })
-);
+router.get('/apple', (req, res, next) => {
+  const state = req.query.native === '1' ? 'native' : 'web';
+  passport.authenticate('apple', { session: false, state })(req, res, next);
+});
 
 router.post('/apple/callback',
   passport.authenticate('apple', { session: false, failureRedirect: `${process.env.CLIENT_URL}?error=apple_failed` }),
-  (req, res) => redirectWithToken(res, req.user)
+  (req, res) => redirectWithToken(res, req.user, req.body.state)
 );
 
 // ════════════════════════════════════════════════════════════════
