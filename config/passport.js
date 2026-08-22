@@ -66,12 +66,10 @@ if (process.env.APPLE_CLIENT_ID && process.env.APPLE_TEAM_ID && process.env.APPL
   }, async (req, accessToken, refreshToken, idToken, profile, done) => {
     try {
       const appleId = idToken.sub;
-      const email   = idToken.email || req.body?.user
-        ? JSON.parse(req.body.user || '{}').email
-        : null;
-      const nameObj = req.body?.user
-        ? JSON.parse(req.body.user || '{}').name
-        : null;
+      let appleUserPayload = {};
+      try { appleUserPayload = JSON.parse(req.body?.user || '{}'); } catch (e) { appleUserPayload = {}; }
+      const email = idToken.email || appleUserPayload.email || null;
+      const nameObj = appleUserPayload.name || null;
       const name = nameObj
         ? `${nameObj.firstName || ''} ${nameObj.lastName || ''}`.trim()
         : null;
