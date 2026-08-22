@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<script>if(localStorage.getItem('mc_theme')==='dark'){document.documentElement.setAttribute('data-theme','dark');}</script>
+
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"/>
 <meta http-equiv="Pragma" content="no-cache"/>
 <meta http-equiv="Expires" content="0"/>
@@ -13,6 +15,7 @@
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <script src="https://unpkg.com/lucide@latest"></script>
 <script src="shared/auth-common.js"></script>
+<script src="shared/theme-native-bg.js"></script>
 <script src="shared/nav-student.js"></script>
 <style>
   :root{ --navy:#0A1424; --navy-2:#0F2038; --navy-3:#16304F; --teal:#0FA89A; --teal-2:#33D9C8; --teal-deep:#0A6E64; --gold:#B9924F; --mist:#F5F7FA; --mist-2:#EEF2F6; --ink:#0B1220; --ink-soft:#56657B; --ink-faint:#8B97A8; --line:rgba(11,18,32,0.08); }
@@ -111,6 +114,7 @@
     const icon = document.getElementById('darkIcon');
     if(icon){ icon.setAttribute('data-lucide', isDark ? 'moon' : 'sun'); lucide.createIcons(); }
     localStorage.setItem('mc_theme', newTheme);
+    window.applyNativeThemeBackground(newTheme);
   }
   if(localStorage.getItem('mc_theme') === 'dark'){
     document.documentElement.setAttribute('data-theme','dark');

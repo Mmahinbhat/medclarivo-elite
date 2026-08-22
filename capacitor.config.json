@@ -2,13 +2,13 @@
   "appId": "com.medclarivo.elite",
   "appName": "MedClarivo Elite",
   "webDir": "www",
-  "backgroundColor": "#0d0f14",
+  "backgroundColor": "#F5F7FA",
   "ios": {
     "contentInset": "never",
     "allowsBackForwardNavigationGestures": true,
-    "backgroundColor": "#0d0f14"
+    "backgroundColor": "#F5F7FA"
   },
   "android": {
-    "backgroundColor": "#0d0f14"
+    "backgroundColor": "#F5F7FA"
   }
 }

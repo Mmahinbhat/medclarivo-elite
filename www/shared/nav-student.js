@@ -115,10 +115,44 @@
       return;
     }
     target.outerHTML = renderSidebar();
+    applyUserBadge();
+    refreshUserBadge();
     if (window.lucide && typeof window.lucide.createIcons === "function") {
       window.lucide.createIcons();
     }
   }
+
+  function applyUserBadge() {
+    try {
+      const me = JSON.parse(localStorage.getItem('mc_user') || '{}');
+      const nameEl = document.getElementById('sidebarName');
+      if (nameEl && me.name) nameEl.textContent = me.name;
+      const examEl = document.getElementById('sidebarExamLevel');
+      if (examEl && me.onboarding && me.onboarding.exam) {
+        const stage = me.onboarding.level || me.onboarding.stage || '';
+        examEl.textContent = stage ? `${me.onboarding.exam} · ${stage}` : me.onboarding.exam;
+      }
+      const initialEl = document.getElementById('sidebarInitial');
+      if (initialEl && me.name) initialEl.textContent = me.name.trim().charAt(0).toUpperCase();
+    } catch (e) { /* localStorage empty or malformed — leave placeholder */ }
+  }
+
+  async function refreshUserBadge() {
+    try {
+      const token = localStorage.getItem('mc_token');
+      if (!token) return;
+      const res = await fetch('https://med-clarivo.onrender.com/api/auth/me', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const data = await res.json();
+      if (res.ok && data.success && data.user) {
+        localStorage.setItem('mc_user', JSON.stringify(data.user));
+        applyUserBadge();
+      }
+    } catch (e) { /* offline or token invalid — cached badge already shown, leave it */ }
+  }
+
+  window.mountStudentSidebar = mount;
 
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", mount);

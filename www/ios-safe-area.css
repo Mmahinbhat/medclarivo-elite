@@ -125,3 +125,18 @@ nav.lg\:hidden.fixed.bottom-0 .text-ink-faint {
 nav.lg\:hidden.fixed.bottom-0 svg {
   stroke-width: 2.4 !important;
 }
+
+/* ── Native cross-document view transitions: eliminates the blank flash between full page navigations ── */
+@view-transition {
+  navigation: auto;
+}
+
+/* ── Native cross-document view transitions: eliminates the blank flash between full page navigations ── */
+@view-transition {
+  navigation: auto;
+}
+
+/* ── Native cross-document view transitions: eliminates the blank flash between full page navigations ── */
+@view-transition {
+  navigation: auto;
+}

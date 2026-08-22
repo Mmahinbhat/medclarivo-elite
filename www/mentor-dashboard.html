@@ -12,6 +12,7 @@
 <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://unpkg.com/lucide@latest"></script>
+<script src="shared/theme-native-bg.js"></script>
   <script src="https://cdn.socket.io/4.7.5/socket.io.min.js" defer></script>
 <script src="push-subscribe.js"></script>
 <script>
@@ -1308,6 +1309,7 @@
     const icon = document.getElementById('darkIcon');
     if(icon){ icon.setAttribute('data-lucide', isDark ? 'moon' : 'sun'); lucide.createIcons(); }
     localStorage.setItem('mc_theme', newTheme);
+    window.applyNativeThemeBackground(newTheme);
   }
 
   // ── Reply Assistant ──
