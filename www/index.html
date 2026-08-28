@@ -799,6 +799,15 @@ async function redirectToDashboard() {
   }
 }
 
+  // ── Auto-login: skip sign-in screen if a token already exists ──
+  (function checkExistingSession() {
+    const existingToken = localStorage.getItem('mc_token');
+    if (existingToken) {
+      document.body.style.visibility = 'hidden';
+      redirectToDashboard();
+    }
+  })();
+
   // ── Password toggle ───────────────────────────
   const pwToggle = document.getElementById('pwToggle');
   const pwInput  = document.getElementById('password');
