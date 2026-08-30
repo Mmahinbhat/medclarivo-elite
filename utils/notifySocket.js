@@ -2,6 +2,7 @@ const jwt = require('jsonwebtoken');
 const { Server } = require('socket.io');
 const Notification = require('../models/Notification');
 const { sendPushToUser, sendPushToAll } = require('./webPush');
+const { sendFcmToUser, sendFcmToAll } = require('./fcmPush');
 
 let io = null;
 
@@ -95,10 +96,12 @@ async function notify({ recipient = null, isBroadcast = false, type, title, body
 
   if (isBroadcast) {
     io.emit('notification', payload); // everyone connected right now (in-app bell)
-    sendPushToAll(payload).catch(() => {}); // phone/browser tray, including users not currently on the site
+    sendPushToAll(payload).catch(() => {});
+    sendFcmToAll(payload).catch(() => {}); // phone/browser tray, including users not currently on the site
   } else if (recipient) {
     io.to(`user:${recipient}`).emit('notification', payload);
     sendPushToUser(recipient, payload).catch(() => {});
+    sendFcmToUser(recipient, payload).catch(() => {});
   }
 
   return notification;

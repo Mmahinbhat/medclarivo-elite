@@ -34,6 +34,7 @@ const myMentorRoutes = require('./routes/myMentor');
 
 const { init: initNotifySocket } = require('./utils/notifySocket');
 const { init: initWebPush } = require('./utils/webPush');
+const { init: initFcmPush } = require('./utils/fcmPush');
 
 const app  = express();
 const PORT = process.env.PORT || 5000;
@@ -133,6 +134,7 @@ app.use((err, req, res, next) => {
 const server = http.createServer(app);
 initNotifySocket(server);
 initWebPush();
+initFcmPush();
 
 mongoose.connect(process.env.MONGO_URI)
   .then(() => {

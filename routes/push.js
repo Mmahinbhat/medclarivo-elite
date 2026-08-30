@@ -48,4 +48,36 @@ router.post('/unsubscribe', protect, async (req, res) => {
   }
 });
 
+
+const DeviceToken = require('../models/DeviceToken');
+
+// POST /api/push/register-device  -- called by native app after getting FCM token
+router.post('/register-device', protect, async (req, res) => {
+  try {
+    const userId = req.user.id || req.user._id;
+    const { token, platform } = req.body;
+    if (!token) return res.status(400).json({ error: 'token required' });
+
+    await DeviceToken.findOneAndUpdate(
+      { token },
+      { user: userId, token, platform: platform || 'ios', userAgent: req.headers['user-agent'] || '' },
+      { upsert: true, new: true }
+    );
+    res.status(201).json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to register device' });
+  }
+});
+
+// POST /api/push/unregister-device  -- called on logout
+router.post('/unregister-device', protect, async (req, res) => {
+  try {
+    const { token } = req.body;
+    if (!token) return res.status(400).json({ error: 'token required' });
+    await DeviceToken.deleteOne({ token });
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to unregister device' });
+  }
+});
 module.exports = router;
