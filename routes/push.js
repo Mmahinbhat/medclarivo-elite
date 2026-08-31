@@ -81,3 +81,15 @@ router.post('/unregister-device', protect, async (req, res) => {
   }
 });
 module.exports = router;
+
+// GET /api/push/test-fcm — temporary test endpoint (remove after testing)
+router.get('/test-fcm', protect, async (req, res) => {
+  try {
+    const { sendFcmToUser } = require('../utils/fcmPush');
+    const userId = req.user.id || req.user._id;
+    await sendFcmToUser(userId, { title: 'MedClarivo Test', body: 'Push notifications are working!', type: 'system' });
+    res.json({ success: true, message: 'FCM test sent' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
