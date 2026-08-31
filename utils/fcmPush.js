@@ -1,7 +1,8 @@
-const admin = require('firebase-admin');
+const { initializeApp, cert } = require('firebase-admin/app');
+const { getMessaging } = require('firebase-admin/messaging');
 const DeviceToken = require('../models/DeviceToken');
 
-let initialized = false;
+let messaging = null;
 
 function init() {
   if (!process.env.FIREBASE_SERVICE_ACCOUNT) {
@@ -10,10 +11,8 @@ function init() {
   }
   try {
     const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
-    admin.initializeApp({
-      credential: admin.credential.cert(serviceAccount),
-    });
-    initialized = true;
+    const app = initializeApp({ credential: cert(serviceAccount) });
+    messaging = getMessaging(app);
     console.log('FCM Push: initialized successfully');
   } catch (err) {
     console.error('FCM Push: failed to initialize —', err.message);
@@ -21,14 +20,14 @@ function init() {
 }
 
 async function sendFcmToUser(userId, payload) {
-  if (!initialized) return;
+  if (!messaging) return;
   const tokens = await DeviceToken.find({ user: userId });
   if (!tokens.length) return;
 
   await Promise.all(
     tokens.map(async (doc) => {
       try {
-        await admin.messaging().send({
+        await messaging.send({
           token: doc.token,
           notification: {
             title: payload.title || 'MedClarivo',
@@ -59,14 +58,14 @@ async function sendFcmToUser(userId, payload) {
 }
 
 async function sendFcmToAll(payload) {
-  if (!initialized) return;
+  if (!messaging) return;
   const tokens = await DeviceToken.find({});
   if (!tokens.length) return;
 
   await Promise.all(
     tokens.map(async (doc) => {
       try {
-        await admin.messaging().send({
+        await messaging.send({
           token: doc.token,
           notification: {
             title: payload.title || 'MedClarivo',
