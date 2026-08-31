@@ -43,7 +43,7 @@ async function sendFcmToUser(userId, payload) {
           },
           android: {
             priority: 'high',
-            notification: { sound: 'default', channelId: 'medclarivo_default' },
+            notification: { sound: 'default', channelId: 'PushPluginsChannel' },
           },
         });
       } catch (err) {
@@ -81,7 +81,7 @@ async function sendFcmToAll(payload) {
           },
           android: {
             priority: 'high',
-            notification: { sound: 'default', channelId: 'medclarivo_default' },
+            notification: { sound: 'default', channelId: 'PushPluginsChannel' },
           },
         });
       } catch (err) {
