@@ -80,7 +80,6 @@ router.post('/unregister-device', protect, async (req, res) => {
     res.status(500).json({ error: 'Failed to unregister device' });
   }
 });
-module.exports = router;
 
 // GET /api/push/test-fcm — temporary test endpoint (remove after testing)
 router.get('/test-fcm', protect, async (req, res) => {
@@ -93,3 +92,5 @@ router.get('/test-fcm', protect, async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
+
+module.exports = router;
