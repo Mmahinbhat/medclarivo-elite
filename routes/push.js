@@ -81,24 +81,4 @@ router.post('/unregister-device', protect, async (req, res) => {
   }
 });
 
-
-    const results = [];
-    for (const doc of tokens) {
-      try {
-        const msgId = await getMessaging().send({
-          token: doc.token,
-          notification: { title: 'MedClarivo Test', body: 'Push notifications are working!' },
-          data: { type: 'system' },
-        });
-        results.push({ token: doc.token.slice(-10), platform: doc.platform, msgId });
-      } catch (err) {
-        results.push({ token: doc.token.slice(-10), platform: doc.platform, error: err.code || err.message });
-      }
-    }
-    res.json({ success: true, userId, tokenCount: tokens.length, results });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
 module.exports = router;
