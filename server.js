@@ -54,9 +54,10 @@ app.use(cors({
     'http://127.0.0.1:5500',
     // Capacitor native app origins (iOS + Android webviews)
     'capacitor://localhost',
+    'ionic://localhost',
     'https://localhost',
     'http://localhost',
-  ],
+  ].filter(Boolean),
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true,
