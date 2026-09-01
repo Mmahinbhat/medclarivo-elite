@@ -3,6 +3,7 @@ const router        = express.Router();
 const Subject       = require('../models/Subject');
 const Chapter       = require('../models/Chapter');
 const UserProgress  = require('../models/UserProgress');
+const TestAttempt   = require('../models/TestAttempt');
 const { protect }   = require('../middleware/auth');
 
 // ── Map a user's onboarding answers to the right curriculum group ──
@@ -183,5 +184,122 @@ router.patch('/progress/:chapterId', protect, async (req, res) => {
   }
 });
 
+
+// ════════════════════════════════════════════════════════════════
+// GET /api/curriculum/analytics  (protected)
+// Deep performance analytics: per-subject accuracy, study time,
+// weak chapters, score trends, and time-vs-mastery comparison.
+// ════════════════════════════════════════════════════════════════
+router.get('/analytics', protect, async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const examGroup = examGroupFor(req.user.onboarding);
+
+    const subjects = await Subject.find({ examGroup }).sort('order').lean();
+    const subjectIds = subjects.map(s => s._id);
+    const chapters = await Chapter.find({ subject: { $in: subjectIds } }).sort('order').lean();
+    const chapterIds = chapters.map(c => c._id);
+
+    const progress = await UserProgress.find({ user: userId, chapter: { $in: chapterIds } }).lean();
+    const progByChapter = {};
+    progress.forEach(p => { progByChapter[p.chapter.toString()] = p; });
+
+    const attempts = await TestAttempt.find({ user: userId, status: 'submitted' }).sort('submittedAt').lean();
+
+    const subjectStats = {};
+    const chapterStats = {};
+    const scoreTrend = [];
+
+    const questionIds = [];
+    attempts.forEach(a => { a.questions.forEach(q => { if (q.question) questionIds.push(q.question); }); });
+
+    const Question = require('../models/Question');
+    const questions = await Question.find({ _id: { $in: questionIds } }).select('subject chapter').lean();
+    const qMap = {};
+    questions.forEach(q => { qMap[q._id.toString()] = q; });
+
+    attempts.forEach(a => {
+      scoreTrend.push({ date: a.submittedAt || a.createdAt, score: a.scorePercent, total: a.totalQuestions, correct: a.correctCount });
+      a.questions.forEach(aq => {
+        const q = qMap[(aq.question || '').toString()];
+        if (!q) return;
+        const sid = q.subject.toString();
+        if (!subjectStats[sid]) subjectStats[sid] = { total: 0, correct: 0 };
+        subjectStats[sid].total++;
+        if (aq.isCorrect) subjectStats[sid].correct++;
+        if (q.chapter) {
+          const cid = q.chapter.toString();
+          if (!chapterStats[cid]) chapterStats[cid] = { total: 0, correct: 0 };
+          chapterStats[cid].total++;
+          if (aq.isCorrect) chapterStats[cid].correct++;
+        }
+      });
+    });
+
+    const StudySession = require('../models/StudySession');
+    const sessions = await StudySession.find({ user: userId, chapter: { $in: chapterIds } }).lean();
+    const timeByChapter = {};
+    const timeBySubject = {};
+    const studyTrend = {};
+    const chapterToSubject = {};
+    chapters.forEach(c => { chapterToSubject[c._id.toString()] = c.subject.toString(); });
+
+    sessions.forEach(s => {
+      const cid = s.chapter.toString();
+      const sid = chapterToSubject[cid];
+      const mins = s.durationMinutes || 0;
+      timeByChapter[cid] = (timeByChapter[cid] || 0) + mins;
+      if (sid) timeBySubject[sid] = (timeBySubject[sid] || 0) + mins;
+      const day = (s.startedAt || s.createdAt).toISOString().slice(0, 10);
+      studyTrend[day] = (studyTrend[day] || 0) + mins;
+    });
+
+    const subjectAnalytics = subjects.map(subj => {
+      const sid = subj._id.toString();
+      const subjChapters = chapters.filter(c => c.subject.toString() === sid);
+      const totalPct = subjChapters.reduce((sum, c) => { const p = progByChapter[c._id.toString()]; return sum + (p ? p.percentComplete : 0); }, 0);
+      const mastery = subjChapters.length ? Math.round(totalPct / subjChapters.length) : 0;
+      const stats = subjectStats[sid] || { total: 0, correct: 0 };
+      const accuracy = stats.total ? Math.round((stats.correct / stats.total) * 100) : null;
+      const studyMinutes = timeBySubject[sid] || 0;
+
+      const weakChapters = subjChapters.map(c => {
+        const cid = c._id.toString();
+        const cs = chapterStats[cid] || { total: 0, correct: 0 };
+        const cAcc = cs.total ? Math.round((cs.correct / cs.total) * 100) : null;
+        const p = progByChapter[cid];
+        return { id: c._id, title: c.title, accuracy: cAcc, questionsAttempted: cs.total, mastery: p ? p.percentComplete : 0, studyMinutes: timeByChapter[cid] || 0 };
+      }).filter(c => c.questionsAttempted >= 3 && c.accuracy !== null && c.accuracy < 50).sort((a, b) => a.accuracy - b.accuracy);
+
+      const chapterAnalytics = subjChapters.map(c => {
+        const cid = c._id.toString();
+        const cs = chapterStats[cid] || { total: 0, correct: 0 };
+        const cAcc = cs.total ? Math.round((cs.correct / cs.total) * 100) : null;
+        const p = progByChapter[cid];
+        return { id: c._id, title: c.title, status: p ? p.status : 'not_started', mastery: p ? p.percentComplete : 0, accuracy: cAcc, questionsAttempted: cs.total, studyMinutes: timeByChapter[cid] || 0 };
+      });
+
+      return { id: subj._id, name: subj.name, color: subj.color, mastery, accuracy, questionsAttempted: stats.total, questionsCorrect: stats.correct, studyMinutes, weakChapterCount: weakChapters.length, weakChapters, chapters: chapterAnalytics };
+    });
+
+    const totalQuestions = Object.values(subjectStats).reduce((s, v) => s + v.total, 0);
+    const totalCorrect = Object.values(subjectStats).reduce((s, v) => s + v.correct, 0);
+    const overallAccuracy = totalQuestions ? Math.round((totalCorrect / totalQuestions) * 100) : null;
+    const totalStudyMinutes = Object.values(timeBySubject).reduce((s, v) => s + v, 0);
+
+    const last30 = [];
+    const today = new Date();
+    for (let i = 29; i >= 0; i--) { const d = new Date(today); d.setDate(d.getDate() - i); const key = d.toISOString().slice(0, 10); last30.push({ date: key, minutes: studyTrend[key] || 0 }); }
+
+    res.json({ success: true, examGroup, overall: { accuracy: overallAccuracy, questionsAttempted: totalQuestions, questionsCorrect: totalCorrect, totalStudyMinutes, testsCompleted: attempts.length }, scoreTrend: scoreTrend.slice(-20), studyTrend: last30, subjects: subjectAnalytics });
+  } catch (err) {
+    console.error('Analytics error:', err);
+    res.status(500).json({ success: false, message: 'Server error.' });
+  }
+});
+
+
+
+// ════════════════════════════════════════════════════════════════
 module.exports = router;
 module.exports.examGroupFor = examGroupFor;
