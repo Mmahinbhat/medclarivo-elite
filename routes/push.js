@@ -81,13 +81,7 @@ router.post('/unregister-device', protect, async (req, res) => {
   }
 });
 
-// GET /api/push/test-fcm — temporary test endpoint (remove after testing)
-router.get('/test-fcm', protect, async (req, res) => {
-  try {
-    const DeviceToken = require('../models/DeviceToken');
-    const { getMessaging } = require('firebase-admin/messaging');
-    const userId = req.user.id || req.user._id;
-    const tokens = await DeviceToken.find({ user: userId });
+
     const results = [];
     for (const doc of tokens) {
       try {
