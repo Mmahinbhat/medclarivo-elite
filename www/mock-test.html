@@ -687,7 +687,41 @@
     document.querySelectorAll('.subject-chip').forEach(el => { el.style.borderColor = 'var(--line)'; el.style.background = ''; });
   }
 
-  loadSubjects();
+  // Check if launched from Progress page for a chapter test
+  const urlParams = new URLSearchParams(window.location.search);
+  const chapterTestId = urlParams.get('chapterId');
+  const chapterTestName = urlParams.get('chapterName');
+
+  if (chapterTestId) {
+    // Auto-start a chapter test
+    (async function startChapterTest() {
+      try {
+        document.getElementById('setupScreen').innerHTML = '<div class="text-center py-20"><p class="text-white text-lg font-semibold">Starting chapter test...</p><p class="text-teal-200 text-sm mt-2">' + (chapterTestName || 'Chapter Test') + '</p></div>';
+        const res = await fetch(API_BASE + '/tests/start', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
+          body: JSON.stringify({ chapterId: chapterTestId, count: 10 }),
+        });
+        const data = await res.json();
+        if (res.ok && data.success) {
+          currentAttemptId = data.attemptId;
+          questions = data.questions;
+          answers = {};
+          currentIndex = 0;
+          startTimer();
+          document.getElementById('setupScreen').classList.add('hidden');
+          document.getElementById('testScreen').classList.remove('hidden');
+          renderQuestion();
+        } else {
+          document.getElementById('setupScreen').innerHTML = '<div class="text-center py-20"><p class="text-red-400 text-lg font-semibold">No questions available for this chapter yet.</p><p class="text-teal-200 text-sm mt-2">Questions will be added soon.</p><button onclick="window.location.href=\'progress.html\'" class="mt-4 px-6 py-2 rounded-lg text-white font-semibold" style="background:var(--teal)">Back to Progress</button></div>';
+        }
+      } catch (err) {
+        document.getElementById('setupScreen').innerHTML = '<div class="text-center py-20"><p class="text-red-400">Network error. Please try again.</p><button onclick="window.location.href=\'progress.html\'" class="mt-4 px-6 py-2 rounded-lg text-white font-semibold" style="background:var(--teal)">Back to Progress</button></div>';
+      }
+    })();
+  } else {
+    loadSubjects();
+  }
 </script>
 
 <script>
