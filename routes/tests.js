@@ -5,6 +5,8 @@ const Question = require('../models/Question');
 const TestAttempt = require('../models/TestAttempt');
 const Subject = require('../models/Subject');
 const { examGroupFor } = require('./curriculum');
+const UserProgress = require('../models/UserProgress');
+const Chapter = require('../models/Chapter');
 
 // ════════════════════════════════════════════════════════════════
 // GET /api/tests/subjects — subjects available for the user's exam,
@@ -45,11 +47,16 @@ router.get('/subjects', protect, async (req, res) => {
 router.post('/start', protect, async (req, res) => {
   try {
     const examGroup = examGroupFor(req.user.onboarding);
-    const { subjectIds, count } = req.body;
+    const { subjectIds, chapterId, count } = req.body;
     const questionCount = Math.min(Math.max(parseInt(count, 10) || 10, 5), 50);
 
     const match = { examGroup };
-    if (Array.isArray(subjectIds) && subjectIds.length) {
+    if (chapterId) {
+      // Chapter-level test: only questions from this chapter
+      const chapter = await Chapter.findById(chapterId);
+      if (!chapter) return res.status(404).json({ success: false, message: 'Chapter not found.' });
+      match.chapter = chapter._id;
+    } else if (Array.isArray(subjectIds) && subjectIds.length) {
       match.subject = { $in: subjectIds };
     }
 
@@ -65,6 +72,7 @@ router.post('/start', protect, async (req, res) => {
     const attempt = await TestAttempt.create({
       user: req.user._id,
       examGroup,
+      chapter: chapterId || null,
       subjects: Array.isArray(subjectIds) ? subjectIds : [],
       questions: questions.map(q => ({
         question: q._id,
@@ -121,12 +129,28 @@ router.post('/:id/submit', protect, async (req, res) => {
     attempt.durationSeconds = Math.round((attempt.submittedAt - attempt.startedAt) / 1000);
     await attempt.save();
 
+    // If this was a chapter test and student scored >= 60%, mark chapter as completed
+    if (attempt.chapter && attempt.scorePercent >= 60) {
+      await UserProgress.findOneAndUpdate(
+        { user: req.user._id, chapter: attempt.chapter },
+        { $set: { status: 'completed', percentComplete: 100, lastAccessedAt: new Date() } },
+        { upsert: true, new: true }
+      );
+    } else if (attempt.chapter && attempt.scorePercent < 60) {
+      // Still mark as in_progress with the score as percent
+      await UserProgress.findOneAndUpdate(
+        { user: req.user._id, chapter: attempt.chapter },
+        { $set: { status: 'in_progress', percentComplete: Math.max(attempt.scorePercent, 0), lastAccessedAt: new Date() } },
+        { upsert: true, new: true }
+      );
+    }
+
     // Populate question text/options/explanation for the review screen
     const populated = await TestAttempt.findById(attempt._id)
       .populate('questions.question', 'text options explanation')
       .lean();
 
-    res.json({ success: true, attempt: populated });
+    res.json({ success: true, attempt: populated, chapterCompleted: !!(attempt.chapter && attempt.scorePercent >= 60) });
   } catch (err) {
     console.error(err);
     res.status(500).json({ success: false, message: 'Failed to submit test.' });

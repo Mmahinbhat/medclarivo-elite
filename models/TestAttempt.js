@@ -3,6 +3,7 @@ const mongoose = require('mongoose');
 const TestAttemptSchema = new mongoose.Schema({
   user:       { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true, index: true },
   examGroup:  { type: String, required: true },
+  chapter:    { type: mongoose.Schema.Types.ObjectId, ref: 'Chapter', default: null },
   subjects:   [{ type: mongoose.Schema.Types.ObjectId, ref: 'Subject' }],
   questions: [{
     question:    { type: mongoose.Schema.Types.ObjectId, ref: 'Question', required: true },
