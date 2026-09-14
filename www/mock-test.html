@@ -599,7 +599,7 @@
     const q = questions[currentIndex];
     document.getElementById('questionCounter').textContent = `Question ${currentIndex + 1} of ${questions.length}`;
     document.getElementById('testProgressBar').style.width = `${Math.round(((currentIndex + 1) / questions.length) * 100)}%`;
-    document.getElementById('questionText').textContent = q.text;
+    document.getElementById('questionText').innerHTML = q.text.replace(/([A-E])\.\s/g, '<br><b>$1.</b> ').replace(/Statement\s*(I|II|III|IV)/g, '<br><b>Statement $1</b>').replace(/List[-\s]*(I|II)/g, '<br><b>List $1</b>');
 
     const selected = answers[q._id];
     document.getElementById('optionsList').innerHTML = q.options.map(o => `
