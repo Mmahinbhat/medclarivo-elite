@@ -496,7 +496,7 @@
     if (nameEl && me.name) nameEl.textContent = me.name;
   })();
 
-  let selectedSubjects = new Set();
+  let selectedChapters = new Set();
   let selectedCount = 10;
   let currentAttemptId = null;
   let questions = [];
@@ -512,10 +512,26 @@
       const wrap = document.getElementById('subjectPicker');
       if (res.ok && data.success && data.subjects.length) {
         wrap.innerHTML = data.subjects.map(s => `
-          <div class="subject-chip p-3 rounded-xl border-1.5 cursor-pointer" style="border:1.5px solid var(--line)" data-id="${s._id}" onclick="toggleSubject('${s._id}', this)">
-            <p class="font-semibold text-sm text-ink">${s.name}</p>
-            <p class="text-ink-faint text-xs">${s.questionCount} questions</p>
-          </div>`).join('');
+          <div class="subject-section mb-1" style="border:1.5px solid var(--line);border-radius:12px;overflow:hidden">
+            <div class="p-3 cursor-pointer flex items-center justify-between" onclick="toggleSubjectExpand('${s._id}')">
+              <div>
+                <p class="font-semibold text-ink text-sm">${s.name}</p>
+                <p class="text-ink-faint text-xs">${s.questionCount} questions</p>
+              </div>
+              <span class="text-ink-faint text-xs" id="subj-arrow-${s._id}">&#9660;</span>
+            </div>
+            <div id="subj-chapters-${s._id}" style="display:none;border-top:1px solid var(--line);padding:8px 12px;max-height:200px;overflow-y:auto">
+              <label style="font-size:12px;cursor:pointer;color:var(--teal);font-weight:600;display:block;margin-bottom:6px" onclick="toggleAllChapters('${s._id}', event)">Select All</label>
+              ${s.chapters.map(ch => `
+                <label class="flex items-center gap-2 py-1 cursor-pointer" style="font-size:13px">
+                  <input type="checkbox" class="chapter-check" data-chapter="${ch._id}" data-subject="${s._id}" onchange="updateChapterSelection()" style="accent-color:var(--teal)">
+                  <span class="text-ink">${ch.title}</span>
+                  <span class="text-ink-faint" style="font-size:11px;margin-left:auto">${ch.questionCount}q</span>
+                </label>
+              `).join('')}
+            </div>
+          </div>
+        `).join('');
       } else {
         wrap.innerHTML = '<p class="text-ink-faint text-sm">No subjects available yet.</p>';
       }
@@ -524,16 +540,26 @@
     }
   }
 
-  function toggleSubject(id, el){
-    if (selectedSubjects.has(id)) {
-      selectedSubjects.delete(id);
-      el.style.borderColor = 'var(--line)';
-      el.style.background = '';
-    } else {
-      selectedSubjects.add(id);
-      el.style.borderColor = 'var(--teal)';
-      el.style.background = 'rgba(15,168,154,0.06)';
-    }
+  function toggleSubjectExpand(subjId) {
+    const el = document.getElementById('subj-chapters-' + subjId);
+    const arrow = document.getElementById('subj-arrow-' + subjId);
+    if (el.style.display === 'none') { el.style.display = 'block'; arrow.innerHTML = '&#9650;'; }
+    else { el.style.display = 'none'; arrow.innerHTML = '&#9660;'; }
+  }
+
+  function toggleAllChapters(subjId, e) {
+    e.stopPropagation();
+    const checks = document.querySelectorAll('.chapter-check[data-subject="' + subjId + '"]');
+    const allChecked = Array.from(checks).every(c => c.checked);
+    checks.forEach(c => { c.checked = !allChecked; });
+    updateChapterSelection();
+  }
+
+  function updateChapterSelection() {
+    selectedChapters.clear();
+    document.querySelectorAll('.chapter-check:checked').forEach(c => {
+      selectedChapters.add(c.dataset.chapter);
+    });
   }
 
   document.querySelectorAll('.count-btn').forEach(btn => {
@@ -683,7 +709,7 @@
     document.getElementById('resultsScreen').classList.add('hidden');
     document.getElementById('testScreen').classList.add('hidden');
     document.getElementById('setupScreen').classList.remove('hidden');
-    selectedSubjects.clear();
+    selectedChapters.clear();
     document.querySelectorAll('.subject-chip').forEach(el => { el.style.borderColor = 'var(--line)'; el.style.background = ''; });
   }
 
