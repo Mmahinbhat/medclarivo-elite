@@ -556,7 +556,7 @@
       const res = await fetch(`${API_BASE}/tests/start`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ subjectIds: Array.from(selectedSubjects), count: selectedCount }),
+        body: JSON.stringify({ chapterIds: Array.from(selectedChapters), count: selectedCount }),
       });
       const data = await res.json();
       if (res.ok && data.success) {

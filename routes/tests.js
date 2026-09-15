@@ -24,11 +24,29 @@ router.get('/subjects', protect, async (req, res) => {
     const countBySubject = {};
     counts.forEach(c => { countBySubject[c._id.toString()] = c.count; });
 
+    // Get chapter-level counts
+    const chapterCounts = await Question.aggregate([
+      { $match: { examGroup } },
+      { $group: { _id: '$chapter', count: { $sum: 1 } } },
+    ]);
+    const countByChapter = {};
+    chapterCounts.forEach(c => { countByChapter[c._id ? c._id.toString() : ''] = c.count; });
+
+    const chapters = await Chapter.find({ subject: { $in: subjects.map(s => s._id) } }).sort('order').lean();
+
     const result = subjects.map(s => ({
       _id: s._id,
       name: s.name,
       color: s.color,
       questionCount: countBySubject[s._id.toString()] || 0,
+      chapters: chapters
+        .filter(ch => ch.subject.toString() === s._id.toString())
+        .map(ch => ({
+          _id: ch._id,
+          title: ch.title,
+          questionCount: countByChapter[ch._id.toString()] || 0,
+        }))
+        .filter(ch => ch.questionCount > 0),
     }));
 
     res.json({ success: true, subjects: result });
@@ -47,15 +65,18 @@ router.get('/subjects', protect, async (req, res) => {
 router.post('/start', protect, async (req, res) => {
   try {
     const examGroup = examGroupFor(req.user.onboarding);
-    const { subjectIds, chapterId, count } = req.body;
+    const { subjectIds, chapterId, chapterIds, count } = req.body;
     const questionCount = Math.min(Math.max(parseInt(count, 10) || 10, 5), 50);
 
     const match = { examGroup };
     if (chapterId) {
-      // Chapter-level test: only questions from this chapter
+      // Single chapter test (from Progress page)
       const chapter = await Chapter.findById(chapterId);
       if (!chapter) return res.status(404).json({ success: false, message: 'Chapter not found.' });
       match.chapter = chapter._id;
+    } else if (Array.isArray(chapterIds) && chapterIds.length) {
+      // Multiple chapters selected in mock test
+      match.chapter = { $in: chapterIds.map(id => new require('mongoose').Types.ObjectId(id)) };
     } else if (Array.isArray(subjectIds) && subjectIds.length) {
       match.subject = { $in: subjectIds };
     }
