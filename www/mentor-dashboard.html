@@ -1874,7 +1874,37 @@ async function submitAvailability(){
     if (!mcToken || !window.io) return;
 
     const socketOrigin = API_BASE.replace(/\/api\/?$/, '');
-    const socket = io(socketOrigin, { auth: { token: mcToken } });
+    const socket = io(socketOrigin, {
+      auth: { token: mcToken },
+      reconnection: true,
+      reconnectionAttempts: 10,
+      reconnectionDelay: 2000,
+      timeout: 15000
+    });
+
+    function _showCallStatus(msg, color) {
+      var el = document.getElementById('callStatusToast');
+      if (!el) {
+        el = document.createElement('div');
+        el.id = 'callStatusToast';
+        el.style.cssText = 'position:fixed;top:12px;left:50%;transform:translateX(-50%);z-index:10000;padding:6px 16px;border-radius:20px;font-size:12px;font-family:sans-serif;color:#fff;pointer-events:none;transition:opacity 0.5s;';
+        document.body.appendChild(el);
+      }
+      el.style.background = color;
+      el.textContent = msg;
+      el.style.opacity = '1';
+      clearTimeout(window._callStatusTimer);
+      window._callStatusTimer = setTimeout(function(){ el.style.opacity = '0'; }, 3000);
+    }
+
+    socket.on('connect', () => {
+      console.log('[MentorDashboard] Socket connected, id:', socket.id);
+      _showCallStatus('Call service connected', '#16A34A');
+    });
+    socket.on('connect_error', (err) => {
+      console.error('[MentorDashboard] Socket error:', err.message);
+      _showCallStatus('Call service: connecting...', '#F59E0B');
+    });
 
     socket.on('notification', (n) => {
       showToast(n.title || 'New notification');

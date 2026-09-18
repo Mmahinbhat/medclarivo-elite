@@ -11,12 +11,56 @@
   // Skip if we're already on call.html (it has its own socket + overlay)
   if (window.location.pathname.indexOf('call.html') !== -1) return;
 
-  // Load Socket.IO dynamically if not already loaded
+  // Skip if page already has its own call socket (dashboard, mentor-dashboard, etc.)
+  if (window._callSocket) return;
+
+  // Brief toast to show connection status (helps debug)
+  function showCallStatus(msg, color) {
+    var el = document.getElementById('callStatusToast');
+    if (!el) {
+      el = document.createElement('div');
+      el.id = 'callStatusToast';
+      el.style.cssText = 'position:fixed;top:12px;left:50%;transform:translateX(-50%);z-index:10000;padding:6px 16px;border-radius:20px;font-size:12px;font-family:sans-serif;color:#fff;pointer-events:none;transition:opacity 0.5s;';
+      document.body.appendChild(el);
+    }
+    el.style.background = color;
+    el.textContent = msg;
+    el.style.opacity = '1';
+    clearTimeout(window._callStatusTimer);
+    window._callStatusTimer = setTimeout(function(){ el.style.opacity = '0'; }, 3000);
+  }
+
   function onSocketReady() {
-    if (!window.io) return;
+    if (!window.io) {
+      console.warn('[CallListener] Socket.IO not loaded');
+      return;
+    }
+
+    // Don't create duplicate connection if page already made one
+    if (window._callSocket) return;
 
     var socketOrigin = 'https://med-clarivo.onrender.com';
-    var socket = io(socketOrigin, { auth: { token: mcToken } });
+    var socket = io(socketOrigin, {
+      auth: { token: mcToken },
+      reconnection: true,
+      reconnectionAttempts: 10,
+      reconnectionDelay: 2000,
+      timeout: 15000
+    });
+
+    socket.on('connect', function() {
+      console.log('[CallListener] Socket connected, id:', socket.id);
+      showCallStatus('Call service connected', '#16A34A');
+    });
+
+    socket.on('connect_error', function(err) {
+      console.error('[CallListener] Socket error:', err.message);
+      showCallStatus('Call service: connecting...', '#F59E0B');
+    });
+
+    socket.on('disconnect', function(reason) {
+      console.warn('[CallListener] Socket disconnected:', reason);
+    });
 
     // Inject overlay HTML if not present
     if (!document.getElementById('incomingCallOverlay')) {
@@ -47,6 +91,7 @@
     }
 
     socket.on('call:incoming', function(data) {
+      console.log('[CallListener] Incoming call from:', data.callerName);
       var overlay = document.getElementById('incomingCallOverlay');
       if (!overlay) return;
 
@@ -129,6 +174,9 @@
     var script = document.createElement('script');
     script.src = 'https://cdn.socket.io/4.7.5/socket.io.min.js';
     script.onload = onSocketReady;
+    script.onerror = function() {
+      console.error('[CallListener] Failed to load Socket.IO from CDN');
+    };
     document.head.appendChild(script);
   }
 })();
