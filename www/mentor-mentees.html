@@ -10,6 +10,7 @@
 <title>My Mentees — MedClarivo Elite</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://unpkg.com/lucide@latest"></script>
+<script src="https://cdn.socket.io/4.7.5/socket.io.min.js" defer></script>
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
   :root{
@@ -268,11 +269,14 @@ function render(mentees) {
           </div>
 
           <div class="flex items-center gap-2 mb-3">
-            <button onclick="toggleSubjects('${m.id}')" class="btn-outline px-4 py-2 text-xs flex items-center gap-1.5 flex-1 justify-center">
-              <i data-lucide="chevron-down" class="w-3.5 h-3.5" id="chevron-${m.id}"></i> Subject Breakdown
+            <button onclick="toggleSubjects('${m.id}')" class="btn-outline px-3 py-2 text-xs flex items-center gap-1.5 flex-1 justify-center">
+              <i data-lucide="chevron-down" class="w-3.5 h-3.5" id="chevron-${m.id}"></i> Subjects
             </button>
-            <a href="mentor-inbox.html?mentee=${m.id}" class="btn-primary px-4 py-2 text-xs flex items-center gap-1.5">
-              <i data-lucide="message-square" class="w-3.5 h-3.5"></i> Message
+            <button onclick="callMentee('${m.id}', '${m.name.replace(/'/g, "\\\\'")}')" class="btn-outline px-3 py-2 text-xs flex items-center gap-1.5" style="border-color:rgba(15,168,154,0.35);color:var(--teal-deep)">
+              <i data-lucide="phone" class="w-3.5 h-3.5"></i> Call
+            </button>
+            <a href="mentor-inbox.html?mentee=` + '${m.id}' + `" class="btn-primary px-3 py-2 text-xs flex items-center gap-1.5">
+              <i data-lucide="message-square" class="w-3.5 h-3.5"></i> Msg
             </a>
           </div>
           <button onclick="openMissionModal('${m.id}', '${m.name.replace(/'/g, "\\'")}')" class="btn-outline w-full px-4 py-2 text-xs flex items-center justify-center gap-1.5 mb-3" style="border-color:rgba(15,168,154,0.35);color:var(--teal-deep)">
@@ -502,5 +506,72 @@ async function saveMission(){
     <span class="text-[9px] font-semibold">Profile</span>
   </button>
 </nav>
+
+<script>
+// ── Voice calling ──
+function callMentee(menteeId, menteeName) {
+  var p = new URLSearchParams({ userId: menteeId, name: menteeName, avatar: '' });
+  window.location.href = 'call.html?' + p.toString();
+}
+
+// ── Socket.IO for incoming calls ──
+(function(){
+  var mcToken = localStorage.getItem('mc_token');
+  if (!mcToken || !window.io) return;
+  var socketOrigin = 'https://med-clarivo.onrender.com';
+  var socket = io(socketOrigin, { auth: { token: mcToken } });
+
+  socket.on('call:incoming', function(data) {
+    var overlay = document.getElementById('incomingCallOverlay');
+    if (!overlay) return;
+    window._icCallId = data.callId;
+    window._icCallerId = data.callerId;
+    window._icCallerName = data.callerName || 'Unknown';
+    window._icCallerAvatar = data.callerAvatar || '';
+    overlay.style.display = 'flex';
+    var nameEl = document.getElementById('icName');
+    var initEl = document.getElementById('icInitials');
+    if (nameEl) nameEl.textContent = data.callerName || 'Unknown';
+    if (initEl) initEl.textContent = (data.callerName || '').split(' ').map(function(w){ return w[0]; }).join('').slice(0,2).toUpperCase();
+    lucide.createIcons();
+  });
+
+  socket.on('call:missed', function() {
+    var overlay = document.getElementById('incomingCallOverlay');
+    if (overlay) overlay.style.display = 'none';
+  });
+
+  window._callSocket = socket;
+})();
+
+function acceptIncomingCall(){
+  document.getElementById('incomingCallOverlay').style.display='none';
+  var p=new URLSearchParams({callId:window._icCallId,userId:window._icCallerId,name:window._icCallerName,avatar:window._icCallerAvatar||'',mode:'incoming'});
+  window.location.href='call.html?'+p.toString();
+}
+function declineIncomingCall(){
+  document.getElementById('incomingCallOverlay').style.display='none';
+  if(window._callSocket&&window._icCallId){window._callSocket.emit('call:reject',{callId:window._icCallId});}
+}
+</script>
+
+<!-- ═══ INCOMING CALL OVERLAY ═══ -->
+<div id="incomingCallOverlay" style="display:none;position:fixed;inset:0;z-index:200;background:rgba(10,20,36,0.92);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);flex-direction:column;align-items:center;justify-content:center;gap:16px;">
+  <div style="width:90px;height:90px;border-radius:50%;background:linear-gradient(135deg,#0FA89A,#0A6E64);display:flex;align-items:center;justify-content:center;font-family:'DM Serif Display',serif;font-size:32px;color:#fff;box-shadow:0 0 0 4px rgba(15,168,154,0.25);animation:icRing 1.5s ease-in-out infinite;">
+    <span id="icInitials"></span>
+  </div>
+  <p style="font-family:'DM Serif Display',serif;font-size:22px;color:#fff;" id="icName"></p>
+  <p style="color:rgba(255,255,255,0.55);font-size:14px;">Incoming voice call...</p>
+  <div style="height:32px"></div>
+  <div style="display:flex;gap:40px;">
+    <button onclick="declineIncomingCall()" style="width:62px;height:62px;border-radius:50%;border:none;background:#DC2626;color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 8px 24px -4px rgba(220,38,38,0.5);">
+      <i data-lucide="phone-off" class="w-6 h-6"></i>
+    </button>
+    <button onclick="acceptIncomingCall()" style="width:62px;height:62px;border-radius:50%;border:none;background:#16A34A;color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 8px 24px -4px rgba(22,163,74,0.5);">
+      <i data-lucide="phone" class="w-6 h-6"></i>
+    </button>
+  </div>
+</div>
+<style>@keyframes icRing{0%,100%{box-shadow:0 0 0 4px rgba(15,168,154,0.25);}50%{box-shadow:0 0 0 18px rgba(15,168,154,0.08);}}</style>
 </body>
 </html>
