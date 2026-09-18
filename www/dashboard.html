@@ -1665,6 +1665,29 @@
 
       showToast(n.title || 'New notification');
     });
+
+    // ── Incoming call listener ──
+    socket.on('call:incoming', ({ callId, callerId, callerName, callerAvatar }) => {
+      const overlay = document.getElementById('incomingCallOverlay');
+      if (!overlay) return;
+      window._icCallId = callId;
+      window._icCallerId = callerId;
+      window._icCallerName = callerName || 'Unknown';
+      window._icCallerAvatar = callerAvatar || '';
+      overlay.style.display = 'flex';
+      const nameEl = document.getElementById('icName');
+      const initEl = document.getElementById('icInitials');
+      if (nameEl) nameEl.textContent = callerName || 'Unknown';
+      if (initEl) initEl.textContent = (callerName || '').split(' ').map(w => w[0]).join('').slice(0,2).toUpperCase();
+      lucide.createIcons();
+    });
+
+    socket.on('call:missed', () => {
+      const overlay = document.getElementById('incomingCallOverlay');
+      if (overlay) overlay.style.display = 'none';
+    });
+
+    window._callSocket = socket;
   });
 
   // ── Enable push notifications (phone/browser tray) ──
@@ -1702,6 +1725,36 @@
     });
   }
 })();
+</script>
+
+<!-- ═══ INCOMING CALL OVERLAY ═══ -->
+<div id="incomingCallOverlay" style="display:none;position:fixed;inset:0;z-index:200;background:rgba(10,20,36,0.92);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);flex-direction:column;align-items:center;justify-content:center;gap:16px;">
+  <div style="width:90px;height:90px;border-radius:50%;background:linear-gradient(135deg,#0FA89A,#0A6E64);display:flex;align-items:center;justify-content:center;font-family:'DM Serif Display',serif;font-size:32px;color:#fff;box-shadow:0 0 0 4px rgba(15,168,154,0.25);animation:icRing 1.5s ease-in-out infinite;">
+    <span id="icInitials"></span>
+  </div>
+  <p style="font-family:'DM Serif Display',serif;font-size:22px;color:#fff;" id="icName"></p>
+  <p style="color:rgba(255,255,255,0.55);font-size:14px;">Incoming voice call...</p>
+  <div style="height:32px"></div>
+  <div style="display:flex;gap:40px;">
+    <button onclick="declineIncomingCall()" style="width:62px;height:62px;border-radius:50%;border:none;background:#DC2626;color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 8px 24px -4px rgba(220,38,38,0.5);">
+      <i data-lucide="phone-off" class="w-6 h-6"></i>
+    </button>
+    <button onclick="acceptIncomingCall()" style="width:62px;height:62px;border-radius:50%;border:none;background:#16A34A;color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 8px 24px -4px rgba(22,163,74,0.5);">
+      <i data-lucide="phone" class="w-6 h-6"></i>
+    </button>
+  </div>
+</div>
+<style>@keyframes icRing{0%,100%{box-shadow:0 0 0 4px rgba(15,168,154,0.25);}50%{box-shadow:0 0 0 18px rgba(15,168,154,0.08);}}</style>
+<script>
+function acceptIncomingCall(){
+  document.getElementById('incomingCallOverlay').style.display='none';
+  var p=new URLSearchParams({callId:window._icCallId,userId:window._icCallerId,name:window._icCallerName,avatar:window._icCallerAvatar||'',mode:'incoming'});
+  window.location.href='call.html?'+p.toString();
+}
+function declineIncomingCall(){
+  document.getElementById('incomingCallOverlay').style.display='none';
+  if(window._callSocket&&window._icCallId){window._callSocket.emit('call:reject',{callId:window._icCallId});}
+}
 </script>
 </body>
 </html>

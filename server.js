@@ -31,6 +31,7 @@ const flashcardRoutes = require('./routes/flashcards');
 const notificationRoutes = require('./routes/notifications');
 const pushRoutes = require('./routes/push');
 const myMentorRoutes = require('./routes/myMentor');
+const callRoutes = require('./routes/calls');
 
 const { init: initNotifySocket } = require('./utils/notifySocket');
 const { init: initWebPush } = require('./utils/webPush');
@@ -108,6 +109,7 @@ app.use('/api/flashcards',       flashcardRoutes);
 app.use('/api/notifications',    notificationRoutes);
 app.use('/api/push',             pushRoutes);
 app.use('/api/student/mentor',   myMentorRoutes);
+app.use('/api/calls',            callRoutes);
 
 // Health check
 app.get('/health', (req, res) => {

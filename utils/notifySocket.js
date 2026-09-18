@@ -1,6 +1,7 @@
 const jwt = require('jsonwebtoken');
 const { Server } = require('socket.io');
 const Notification = require('../models/Notification');
+const Call = require('../models/Call');
 const { sendPushToUser, sendPushToAll } = require('./webPush');
 const { sendFcmToUser, sendFcmToAll } = require('./fcmPush');
 
@@ -46,6 +47,124 @@ function init(httpServer) {
     // Every user gets a private room named after their own id — lets us
     // target "notify this one user" without tracking socket ids manually.
     socket.join(`user:${socket.userId}`);
+
+    // ── WebRTC Call Signaling ──────────────────────────────────
+    // Caller initiates a call
+    socket.on('call:initiate', async ({ receiverId, callerName, callerAvatar }) => {
+      try {
+        const call = await Call.create({
+          caller: socket.userId,
+          receiver: receiverId,
+          status: 'ringing',
+        });
+
+        io.to(`user:${receiverId}`).emit('call:incoming', {
+          callId: call._id.toString(),
+          callerId: socket.userId,
+          callerName: callerName || 'Unknown',
+          callerAvatar: callerAvatar || '',
+        });
+
+        socket.emit('call:ringing', { callId: call._id.toString() });
+
+        // Auto-miss after 30 seconds if not answered
+        setTimeout(async () => {
+          const c = await Call.findById(call._id);
+          if (c && c.status === 'ringing') {
+            c.status = 'missed';
+            await c.save();
+            io.to(`user:${socket.userId}`).emit('call:missed', { callId: call._id.toString() });
+            io.to(`user:${receiverId}`).emit('call:missed', { callId: call._id.toString() });
+          }
+        }, 30000);
+      } catch (err) {
+        socket.emit('call:error', { message: 'Failed to initiate call' });
+      }
+    });
+
+    // Receiver accepts the call
+    socket.on('call:accept', async ({ callId }) => {
+      try {
+        const call = await Call.findById(callId);
+        if (!call || call.status !== 'ringing') return;
+
+        call.status = 'ongoing';
+        call.startedAt = new Date();
+        await call.save();
+
+        io.to(`user:${call.caller.toString()}`).emit('call:accepted', { callId });
+        io.to(`user:${call.receiver.toString()}`).emit('call:accepted', { callId });
+      } catch (err) {
+        socket.emit('call:error', { message: 'Failed to accept call' });
+      }
+    });
+
+    // Receiver rejects the call
+    socket.on('call:reject', async ({ callId }) => {
+      try {
+        const call = await Call.findById(callId);
+        if (!call || call.status !== 'ringing') return;
+
+        call.status = 'rejected';
+        await call.save();
+
+        io.to(`user:${call.caller.toString()}`).emit('call:rejected', { callId });
+      } catch (err) {
+        socket.emit('call:error', { message: 'Failed to reject call' });
+      }
+    });
+
+    // Either side ends the call
+    socket.on('call:end', async ({ callId }) => {
+      try {
+        const call = await Call.findById(callId);
+        if (!call || call.status === 'ended') return;
+
+        call.status = 'ended';
+        call.endedAt = new Date();
+        if (call.startedAt) {
+          call.duration = Math.round((call.endedAt - call.startedAt) / 1000);
+        }
+        await call.save();
+
+        io.to(`user:${call.caller.toString()}`).emit('call:ended', {
+          callId,
+          duration: call.duration,
+        });
+        io.to(`user:${call.receiver.toString()}`).emit('call:ended', {
+          callId,
+          duration: call.duration,
+        });
+      } catch (err) {
+        socket.emit('call:error', { message: 'Failed to end call' });
+      }
+    });
+
+    // WebRTC offer/answer/ICE exchange — relay to the other user
+    socket.on('call:offer', ({ callId, targetUserId, offer }) => {
+      io.to(`user:${targetUserId}`).emit('call:offer', {
+        callId,
+        fromUserId: socket.userId,
+        offer,
+      });
+    });
+
+    socket.on('call:answer', ({ callId, targetUserId, answer }) => {
+      io.to(`user:${targetUserId}`).emit('call:answer', {
+        callId,
+        fromUserId: socket.userId,
+        answer,
+      });
+    });
+
+    socket.on('call:ice-candidate', ({ callId, targetUserId, candidate }) => {
+      io.to(`user:${targetUserId}`).emit('call:ice-candidate', {
+        callId,
+        fromUserId: socket.userId,
+        candidate,
+      });
+    });
+    // ── End Call Signaling ─────────────────────────────────────
 
     socket.on('disconnect', () => {
       // socket.io auto-leaves rooms on disconnect, nothing to clean up here
