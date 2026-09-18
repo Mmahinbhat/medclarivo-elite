@@ -47,16 +47,25 @@ function init(httpServer) {
     // Every user gets a private room named after their own id — lets us
     // target "notify this one user" without tracking socket ids manually.
     socket.join(`user:${socket.userId}`);
+    console.log(`[Socket] User connected: ${socket.userId}, socket: ${socket.id}`);
 
     // ── WebRTC Call Signaling ──────────────────────────────────
     // Caller initiates a call
     socket.on('call:initiate', async ({ receiverId, callerName, callerAvatar }) => {
       try {
+        console.log(`[Call] Initiate: caller=${socket.userId}, receiver=${receiverId}, callerName=${callerName}`);
+
+        // Check how many sockets are in the receiver's room
+        const receiverRoom = io.sockets.adapter.rooms.get(`user:${receiverId}`);
+        console.log(`[Call] Receiver room user:${receiverId} has ${receiverRoom ? receiverRoom.size : 0} socket(s)`);
+
         const call = await Call.create({
           caller: socket.userId,
           receiver: receiverId,
           status: 'ringing',
         });
+
+        console.log(`[Call] Created call ${call._id}, emitting call:incoming to user:${receiverId}`);
 
         io.to(`user:${receiverId}`).emit('call:incoming', {
           callId: call._id.toString(),
@@ -166,8 +175,8 @@ function init(httpServer) {
     });
     // ── End Call Signaling ─────────────────────────────────────
 
-    socket.on('disconnect', () => {
-      // socket.io auto-leaves rooms on disconnect, nothing to clean up here
+    socket.on('disconnect', (reason) => {
+      console.log(`[Socket] User disconnected: ${socket.userId}, reason: ${reason}`);
     });
   });
 

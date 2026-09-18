@@ -284,10 +284,21 @@ const ICE_SERVERS = [
 
 // ── Socket ────────────────────────────────────────────────────
 const socketOrigin = API_BASE.replace(/\/api\/?$/, '');
-const socket = io(socketOrigin, { auth: { token: mcToken } });
+const socket = io(socketOrigin, {
+  auth: { token: mcToken },
+  reconnection: true,
+  reconnectionAttempts: 10,
+  reconnectionDelay: 2000,
+  timeout: 15000
+});
+
+// Debug info
+console.log('[Call] My userId:', mcUser._id || mcUser.id);
+console.log('[Call] Target userId:', targetId);
+console.log('[Call] Mode:', mode || 'outgoing');
 
 socket.on('connect', () => {
-  console.log('[Call] Socket connected');
+  console.log('[Call] Socket connected, id:', socket.id);
   if (mode === 'incoming' && incomingCallId) {
     showIncomingUI();
   } else if (targetId) {
@@ -303,8 +314,14 @@ socket.on('connect_error', (err) => {
 // ── Socket event handlers ─────────────────────────────────────
 socket.on('call:ringing', ({ callId: cid }) => {
   callId = cid;
+  console.log('[Call] Got call:ringing, callId:', cid);
   setStatus('Ringing...');
   startRingtone();
+});
+
+socket.on('call:error', ({ message }) => {
+  console.error('[Call] Server error:', message);
+  setStatus('Error: ' + message);
 });
 
 socket.on('call:accepted', async ({ callId: cid }) => {
