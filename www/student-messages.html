@@ -367,10 +367,13 @@
               <i data-lucide="arrow-left" class="w-5 h-5"></i>
             </button>
             <div class="contact-avatar" id="threadAvatar">—</div>
-            <div>
+            <div style="flex:1;min-width:0;">
               <p class="font-semibold text-ink text-sm" id="threadName">—</p>
               <p class="text-ink-faint text-xs" id="threadRole">—</p>
             </div>
+            <button id="threadCallBtn" onclick="callFromChat()" title="Voice call" style="background:none;border:none;cursor:pointer;padding:8px;border-radius:50%;transition:background .2s;" onmouseover="this.style.background='rgba(15,168,154,0.1)'" onmouseout="this.style.background='none'">
+              <i data-lucide="phone" class="w-5 h-5" style="color:var(--teal);"></i>
+            </button>
           </div>
 
           <div id="threadEmptyState" class="flex-1 flex flex-col items-center justify-center text-center py-12">
@@ -521,6 +524,13 @@
     activeContactId = null;
   }
 
+  function callFromChat() {
+    const c = window._chatContact;
+    if (!c) return;
+    const params = new URLSearchParams({ userId: c.id, name: c.name, avatar: c.avatar || '' });
+    window.location.href = 'call.html?' + params.toString();
+  }
+
   async function openThread(contactId) {
     document.getElementById('msgPanel').classList.add('chat-open');
     document.body.classList.add('chat-open');
@@ -535,6 +545,8 @@
     document.getElementById('threadAvatar').textContent = initials(contact.name);
     document.getElementById('threadName').textContent = contact.name;
     document.getElementById('threadRole').textContent = roleLabel(contact.role);
+    // Store contact info for call button
+    window._chatContact = { id: contact._id, name: contact.name, avatar: contact.avatar || '' };
     document.getElementById('threadEmptyState').classList.add('hidden');
     document.getElementById('threadBody').classList.remove('hidden');
     document.getElementById('threadBody').classList.add('flex');
