@@ -146,11 +146,12 @@
   }
 
   window._acceptIncomingCall = function() {
+    if (window._alreadyAccepting) { console.log('[CallListener] BLOCKED double-tap'); return; }
+    window._alreadyAccepting = true;
+    console.log('[CallListener] Accept tapped — navigating to call.html');
     document.getElementById('incomingCallOverlay').style.display = 'none';
     _stopRingSound();
     // Don't emit call:accept here — let call.html handle it after its socket connects.
-    // Emitting here causes a race: the caller gets call:accepted and sends the offer
-    // while call.html hasn't loaded yet, so the offer is lost.
     var p = new URLSearchParams({
       callId: window._icCallId,
       userId: window._icCallerId,
@@ -159,7 +160,9 @@
       mode: 'incoming',
       accepted: '1'
     });
-    window.location.href = 'call.html?' + p.toString();
+    var url = 'call.html?' + p.toString();
+    console.log('[CallListener] Navigating to: ' + url);
+    window.location.href = url;
   };
 
   window._declineIncomingCall = function() {

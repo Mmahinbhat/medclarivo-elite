@@ -224,10 +224,14 @@
 
 <div class="toast" id="toast"></div>
 
-<!-- Debug goes to console only -->
+<!-- TEMPORARY visible debug panel -->
+<div id="dbgPanel" style="position:fixed;top:0;left:0;right:0;z-index:9999;background:rgba(0,0,0,0.85);color:#0f0;font-family:monospace;font-size:10px;padding:4px 8px;max-height:35vh;overflow-y:auto;pointer-events:none;"></div>
 <script>
 function dbg(msg){
-  console.log('[DBG] '+new Date().toLocaleTimeString()+' '+msg);
+  var t = new Date().toLocaleTimeString();
+  console.log('[DBG] '+t+' '+msg);
+  var p = document.getElementById('dbgPanel');
+  if(p){ p.innerHTML += t+' '+msg+'<br>'; p.scrollTop = p.scrollHeight; }
 }
 </script>
 
@@ -254,7 +258,9 @@ const alreadyAccepted = params.get('accepted') === '1'; // accepted from call-li
 
 // v4: overlay HTML is NOT in the page at all — created dynamically by showIncomingUI()
 // only when callWasAccepted is false. No overlay = nothing to show = no double-accept.
-dbg('alreadyAccepted=' + alreadyAccepted);
+dbg('PAGE LOADED — URL: ' + window.location.href);
+dbg('mode=' + mode + ' alreadyAccepted=' + alreadyAccepted + ' callId=' + incomingCallId);
+dbg('incomingOverlay exists in DOM? ' + !!document.getElementById('incomingOverlay'));
 
 // -- State --
 let callId        = incomingCallId || null;
