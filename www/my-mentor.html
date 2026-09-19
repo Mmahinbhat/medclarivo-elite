@@ -485,6 +485,7 @@ function acceptIncomingCall() {
     name: _icCallerName,
     avatar: _icCallerAvatar || '',
     mode: 'incoming',
+    accepted: '1',
   });
   window.location.href = 'call.html?' + params.toString();
 }

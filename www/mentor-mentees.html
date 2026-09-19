@@ -546,7 +546,7 @@ function callMentee(menteeId, menteeName) {
 
 function acceptIncomingCall(){
   document.getElementById('incomingCallOverlay').style.display='none';
-  var p=new URLSearchParams({callId:window._icCallId,userId:window._icCallerId,name:window._icCallerName,avatar:window._icCallerAvatar||'',mode:'incoming'});
+  var p=new URLSearchParams({callId:window._icCallId,userId:window._icCallerId,name:window._icCallerName,avatar:window._icCallerAvatar||'',mode:'incoming',accepted:'1'});
   window.location.href='call.html?'+p.toString();
 }
 function declineIncomingCall(){
