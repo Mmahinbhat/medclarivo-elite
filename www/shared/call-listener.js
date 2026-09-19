@@ -148,12 +148,9 @@
   window._acceptIncomingCall = function() {
     document.getElementById('incomingCallOverlay').style.display = 'none';
     _stopRingSound();
-    // Emit call:accept HERE so the server transitions the call state
-    // BEFORE call.html loads and connects a new socket.
-    // This prevents the server from re-sending call:incoming to the new socket.
-    if (window._callSocket && window._icCallId) {
-      window._callSocket.emit('call:accept', { callId: window._icCallId });
-    }
+    // Don't emit call:accept here — let call.html handle it after its socket connects.
+    // Emitting here causes a race: the caller gets call:accepted and sends the offer
+    // while call.html hasn't loaded yet, so the offer is lost.
     var p = new URLSearchParams({
       callId: window._icCallId,
       userId: window._icCallerId,

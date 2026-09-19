@@ -269,6 +269,14 @@ const incomingCallId = params.get('callId'); // if we got here from an incoming 
 const mode        = params.get('mode');      // 'incoming' or null (outgoing)
 const alreadyAccepted = params.get('accepted') === '1'; // accepted from call-listener overlay
 
+// *** AGGRESSIVE FIX: If already accepted, physically remove the incoming overlay
+// from the DOM so it can NEVER be shown by any code path ***
+if (alreadyAccepted) {
+  var _ov = document.getElementById('incomingOverlay');
+  if (_ov) _ov.parentNode.removeChild(_ov);
+  dbg('Already accepted — removed incomingOverlay from DOM');
+}
+
 // -- State --
 let callId        = incomingCallId || null;
 let peerConnection= null;
@@ -478,11 +486,18 @@ function initiateCall() {
 let incomingCallerId = null;
 
 function showIncomingUI(name, avatar, callerId) {
+  // Triple guard: if call was already accepted, never show overlay
+  if (callWasAccepted) {
+    dbg('showIncomingUI BLOCKED — call already accepted');
+    return;
+  }
+
   name = name || targetName;
   avatar = avatar || targetAvatar;
   incomingCallerId = callerId || targetId;
 
   const overlay = document.getElementById('incomingOverlay');
+  if (!overlay) { dbg('showIncomingUI — overlay element not found (removed)'); return; }
   overlay.classList.add('show');
 
   document.getElementById('incomingName').textContent = name;
