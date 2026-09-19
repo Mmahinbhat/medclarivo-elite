@@ -220,24 +220,7 @@
   </div>
 </div>
 
-<!-- INCOMING CALL OVERLAY -->
-<div class="incoming-overlay" id="incomingOverlay">
-  <div class="call-avatar ringing" id="incomingAvatar">
-    <span id="incomingInitials"></span>
-  </div>
-  <div class="call-name" id="incomingName">Incoming Call</div>
-  <div class="call-status" id="incomingStatus">is calling you...</div>
-  <div style="height:60px"></div>
-  <div class="controls">
-    <button class="ctrl-btn ctrl-end" onclick="rejectIncoming()" title="Decline">
-      <i data-lucide="phone-off" class="w-6 h-6"></i>
-    </button>
-    <div style="width:40px"></div>
-    <button class="ctrl-btn ctrl-accept" onclick="acceptIncoming()" title="Accept">
-      <i data-lucide="phone" class="w-6 h-6"></i>
-    </button>
-  </div>
-</div>
+<!-- Incoming overlay is created dynamically by showIncomingUI() only when needed -->
 
 <div class="toast" id="toast"></div>
 
@@ -269,13 +252,9 @@ const incomingCallId = params.get('callId'); // if we got here from an incoming 
 const mode        = params.get('mode');      // 'incoming' or null (outgoing)
 const alreadyAccepted = params.get('accepted') === '1'; // accepted from call-listener overlay
 
-// *** AGGRESSIVE FIX: If already accepted, physically remove the incoming overlay
-// from the DOM so it can NEVER be shown by any code path ***
-if (alreadyAccepted) {
-  var _ov = document.getElementById('incomingOverlay');
-  if (_ov) _ov.parentNode.removeChild(_ov);
-  dbg('Already accepted — removed incomingOverlay from DOM');
-}
+// v4: overlay HTML is NOT in the page at all — created dynamically by showIncomingUI()
+// only when callWasAccepted is false. No overlay = nothing to show = no double-accept.
+dbg('alreadyAccepted=' + alreadyAccepted);
 
 // -- State --
 let callId        = incomingCallId || null;
@@ -486,7 +465,7 @@ function initiateCall() {
 let incomingCallerId = null;
 
 function showIncomingUI(name, avatar, callerId) {
-  // Triple guard: if call was already accepted, never show overlay
+  // v4: if call was already accepted, never create overlay
   if (callWasAccepted) {
     dbg('showIncomingUI BLOCKED — call already accepted');
     return;
@@ -496,17 +475,34 @@ function showIncomingUI(name, avatar, callerId) {
   avatar = avatar || targetAvatar;
   incomingCallerId = callerId || targetId;
 
-  const overlay = document.getElementById('incomingOverlay');
-  if (!overlay) { dbg('showIncomingUI — overlay element not found (removed)'); return; }
-  overlay.classList.add('show');
-
-  document.getElementById('incomingName').textContent = name;
-  const initialsEl = document.getElementById('incomingInitials');
-
-  if (avatar) {
-    initialsEl.innerHTML = '<img src="' + avatar + '" style="width:100%;height:100%;object-fit:cover;">';
+  // Only create the overlay DOM now — it doesn't exist in the HTML at all
+  var overlay = document.getElementById('incomingOverlay');
+  if (!overlay) {
+    overlay = document.createElement('div');
+    overlay.id = 'incomingOverlay';
+    overlay.className = 'incoming-overlay show';
+    var initContent = avatar
+      ? '<img src="' + avatar + '" style="width:100%;height:100%;object-fit:cover;">'
+      : getInitials(name);
+    overlay.innerHTML =
+      '<div class="call-avatar ringing"><span id="incomingInitials">' + initContent + '</span></div>' +
+      '<div class="call-name" id="incomingName">' + (name || 'Incoming Call') + '</div>' +
+      '<div class="call-status">is calling you...</div>' +
+      '<div style="height:60px"></div>' +
+      '<div class="controls">' +
+        '<button class="ctrl-btn ctrl-end" onclick="rejectIncoming()" title="Decline">' +
+          '<i data-lucide="phone-off" class="w-6 h-6"></i>' +
+        '</button>' +
+        '<div style="width:40px"></div>' +
+        '<button class="ctrl-btn ctrl-accept" onclick="acceptIncoming()" title="Accept">' +
+          '<i data-lucide="phone" class="w-6 h-6"></i>' +
+        '</button>' +
+      '</div>';
+    document.body.appendChild(overlay);
+    lucide.createIcons();
+    dbg('Created incoming overlay dynamically');
   } else {
-    initialsEl.textContent = getInitials(name);
+    overlay.classList.add('show');
   }
 
   setName(name, avatar);
@@ -515,14 +511,16 @@ function showIncomingUI(name, avatar, callerId) {
 
 function acceptIncoming() {
   callWasAccepted = true; // prevent call:incoming from re-showing overlay
-  document.getElementById('incomingOverlay').classList.remove('show');
+  var ov = document.getElementById('incomingOverlay');
+  if (ov) ov.parentNode.removeChild(ov); // remove entirely
   stopRingtone();
   socket.emit('call:accept', { callId });
   setStatus('Connecting...');
 }
 
 function rejectIncoming() {
-  document.getElementById('incomingOverlay').classList.remove('show');
+  var ov = document.getElementById('incomingOverlay');
+  if (ov) ov.parentNode.removeChild(ov);
   stopRingtone();
   socket.emit('call:reject', { callId });
   setTimeout(() => goBack(), 1000);
