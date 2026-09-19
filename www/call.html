@@ -560,7 +560,13 @@ async function setupWebRTC(isInitiator) {
   };
 
   peerConnection.oniceconnectionstatechange = () => {
-    dbg('iceState: ' + peerConnection.iceConnectionState);
+    var s = peerConnection.iceConnectionState;
+    dbg('iceState: ' + s);
+    setStatus('ICE: ' + s);
+    if (s === 'connected' || s === 'completed') {
+      setStatus('In call');
+      if (!timerInterval) startTimer();
+    }
   };
 
   peerConnection.onicegatheringstatechange = () => {
@@ -784,6 +790,9 @@ function cleanupCall() {
   if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
   if (localStream) { localStream.getTracks().forEach(t => t.stop()); localStream = null; }
   if (peerConnection) { peerConnection.close(); peerConnection = null; }
+  window._setupInProgress = false;
+  iceCandidateBuffer = [];
+  remoteStream = null;
 }
 
 function goBack() {
