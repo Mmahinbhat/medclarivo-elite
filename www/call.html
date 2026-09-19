@@ -192,7 +192,7 @@
 
 <div class="bg-pulse" id="bgPulse"></div>
 
-<!-- ═══ MAIN CALL SCREEN ═══ -->
+<!-- MAIN CALL SCREEN -->
 <div class="call-screen" id="callScreen">
   <div class="call-avatar" id="callAvatar">
     <span id="callInitials"></span>
@@ -217,7 +217,7 @@
   </div>
 </div>
 
-<!-- ═══ INCOMING CALL OVERLAY ═══ -->
+<!-- INCOMING CALL OVERLAY -->
 <div class="incoming-overlay" id="incomingOverlay">
   <div class="call-avatar ringing" id="incomingAvatar">
     <span id="incomingInitials"></span>
@@ -238,7 +238,7 @@
 
 <div class="toast" id="toast"></div>
 
-<!-- DEBUG PANEL — remove once audio works -->
+<!-- DEBUG PANEL -->
 <div id="debugPanel" style="position:fixed;bottom:0;left:0;right:0;z-index:9999;background:rgba(0,0,0,0.85);color:#0f0;font-family:monospace;font-size:11px;padding:8px 12px;max-height:40vh;overflow-y:auto;"></div>
 <script>
 function dbg(msg){
@@ -263,7 +263,7 @@ const mcUser   = JSON.parse(localStorage.getItem('mc_user') || '{}');
 
 if (!mcToken) { window.location.href = 'index.html'; }
 
-// ── URL params ────────────────────────────────────────────────
+// -- URL params --
 const params      = new URLSearchParams(window.location.search);
 const targetId    = params.get('userId');   // who we're calling
 const targetName  = params.get('name') || 'User';
@@ -271,13 +271,13 @@ const targetAvatar= params.get('avatar') || '';
 const incomingCallId = params.get('callId'); // if we got here from an incoming call
 const mode        = params.get('mode');      // 'incoming' or null (outgoing)
 
-// ── State ─────────────────────────────────────────────────────
+// -- State --
 let callId        = incomingCallId || null;
 let peerConnection= null;
 let localStream   = null;
 let remoteStream  = null;
 let isMuted       = false;
-let isSpeaker     = true; // default to speaker on
+let isSpeaker     = true;
 let isRecording   = false;
 let mediaRecorder = null;
 let recordedChunks = [];
@@ -285,8 +285,9 @@ let timerInterval  = null;
 let callStartTime  = null;
 let ringtoneCtx    = null;
 let ringtoneOsc    = null;
+let iceCandidateBuffer = [];
 
-// ── STUN/TURN ─────────────────────────────────────────────────
+// -- STUN/TURN (correct Metered.ca relay hostnames) --
 const ICE_SERVERS = [
   { urls: 'stun:stun.l.google.com:19302' },
   { urls: 'stun:stun.relay.metered.ca:80' },
@@ -296,12 +297,22 @@ const ICE_SERVERS = [
   { urls: 'turns:global.relay.metered.ca:443?transport=tcp', username: 'b9ace2950e1d37f0d711b482', credential: 'u0h1w1s+qf2SKC9i' },
 ];
 
-// ── Socket ────────────────────────────────────────────────────
+// -- Socket --
 const socketOrigin = API_BASE.replace(/\/api\/?$/, '');
-const socket = io(socketOrigin, { auth: { token: mcToken } });
+const socket = io(socketOrigin, {
+  auth: { token: mcToken },
+  reconnection: true,
+  reconnectionAttempts: 10,
+  reconnectionDelay: 2000,
+  timeout: 15000
+});
+
+dbg('My userId: ' + (mcUser._id || mcUser.id));
+dbg('Target userId: ' + targetId);
+dbg('Mode: ' + (mode || 'outgoing'));
 
 socket.on('connect', () => {
-  console.log('[Call] Socket connected');
+  dbg('Socket connected: ' + socket.id);
   if (mode === 'incoming' && incomingCallId) {
     showIncomingUI();
   } else if (targetId) {
@@ -310,28 +321,51 @@ socket.on('connect', () => {
 });
 
 socket.on('connect_error', (err) => {
-  console.error('[Call] Socket error:', err.message);
+  dbg('Socket error: ' + err.message);
   setStatus('Connection failed');
 });
 
-// ── Socket event handlers ─────────────────────────────────────
+// No more waiting for ICE gathering — we send offer/answer immediately
+// and rely on trickle ICE candidates sent via socket
+
+// -- Helper: flush buffered ICE candidates --
+async function flushIceCandidates() {
+  dbg('Flushing ' + iceCandidateBuffer.length + ' buffered ICE candidates');
+  for (var i = 0; i < iceCandidateBuffer.length; i++) {
+    try {
+      await peerConnection.addIceCandidate(new RTCIceCandidate(iceCandidateBuffer[i]));
+      dbg('Added buffered ICE candidate #' + (i + 1));
+    } catch (e) {
+      dbg('Buffered ICE err: ' + e.message);
+    }
+  }
+  iceCandidateBuffer = [];
+}
+
+// -- Socket event handlers --
 socket.on('call:ringing', ({ callId: cid }) => {
   callId = cid;
+  dbg('call:ringing callId=' + cid);
   setStatus('Ringing...');
   startRingtone();
+});
+
+socket.on('call:error', ({ message }) => {
+  dbg('call:error: ' + message);
+  setStatus('Error: ' + message);
 });
 
 socket.on('call:accepted', async ({ callId: cid }) => {
   callId = cid;
   stopRingtone();
-  setStatus('Connected');
+  setStatus('Connecting...');
   document.getElementById('bgPulse').classList.remove('ringing');
-  // Only the CALLER creates the offer - receiver waits for call:offer
+  // Only the CALLER creates the offer — receiver waits for call:offer
   if (mode !== 'incoming') {
-    console.log('I am the CALLER - creating offer');
+    dbg('I am the CALLER — creating offer');
     await setupWebRTC(true);
   } else {
-    console.log('I am the RECEIVER - waiting for offer');
+    dbg('I am the RECEIVER — waiting for offer');
   }
 });
 
@@ -348,84 +382,72 @@ socket.on('call:missed', () => {
 });
 
 socket.on('call:ended', ({ duration }) => {
+  dbg('call:ended received, duration=' + duration);
   stopRingtone();
-  setStatus(duration ? `Call ended (${formatDuration(duration)})` : 'Call ended');
+  setStatus(duration ? 'Call ended (' + formatDuration(duration) + ')' : 'Call ended');
   cleanupCall();
   setTimeout(() => goBack(), 2000);
 });
 
+// -- Vanilla ICE: Offer handler (receiver side) --
 socket.on('call:offer', async ({ callId: cid, fromUserId, offer }) => {
   callId = cid;
-  console.log('Got offer from ' + fromUserId);
+  dbg('Got offer from ' + fromUserId);
+
   if (peerConnection) {
-    console.log('Already have peerConnection - setting remote desc only');
+    dbg('Already have peerConnection — setting remote desc only');
     await peerConnection.setRemoteDescription(new RTCSessionDescription(offer));
-    const answer = await peerConnection.createAnswer();
-    await peerConnection.setLocalDescription(answer);
-    socket.emit('call:answer', { callId, targetUserId: fromUserId, answer });
+    await flushIceCandidates();
+    var answer2 = await peerConnection.createAnswer();
+    await peerConnection.setLocalDescription(answer2);
+    dbg('Sent answer (existing PC)');
+    socket.emit('call:answer', { callId, targetUserId: fromUserId, answer: answer2 });
     return;
   }
-  await setupWebRTC(false);
+
+  await setupWebRTC(false); // false = receiver
   await peerConnection.setRemoteDescription(new RTCSessionDescription(offer));
   await flushIceCandidates();
-  const answer = await peerConnection.createAnswer();
+  var answer = await peerConnection.createAnswer();
   await peerConnection.setLocalDescription(answer);
-  dbg('Receiver waiting for ICE candidates...');
-  await new Promise(function(resolve) {
-    if (peerConnection.iceGatheringState === 'complete') return resolve();
-    peerConnection.addEventListener('icegatheringstatechange', function check() {
-      if (peerConnection && peerConnection.iceGatheringState === 'complete') {
-        peerConnection.removeEventListener('icegatheringstatechange', check);
-        resolve();
-      }
-    });
-    setTimeout(resolve, 5000);
-  });
-  dbg('Sending answer with ' + (peerConnection.localDescription.sdp.match(/a=candidate:/g)||[]).length + ' candidates');
-  socket.emit('call:answer', { callId, targetUserId: fromUserId, answer: peerConnection.localDescription });
+  dbg('Sent answer');
+  socket.emit('call:answer', { callId, targetUserId: fromUserId, answer: answer });
 });
 
+// -- Vanilla ICE: Answer handler (caller side) --
 socket.on('call:answer', async ({ answer }) => {
   if (peerConnection) {
     dbg('Got answer — setting remote description');
     await peerConnection.setRemoteDescription(new RTCSessionDescription(answer));
     await flushIceCandidates();
+    dbg('Remote description set — ICE should start checking now');
   }
 });
 
-let iceCandidateBuffer = [];
-
+// -- ICE candidate handler (trickle fallback + buffering) --
 socket.on('call:ice-candidate', async ({ candidate }) => {
   if (!candidate) return;
   if (peerConnection && peerConnection.remoteDescription) {
     try {
       await peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
-      dbg('Added remote ICE: ' + candidate.type);
-    } catch (e) { dbg('ICE add err: ' + e.message); }
+      dbg('Added trickle ICE: ' + (candidate.candidate || '').substring(0, 60));
+    } catch (e) {
+      dbg('Trickle ICE err: ' + e.message);
+    }
   } else {
     iceCandidateBuffer.push(candidate);
-    dbg('Buffered remote ICE candidate (' + iceCandidateBuffer.length + ')');
+    dbg('Buffered ICE candidate (' + iceCandidateBuffer.length + ')');
   }
 });
 
-async function flushIceCandidates() {
-  dbg('Flushing ' + iceCandidateBuffer.length + ' buffered ICE candidates');
-  for (const c of iceCandidateBuffer) {
-    try {
-      await peerConnection.addIceCandidate(new RTCIceCandidate(c));
-    } catch (e) { dbg('Buffered ICE err: ' + e.message); }
-  }
-  iceCandidateBuffer = [];
-}
-
-// Incoming call while already on this page (e.g. came directly)
+// Incoming call while already on this page
 socket.on('call:incoming', ({ callId: cid, callerId, callerName, callerAvatar }) => {
   if (peerConnection) return; // already in a call
   callId = cid;
   showIncomingUI(callerName, callerAvatar, callerId);
 });
 
-// ── Initiate outgoing call ────────────────────────────────────
+// -- Initiate outgoing call --
 function initiateCall() {
   setName(targetName, targetAvatar);
   setStatus('Calling...');
@@ -438,7 +460,7 @@ function initiateCall() {
   });
 }
 
-// ── Incoming call UI ──────────────────────────────────────────
+// -- Incoming call UI --
 let incomingCallerId = null;
 
 function showIncomingUI(name, avatar, callerId) {
@@ -451,10 +473,9 @@ function showIncomingUI(name, avatar, callerId) {
 
   document.getElementById('incomingName').textContent = name;
   const initialsEl = document.getElementById('incomingInitials');
-  const avatarEl   = document.getElementById('incomingAvatar');
 
   if (avatar) {
-    initialsEl.innerHTML = `<img src="${avatar}" style="width:100%;height:100%;object-fit:cover;">`;
+    initialsEl.innerHTML = '<img src="' + avatar + '" style="width:100%;height:100%;object-fit:cover;">';
   } else {
     initialsEl.textContent = getInitials(name);
   }
@@ -468,8 +489,6 @@ function acceptIncoming() {
   stopRingtone();
   socket.emit('call:accept', { callId });
   setStatus('Connecting...');
-
-  // The caller will send us an offer after getting 'call:accepted'
 }
 
 function rejectIncoming() {
@@ -479,88 +498,104 @@ function rejectIncoming() {
   setTimeout(() => goBack(), 1000);
 }
 
-// ── WebRTC Setup ──────────────────────────────────────────────
+// -- WebRTC Setup --
 async function setupWebRTC(isInitiator) {
-  if (window._setupInProgress) { dbg('setupWebRTC BLOCKED - already in progress'); return; }
-  if (peerConnection) { dbg('setupWebRTC BLOCKED - peerConnection exists'); return; }
+  // Guard against being called twice
+  if (window._setupInProgress) {
+    dbg('setupWebRTC BLOCKED — already in progress');
+    return;
+  }
+  if (peerConnection) {
+    dbg('setupWebRTC BLOCKED — peerConnection already exists');
+    return;
+  }
   window._setupInProgress = true;
-    iceCandidateBuffer = [];
+  iceCandidateBuffer = [];
+
   try {
     dbg('Requesting mic...');
     localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
     dbg('MIC OK — tracks: ' + localStream.getAudioTracks().length);
-    localStream.getAudioTracks().forEach(t => {
+    localStream.getAudioTracks().forEach(function(t) {
       dbg('Local track: ' + t.label + ' enabled=' + t.enabled + ' muted=' + t.muted + ' state=' + t.readyState);
     });
   } catch (err) {
     dbg('MIC DENIED: ' + err.message);
     setStatus('Microphone access denied');
+    window._setupInProgress = false;
     return;
   }
 
   peerConnection = new RTCPeerConnection({ iceServers: ICE_SERVERS });
 
   // Add local audio tracks
-  localStream.getTracks().forEach(track => {
+  localStream.getTracks().forEach(function(track) {
     peerConnection.addTrack(track, localStream);
   });
 
   // Handle remote stream
-  peerConnection.ontrack = (event) => {
+  peerConnection.ontrack = function(event) {
     dbg('ONTRACK — streams:' + event.streams.length);
     remoteStream = event.streams[0];
 
-    remoteStream.getAudioTracks().forEach(t => {
+    remoteStream.getAudioTracks().forEach(function(t) {
       dbg('Remote track: enabled=' + t.enabled + ' muted=' + t.muted + ' state=' + t.readyState);
     });
 
-    const remoteAudio = document.getElementById('remoteAudio');
+    var remoteAudio = document.getElementById('remoteAudio');
     remoteAudio.srcObject = remoteStream;
     remoteAudio.volume = 1.0;
 
-    // Force play
+    // Force play with retry
     var playAttempt = function() {
-      remoteAudio.play().then(() => {
+      remoteAudio.play().then(function() {
         dbg('AUDIO PLAY OK');
-      }).catch(e => {
+      }).catch(function(e) {
         dbg('AUDIO PLAY FAIL: ' + e.message);
         setTimeout(playAttempt, 500);
       });
     };
     playAttempt();
 
-    // Check audio levels every 2s
+    // Audio level monitor
     try {
-      var actx = new AudioContext();
-      var src = actx.createMediaStreamSource(remoteStream);
-      var analyser = actx.createAnalyser();
+      var audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      var analyser = audioCtx.createAnalyser();
+      var source = audioCtx.createMediaStreamSource(remoteStream);
+      source.connect(analyser);
       analyser.fftSize = 256;
-      src.connect(analyser);
-      var buf = new Uint8Array(analyser.frequencyBinCount);
-      setInterval(function(){
-        analyser.getByteFrequencyData(buf);
-        var avg = buf.reduce(function(a,b){return a+b;},0) / buf.length;
-        dbg('Audio level: ' + avg.toFixed(1));
-      }, 2000);
-    } catch(e) { dbg('Analyser err: ' + e.message); }
+      var dataArray = new Uint8Array(analyser.frequencyBinCount);
+      var checkLevel = function() {
+        if (!remoteStream) return;
+        analyser.getByteFrequencyData(dataArray);
+        var sum = 0;
+        for (var i = 0; i < dataArray.length; i++) sum += dataArray[i];
+        var avg = sum / dataArray.length;
+        if (avg > 0) dbg('Audio level: ' + avg.toFixed(1));
+        setTimeout(checkLevel, 3000);
+      };
+      setTimeout(checkLevel, 2000);
+    } catch(ae) { dbg('AudioContext err: ' + ae.message); }
   };
 
-  // ICE candidates
-  peerConnection.onicecandidate = (event) => {
+  // ICE candidates — trickle each one to the other side immediately
+  peerConnection.onicecandidate = function(event) {
     if (event.candidate) {
       var c = event.candidate;
-      dbg('ICE: ' + c.type + ' ' + c.protocol + ' ' + c.address + ':' + c.port);
-      const otherId = incomingCallerId || targetId;
+      dbg('ICE local: ' + c.type + ' ' + c.protocol + ' ' + c.address + ':' + c.port);
+      var otherId = incomingCallerId || targetId;
       socket.emit('call:ice-candidate', {
-        callId,
+        callId: callId,
         targetUserId: otherId,
         candidate: event.candidate,
       });
+    } else {
+      dbg('ICE gathering done (null candidate)');
     }
   };
 
-  peerConnection.onconnectionstatechange = () => {
-    const state = peerConnection.connectionState;
+  peerConnection.onconnectionstatechange = function() {
+    var state = peerConnection.connectionState;
     dbg('connState: ' + state);
     if (state === 'connected') {
       setStatus('In call');
@@ -571,7 +606,7 @@ async function setupWebRTC(isInitiator) {
     }
   };
 
-  peerConnection.oniceconnectionstatechange = () => {
+  peerConnection.oniceconnectionstatechange = function() {
     var s = peerConnection.iceConnectionState;
     dbg('iceState: ' + s);
     setStatus('ICE: ' + s);
@@ -581,40 +616,35 @@ async function setupWebRTC(isInitiator) {
     }
   };
 
-  peerConnection.onicegatheringstatechange = () => {
+  peerConnection.onicegatheringstatechange = function() {
     dbg('iceGathering: ' + peerConnection.iceGatheringState);
   };
 
+  window._setupInProgress = false;
+
   if (isInitiator) {
     dbg('Creating offer...');
-    const offer = await peerConnection.createOffer();
+    var offer = await peerConnection.createOffer();
     await peerConnection.setLocalDescription(offer);
-    const otherId = incomingCallerId || targetId;
-    dbg('Waiting for ICE candidates to gather...');
-    await new Promise(function(resolve) {
-      if (peerConnection.iceGatheringState === 'complete') return resolve();
-      peerConnection.addEventListener('icegatheringstatechange', function check() {
-        if (peerConnection && peerConnection.iceGatheringState === 'complete') {
-          peerConnection.removeEventListener('icegatheringstatechange', check);
-          resolve();
-        }
-      });
-      setTimeout(resolve, 5000);
+    var otherId = incomingCallerId || targetId;
+    dbg('Sending offer to ' + otherId);
+    socket.emit('call:offer', {
+      callId: callId,
+      targetUserId: otherId,
+      offer: offer
     });
-    dbg('Sending offer to ' + otherId + ' (with ' + (peerConnection.localDescription.sdp.match(/a=candidate:/g)||[]).length + ' candidates)');
-    socket.emit('call:offer', { callId, targetUserId: otherId, offer: peerConnection.localDescription });
   } else {
     dbg('Waiting for offer (receiver)...');
   }
 }
 
-// ── Controls ──────────────────────────────────────────────────
+// -- Controls --
 function toggleMute() {
   if (!localStream) return;
   isMuted = !isMuted;
-  localStream.getAudioTracks().forEach(t => { t.enabled = !isMuted; });
+  localStream.getAudioTracks().forEach(function(t) { t.enabled = !isMuted; });
 
-  const btn = document.getElementById('btnMute');
+  var btn = document.getElementById('btnMute');
   btn.classList.toggle('active', isMuted);
   btn.innerHTML = isMuted
     ? '<i data-lucide="mic-off" class="w-6 h-6"></i>'
@@ -624,13 +654,7 @@ function toggleMute() {
 
 function toggleSpeaker() {
   isSpeaker = !isSpeaker;
-  const remoteAudio = document.getElementById('remoteAudio');
-  // On mobile, toggle between earpiece and speaker
-  if (remoteAudio.setSinkId) {
-    // Web API — limited browser support
-  }
-  // Visual toggle
-  const btn = document.getElementById('btnSpeaker');
+  var btn = document.getElementById('btnSpeaker');
   btn.classList.toggle('active', isSpeaker);
   btn.innerHTML = isSpeaker
     ? '<i data-lucide="volume-2" class="w-6 h-6"></i>'
@@ -647,6 +671,7 @@ function toggleRecord() {
 }
 
 function endCall() {
+  dbg('endCall() called, callId=' + callId);
   if (callId) {
     socket.emit('call:end', { callId });
   }
@@ -655,24 +680,23 @@ function endCall() {
   }
   cleanupCall();
   setStatus('Call ended');
-  setTimeout(() => goBack(), 1500);
+  setTimeout(function() { goBack(); }, 1500);
 }
 
-// ── Recording (client-side) ──────────────────────────────────
+// -- Recording (client-side) --
 function startRecording() {
   if (!remoteStream && !localStream) return;
 
   try {
-    // Mix local + remote into one stream for full recording
-    const audioCtx = new AudioContext();
-    const dest = audioCtx.createMediaStreamDestination();
+    var audioCtx = new AudioContext();
+    var dest = audioCtx.createMediaStreamDestination();
 
     if (localStream) {
-      const localSrc = audioCtx.createMediaStreamSource(localStream);
+      var localSrc = audioCtx.createMediaStreamSource(localStream);
       localSrc.connect(dest);
     }
     if (remoteStream) {
-      const remoteSrc = audioCtx.createMediaStreamSource(remoteStream);
+      var remoteSrc = audioCtx.createMediaStreamSource(remoteStream);
       remoteSrc.connect(dest);
     }
 
@@ -682,18 +706,18 @@ function startRecording() {
         ? 'audio/webm;codecs=opus' : 'audio/webm'
     });
 
-    mediaRecorder.ondataavailable = (e) => {
+    mediaRecorder.ondataavailable = function(e) {
       if (e.data.size > 0) recordedChunks.push(e.data);
     };
 
-    mediaRecorder.onstop = () => {
+    mediaRecorder.onstop = function() {
       saveRecording();
     };
 
-    mediaRecorder.start(1000); // collect data every second
+    mediaRecorder.start(1000);
     isRecording = true;
 
-    const btn = document.getElementById('btnRecord');
+    var btn = document.getElementById('btnRecord');
     btn.classList.add('active');
     btn.innerHTML = '<i data-lucide="circle" class="w-6 h-6"></i>';
     lucide.createIcons();
@@ -710,7 +734,7 @@ function stopRecording() {
   }
   isRecording = false;
 
-  const btn = document.getElementById('btnRecord');
+  var btn = document.getElementById('btnRecord');
   btn.classList.remove('active');
   btn.innerHTML = '<i data-lucide="circle" class="w-6 h-6"></i>';
   lucide.createIcons();
@@ -719,54 +743,50 @@ function stopRecording() {
 function saveRecording() {
   if (recordedChunks.length === 0) return;
 
-  const blob = new Blob(recordedChunks, { type: 'audio/webm' });
-  const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-  const fileName  = `call-recording-${timestamp}.webm`;
+  var blob = new Blob(recordedChunks, { type: 'audio/webm' });
+  var timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+  var fileName  = 'call-recording-' + timestamp + '.webm';
 
-  // Option 1: Download locally (always works, good fallback)
-  const url = URL.createObjectURL(blob);
-  const a   = document.createElement('a');
+  var url = URL.createObjectURL(blob);
+  var a   = document.createElement('a');
   a.href = url;
   a.download = fileName;
   a.click();
   URL.revokeObjectURL(url);
 
   showToast('Recording saved');
-
-  // Option 2: Upload to server (Cloudflare R2) — can be added later
-  // uploadRecording(blob, fileName);
 }
 
-// ── Timer ─────────────────────────────────────────────────────
+// -- Timer --
 function startTimer() {
+  if (timerInterval) return; // prevent duplicates
   callStartTime = Date.now();
-  timerInterval = setInterval(() => {
-    const elapsed = Math.floor((Date.now() - callStartTime) / 1000);
+  timerInterval = setInterval(function() {
+    var elapsed = Math.floor((Date.now() - callStartTime) / 1000);
     document.getElementById('callTimer').textContent = formatDuration(elapsed);
   }, 1000);
 }
 
 function formatDuration(seconds) {
-  const m = Math.floor(seconds / 60).toString().padStart(2, '0');
-  const s = (seconds % 60).toString().padStart(2, '0');
-  return `${m}:${s}`;
+  var m = Math.floor(seconds / 60).toString().padStart(2, '0');
+  var s = (seconds % 60).toString().padStart(2, '0');
+  return m + ':' + s;
 }
 
-// ── Ringtone (Web Audio generated) ────────────────────────────
+// -- Ringtone (Web Audio generated) --
 function startRingtone() {
   try {
     ringtoneCtx = new (window.AudioContext || window.webkitAudioContext)();
     ringtoneOsc = ringtoneCtx.createOscillator();
-    const gain  = ringtoneCtx.createGain();
+    var gain  = ringtoneCtx.createGain();
     ringtoneOsc.type = 'sine';
     ringtoneOsc.frequency.value = 440;
     gain.gain.value = 0.15;
     ringtoneOsc.connect(gain);
     gain.connect(ringtoneCtx.destination);
 
-    // Pulse pattern: beep 0.5s, silence 0.5s
-    const now = ringtoneCtx.currentTime;
-    for (let i = 0; i < 30; i++) {
+    var now = ringtoneCtx.currentTime;
+    for (var i = 0; i < 30; i++) {
       gain.gain.setValueAtTime(0.15, now + i * 1.0);
       gain.gain.setValueAtTime(0, now + i * 1.0 + 0.4);
     }
@@ -781,13 +801,12 @@ function stopRingtone() {
   } catch (e) {}
 }
 
-// ── Helpers ───────────────────────────────────────────────────
+// -- Helpers --
 function setName(name, avatar) {
   document.getElementById('callName').textContent = name;
-  const avatarEl = document.getElementById('callAvatar');
-  const initialsEl = document.getElementById('callInitials');
+  var initialsEl = document.getElementById('callInitials');
   if (avatar) {
-    initialsEl.innerHTML = `<img src="${avatar}" style="width:100%;height:100%;object-fit:cover;">`;
+    initialsEl.innerHTML = '<img src="' + avatar + '" style="width:100%;height:100%;object-fit:cover;">';
   } else {
     initialsEl.textContent = getInitials(name);
   }
@@ -798,20 +817,21 @@ function setStatus(text) {
 }
 
 function getInitials(name) {
-  return (name || '').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+  return (name || '').split(' ').map(function(w) { return w[0]; }).join('').slice(0, 2).toUpperCase();
 }
 
 function showToast(msg) {
-  const toast = document.getElementById('toast');
+  var toast = document.getElementById('toast');
   toast.textContent = msg;
   toast.classList.add('show');
-  setTimeout(() => toast.classList.remove('show'), 3000);
+  setTimeout(function() { toast.classList.remove('show'); }, 3000);
 }
 
 function cleanupCall() {
+  dbg('cleanupCall()');
   stopRingtone();
   if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
-  if (localStream) { localStream.getTracks().forEach(t => t.stop()); localStream = null; }
+  if (localStream) { localStream.getTracks().forEach(function(t) { t.stop(); }); localStream = null; }
   if (peerConnection) { peerConnection.close(); peerConnection = null; }
   window._setupInProgress = false;
   iceCandidateBuffer = [];
