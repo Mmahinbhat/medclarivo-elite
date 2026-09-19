@@ -370,7 +370,19 @@ socket.on('call:offer', async ({ callId: cid, fromUserId, offer }) => {
   await flushIceCandidates();
   const answer = await peerConnection.createAnswer();
   await peerConnection.setLocalDescription(answer);
-  socket.emit('call:answer', { callId, targetUserId: fromUserId, answer });
+  dbg('Receiver waiting for ICE candidates...');
+  await new Promise(function(resolve) {
+    if (peerConnection.iceGatheringState === 'complete') return resolve();
+    peerConnection.addEventListener('icegatheringstatechange', function check() {
+      if (peerConnection && peerConnection.iceGatheringState === 'complete') {
+        peerConnection.removeEventListener('icegatheringstatechange', check);
+        resolve();
+      }
+    });
+    setTimeout(resolve, 5000);
+  });
+  dbg('Sending answer with ' + (peerConnection.localDescription.sdp.match(/a=candidate:/g)||[]).length + ' candidates');
+  socket.emit('call:answer', { callId, targetUserId: fromUserId, answer: peerConnection.localDescription });
 });
 
 socket.on('call:answer', async ({ answer }) => {
@@ -578,8 +590,19 @@ async function setupWebRTC(isInitiator) {
     const offer = await peerConnection.createOffer();
     await peerConnection.setLocalDescription(offer);
     const otherId = incomingCallerId || targetId;
-    dbg('Sending offer to ' + otherId);
-    socket.emit('call:offer', { callId, targetUserId: otherId, offer });
+    dbg('Waiting for ICE candidates to gather...');
+    await new Promise(function(resolve) {
+      if (peerConnection.iceGatheringState === 'complete') return resolve();
+      peerConnection.addEventListener('icegatheringstatechange', function check() {
+        if (peerConnection && peerConnection.iceGatheringState === 'complete') {
+          peerConnection.removeEventListener('icegatheringstatechange', check);
+          resolve();
+        }
+      });
+      setTimeout(resolve, 5000);
+    });
+    dbg('Sending offer to ' + otherId + ' (with ' + (peerConnection.localDescription.sdp.match(/a=candidate:/g)||[]).length + ' candidates)');
+    socket.emit('call:offer', { callId, targetUserId: otherId, offer: peerConnection.localDescription });
   } else {
     dbg('Waiting for offer (receiver)...');
   }
