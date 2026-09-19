@@ -224,14 +224,9 @@
 
 <div class="toast" id="toast"></div>
 
-<!-- TEMPORARY visible debug panel -->
-<div id="dbgPanel" style="position:fixed;top:0;left:0;right:0;z-index:9999;background:rgba(0,0,0,0.85);color:#0f0;font-family:monospace;font-size:10px;padding:4px 8px;max-height:35vh;overflow-y:auto;pointer-events:none;"></div>
 <script>
 function dbg(msg){
-  var t = new Date().toLocaleTimeString();
-  console.log('[DBG] '+t+' '+msg);
-  var p = document.getElementById('dbgPanel');
-  if(p){ p.innerHTML += t+' '+msg+'<br>'; p.scrollTop = p.scrollHeight; }
+  console.log('[DBG] '+new Date().toLocaleTimeString()+' '+msg);
 }
 </script>
 
