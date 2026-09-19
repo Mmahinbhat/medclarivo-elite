@@ -448,6 +448,9 @@ function rejectIncoming() {
 
 // ── WebRTC Setup ──────────────────────────────────────────────
 async function setupWebRTC(isInitiator) {
+  if (window._setupInProgress) { dbg('setupWebRTC BLOCKED - already in progress'); return; }
+  if (peerConnection) { dbg('setupWebRTC BLOCKED - peerConnection exists'); return; }
+  window._setupInProgress = true;
   try {
     dbg('Requesting mic...');
     localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
