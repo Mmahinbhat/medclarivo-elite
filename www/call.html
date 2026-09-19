@@ -302,14 +302,12 @@ socket.on('connect', () => {
   dbg('Socket connected: ' + socket.id);
   if (mode === 'incoming' && incomingCallId) {
     if (alreadyAccepted) {
-      // Already accepted from call-listener overlay — skip the second overlay.
-      // call-listener.js already emitted call:accept on its socket, but emit
-      // again here in case the first one didn't reach the server in time.
-      // The server should handle duplicate accepts gracefully.
       dbg('Already accepted — auto-accepting (no overlay)');
       setName(targetName, targetAvatar);
       setStatus('Connecting...');
       socket.emit('call:accept', { callId });
+      // Start getting mic + PeerConnection NOW while waiting for offer
+      prepareMedia();
     } else {
       showIncomingUI();
     }
@@ -361,9 +359,20 @@ socket.on('call:accepted', async ({ callId: cid }) => {
   // Only the CALLER creates the offer — receiver waits for call:offer
   if (mode !== 'incoming') {
     dbg('I am the CALLER — creating offer');
-    await setupWebRTC(true);
+    // Wait for prepareMedia to finish if still in progress
+    await _mediaReady;
+    if (!peerConnection) {
+      dbg('prepareMedia failed — cannot create offer');
+      return;
+    }
+    dbg('Creating offer...');
+    var offer = await peerConnection.createOffer();
+    await peerConnection.setLocalDescription(offer);
+    var otherId = incomingCallerId || targetId;
+    dbg('Sending offer to ' + otherId);
+    socket.emit('call:offer', { callId, targetUserId: otherId, offer: offer });
   } else {
-    dbg('I am the RECEIVER — waiting for offer');
+    dbg('I am the RECEIVER — waiting for offer (media already preparing)');
   }
 });
 
@@ -392,18 +401,19 @@ socket.on('call:offer', async ({ callId: cid, fromUserId, offer }) => {
   callId = cid;
   dbg('Got offer from ' + fromUserId);
 
-  if (peerConnection) {
-    dbg('Already have peerConnection — setting remote desc only');
-    await peerConnection.setRemoteDescription(new RTCSessionDescription(offer));
-    await flushIceCandidates();
-    var answer2 = await peerConnection.createAnswer();
-    await peerConnection.setLocalDescription(answer2);
-    dbg('Sent answer (existing PC)');
-    socket.emit('call:answer', { callId, targetUserId: fromUserId, answer: answer2 });
-    return;
+  // Wait for prepareMedia to finish if still in progress
+  await _mediaReady;
+
+  if (!peerConnection) {
+    dbg('No peerConnection — calling prepareMedia as fallback');
+    await prepareMedia();
+    if (!peerConnection) {
+      dbg('prepareMedia failed — cannot handle offer');
+      return;
+    }
   }
 
-  await setupWebRTC(false); // false = receiver
+  dbg('Setting remote description...');
   await peerConnection.setRemoteDescription(new RTCSessionDescription(offer));
   await flushIceCandidates();
   var answer = await peerConnection.createAnswer();
@@ -460,6 +470,8 @@ function initiateCall() {
     callerName: mcUser.name || 'User',
     callerAvatar: mcUser.avatar || '',
   });
+  // Start getting mic + PeerConnection NOW while ringing
+  prepareMedia();
 }
 
 // -- Incoming call UI --
@@ -517,6 +529,8 @@ function acceptIncoming() {
   stopRingtone();
   socket.emit('call:accept', { callId });
   setStatus('Connecting...');
+  // Start getting mic + PeerConnection NOW while waiting for offer
+  prepareMedia();
 }
 
 function rejectIncoming() {
@@ -527,37 +541,32 @@ function rejectIncoming() {
   setTimeout(() => goBack(), 1000);
 }
 
-// -- WebRTC Setup --
-async function setupWebRTC(isInitiator) {
-  // Guard against being called twice
-  if (window._setupInProgress) {
-    dbg('setupWebRTC BLOCKED — already in progress');
-    return;
-  }
-  if (peerConnection) {
-    dbg('setupWebRTC BLOCKED — peerConnection already exists');
-    return;
-  }
-  window._setupInProgress = true;
-  iceCandidateBuffer = [];
+// -- Prepare media + PeerConnection early (called before signaling completes) --
+let _mediaReady = Promise.resolve(); // resolves when prepareMedia finishes
+let _mediaStarted = false;
+
+async function prepareMedia() {
+  if (_mediaStarted) return; // only run once
+  if (peerConnection) return; // already set up
+  _mediaStarted = true;
+
+  var resolve;
+  _mediaReady = new Promise(function(r) { resolve = r; });
 
   try {
-    dbg('Requesting mic...');
+    dbg('Requesting mic early...');
     localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
     dbg('MIC OK — tracks: ' + localStream.getAudioTracks().length);
-    localStream.getAudioTracks().forEach(function(t) {
-      dbg('Local track: ' + t.label + ' enabled=' + t.enabled + ' muted=' + t.muted + ' state=' + t.readyState);
-    });
   } catch (err) {
     dbg('MIC DENIED: ' + err.message);
     setStatus('Microphone access denied');
-    window._setupInProgress = false;
+    resolve();
     return;
   }
 
   peerConnection = new RTCPeerConnection({
     iceServers: ICE_SERVERS,
-    iceTransportPolicy: 'relay'  // Skip host/srflx — go straight to TURN relay
+    iceTransportPolicy: 'relay'
   });
 
   // Add local audio tracks
@@ -655,22 +664,8 @@ async function setupWebRTC(isInitiator) {
     dbg('iceGathering: ' + peerConnection.iceGatheringState);
   };
 
-  window._setupInProgress = false;
-
-  if (isInitiator) {
-    dbg('Creating offer...');
-    var offer = await peerConnection.createOffer();
-    await peerConnection.setLocalDescription(offer);
-    var otherId = incomingCallerId || targetId;
-    dbg('Sending offer to ' + otherId);
-    socket.emit('call:offer', {
-      callId: callId,
-      targetUserId: otherId,
-      offer: offer
-    });
-  } else {
-    dbg('Waiting for offer (receiver)...');
-  }
+  dbg('Media + PeerConnection ready');
+  resolve();
 }
 
 // -- Controls --
