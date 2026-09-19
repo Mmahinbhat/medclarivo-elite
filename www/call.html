@@ -609,11 +609,14 @@ async function setupWebRTC(isInitiator) {
   peerConnection.oniceconnectionstatechange = function() {
     var s = peerConnection.iceConnectionState;
     dbg('iceState: ' + s);
-    setStatus('ICE: ' + s);
+    // Only show user-friendly statuses
     if (s === 'connected' || s === 'completed') {
       setStatus('In call');
       if (!timerInterval) startTimer();
+    } else if (s === 'disconnected' || s === 'failed') {
+      setStatus('Connection lost');
     }
+    // Don't show "checking", "new", etc. — keep "Connecting..."
   };
 
   peerConnection.onicegatheringstatechange = function() {
