@@ -238,7 +238,7 @@
 
 <div class="toast" id="toast"></div>
 
-<audio id="remoteAudio" autoplay></audio>
+<audio id="remoteAudio" autoplay playsinline></audio>
 <audio id="ringtone" loop preload="auto">
   <!-- We'll generate a simple tone via Web Audio if needed -->
 </audio>
@@ -439,6 +439,10 @@ function rejectIncoming() {
 async function setupWebRTC(isInitiator) {
   try {
     localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+    console.log('[Call] Got local stream, tracks:', localStream.getAudioTracks().length);
+    localStream.getAudioTracks().forEach(t => {
+      console.log('[Call] Local track:', t.label, 'enabled:', t.enabled, 'muted:', t.muted);
+    });
   } catch (err) {
     console.error('[Call] Mic access denied:', err);
     setStatus('Microphone access denied');
@@ -454,9 +458,21 @@ async function setupWebRTC(isInitiator) {
 
   // Handle remote stream
   peerConnection.ontrack = (event) => {
+    console.log('[Call] ontrack fired, streams:', event.streams.length);
     remoteStream = event.streams[0];
     const remoteAudio = document.getElementById('remoteAudio');
     remoteAudio.srcObject = remoteStream;
+    // Force play — mobile WebViews often block autoplay
+    remoteAudio.play().then(() => {
+      console.log('[Call] Remote audio playing');
+    }).catch(e => {
+      console.warn('[Call] Audio play blocked, retrying...', e);
+      // Retry on next user interaction
+      document.addEventListener('click', function retry() {
+        remoteAudio.play();
+        document.removeEventListener('click', retry);
+      }, { once: true });
+    });
   };
 
   // ICE candidates
