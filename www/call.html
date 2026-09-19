@@ -238,6 +238,19 @@
 
 <div class="toast" id="toast"></div>
 
+<!-- DEBUG PANEL — remove once audio works -->
+<div id="debugPanel" style="position:fixed;bottom:0;left:0;right:0;z-index:9999;background:rgba(0,0,0,0.85);color:#0f0;font-family:monospace;font-size:11px;padding:8px 12px;max-height:40vh;overflow-y:auto;"></div>
+<script>
+function dbg(msg){
+  var p=document.getElementById('debugPanel');
+  if(!p)return;
+  var t=new Date().toLocaleTimeString();
+  p.innerHTML += t+' '+msg+'<br>';
+  p.scrollTop=p.scrollHeight;
+  console.log('[DBG] '+msg);
+}
+</script>
+
 <audio id="remoteAudio" autoplay playsinline></audio>
 <audio id="ringtone" loop preload="auto">
   <!-- We'll generate a simple tone via Web Audio if needed -->
@@ -277,9 +290,9 @@ let ringtoneOsc    = null;
 const ICE_SERVERS = [
   { urls: 'stun:stun.l.google.com:19302' },
   { urls: 'stun:stun1.l.google.com:19302' },
-  { urls: 'stun:stun2.l.google.com:19302' },
-  // Metered.ca free TURN — sign up at metered.ca for your own credentials
-  // Replace these with your own if you set up a TURN server
+  { urls: 'turn:openrelay.metered.ca:80', username: 'openrelayproject', credential: 'openrelayproject' },
+  { urls: 'turn:openrelay.metered.ca:443', username: 'openrelayproject', credential: 'openrelayproject' },
+  { urls: 'turn:openrelay.metered.ca:443?transport=tcp', username: 'openrelayproject', credential: 'openrelayproject' },
 ];
 
 // ── Socket ────────────────────────────────────────────────────
@@ -438,13 +451,14 @@ function rejectIncoming() {
 // ── WebRTC Setup ──────────────────────────────────────────────
 async function setupWebRTC(isInitiator) {
   try {
+    dbg('Requesting mic...');
     localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
-    console.log('[Call] Got local stream, tracks:', localStream.getAudioTracks().length);
+    dbg('MIC OK — tracks: ' + localStream.getAudioTracks().length);
     localStream.getAudioTracks().forEach(t => {
-      console.log('[Call] Local track:', t.label, 'enabled:', t.enabled, 'muted:', t.muted);
+      dbg('Local track: ' + t.label + ' enabled=' + t.enabled + ' muted=' + t.muted + ' state=' + t.readyState);
     });
   } catch (err) {
-    console.error('[Call] Mic access denied:', err);
+    dbg('MIC DENIED: ' + err.message);
     setStatus('Microphone access denied');
     return;
   }
@@ -458,28 +472,42 @@ async function setupWebRTC(isInitiator) {
 
   // Handle remote stream
   peerConnection.ontrack = (event) => {
-    console.log('[Call] ontrack fired, streams:', event.streams.length, 'tracks:', event.streams[0]?.getAudioTracks().length);
+    dbg('ONTRACK — streams:' + event.streams.length);
     remoteStream = event.streams[0];
 
-    // Log remote track state
     remoteStream.getAudioTracks().forEach(t => {
-      console.log('[Call] Remote track:', t.label, 'enabled:', t.enabled, 'muted:', t.muted, 'readyState:', t.readyState);
+      dbg('Remote track: enabled=' + t.enabled + ' muted=' + t.muted + ' state=' + t.readyState);
     });
 
     const remoteAudio = document.getElementById('remoteAudio');
     remoteAudio.srcObject = remoteStream;
     remoteAudio.volume = 1.0;
 
-    // Force play — mobile WebViews often block autoplay
+    // Force play
     var playAttempt = function() {
       remoteAudio.play().then(() => {
-        console.log('[Call] Remote audio playing OK');
+        dbg('AUDIO PLAY OK');
       }).catch(e => {
-        console.warn('[Call] Audio play failed:', e.message);
+        dbg('AUDIO PLAY FAIL: ' + e.message);
         setTimeout(playAttempt, 500);
       });
     };
     playAttempt();
+
+    // Check audio levels every 2s
+    try {
+      var actx = new AudioContext();
+      var src = actx.createMediaStreamSource(remoteStream);
+      var analyser = actx.createAnalyser();
+      analyser.fftSize = 256;
+      src.connect(analyser);
+      var buf = new Uint8Array(analyser.frequencyBinCount);
+      setInterval(function(){
+        analyser.getByteFrequencyData(buf);
+        var avg = buf.reduce(function(a,b){return a+b;},0) / buf.length;
+        dbg('Audio level: ' + avg.toFixed(1));
+      }, 2000);
+    } catch(e) { dbg('Analyser err: ' + e.message); }
   };
 
   // ICE candidates
@@ -496,7 +524,7 @@ async function setupWebRTC(isInitiator) {
 
   peerConnection.onconnectionstatechange = () => {
     const state = peerConnection.connectionState;
-    console.log('[Call] connectionState:', state);
+    dbg('connState: ' + state);
     if (state === 'connected') {
       setStatus('In call');
       startTimer();
@@ -507,14 +535,22 @@ async function setupWebRTC(isInitiator) {
   };
 
   peerConnection.oniceconnectionstatechange = () => {
-    console.log('[Call] iceConnectionState:', peerConnection.iceConnectionState);
+    dbg('iceState: ' + peerConnection.iceConnectionState);
+  };
+
+  peerConnection.onicegatheringstatechange = () => {
+    dbg('iceGathering: ' + peerConnection.iceGatheringState);
   };
 
   if (isInitiator) {
+    dbg('Creating offer...');
     const offer = await peerConnection.createOffer();
     await peerConnection.setLocalDescription(offer);
     const otherId = incomingCallerId || targetId;
+    dbg('Sending offer to ' + otherId);
     socket.emit('call:offer', { callId, targetUserId: otherId, offer });
+  } else {
+    dbg('Waiting for offer (receiver)...');
   }
 }
 
