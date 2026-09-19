@@ -238,6 +238,19 @@
 
 <div class="toast" id="toast"></div>
 
+<!-- DEBUG PANEL -->
+<div id="debugPanel" style="position:fixed;bottom:0;left:0;right:0;z-index:9999;background:rgba(0,0,0,0.85);color:#0f0;font-family:monospace;font-size:11px;padding:8px 12px;max-height:40vh;overflow-y:auto;"></div>
+<script>
+function dbg(msg){
+  var p=document.getElementById('debugPanel');
+  if(!p)return;
+  var t=new Date().toLocaleTimeString();
+  p.innerHTML += t+' '+msg+'<br>';
+  p.scrollTop=p.scrollHeight;
+  console.log('[DBG] '+msg);
+}
+</script>
+
 <audio id="remoteAudio" autoplay playsinline></audio>
 <audio id="ringtone" loop preload="auto">
   <!-- We'll generate a simple tone via Web Audio if needed -->
@@ -331,10 +344,10 @@ socket.on('call:accepted', async ({ callId: cid }) => {
   document.getElementById('bgPulse').classList.remove('ringing');
   // Only the CALLER creates the offer — the receiver waits for call:offer
   if (mode !== 'incoming') {
-    console.log('[Call] ' +'I am the CALLER — creating offer');
+    dbg('I am the CALLER — creating offer');
     await setupWebRTC(true);
   } else {
-    console.log('[Call] ' +'I am the RECEIVER — waiting for offer');
+    dbg('I am the RECEIVER — waiting for offer');
   }
 });
 
@@ -359,13 +372,13 @@ socket.on('call:ended', ({ duration }) => {
 
 socket.on('call:offer', async ({ callId: cid, fromUserId, offer }) => {
   callId = cid;
-  console.log('[Call] ' +'Got offer from ' + fromUserId);
+  dbg('Got offer from ' + fromUserId);
   if (peerConnection) {
-    console.log('[Call] ' +'Already have peerConnection — setting remote desc only');
+    dbg('Already have peerConnection — setting remote desc only');
     await peerConnection.setRemoteDescription(new RTCSessionDescription(offer));
     const answer = await peerConnection.createAnswer();
     await peerConnection.setLocalDescription(answer);
-    console.log('[Call] ' +'Sent answer (existing PC)');
+    dbg('Sent answer (existing PC)');
     socket.emit('call:answer', { callId, targetUserId: fromUserId, answer });
     return;
   }
@@ -454,14 +467,14 @@ function rejectIncoming() {
 // ── WebRTC Setup ──────────────────────────────────────────────
 async function setupWebRTC(isInitiator) {
   try {
-    console.log('[Call] ' +'Requesting mic...');
+    dbg('Requesting mic...');
     localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
-    console.log('[Call] ' +'MIC OK — tracks: ' + localStream.getAudioTracks().length);
+    dbg('MIC OK — tracks: ' + localStream.getAudioTracks().length);
     localStream.getAudioTracks().forEach(t => {
-      console.log('[Call] ' +'Local track: ' + t.label + ' enabled=' + t.enabled + ' muted=' + t.muted + ' state=' + t.readyState);
+      dbg('Local track: ' + t.label + ' enabled=' + t.enabled + ' muted=' + t.muted + ' state=' + t.readyState);
     });
   } catch (err) {
-    console.log('[Call] ' +'MIC DENIED: ' + err.message);
+    dbg('MIC DENIED: ' + err.message);
     setStatus('Microphone access denied');
     return;
   }
@@ -475,11 +488,11 @@ async function setupWebRTC(isInitiator) {
 
   // Handle remote stream
   peerConnection.ontrack = (event) => {
-    console.log('[Call] ' +'ONTRACK — streams:' + event.streams.length);
+    dbg('ONTRACK — streams:' + event.streams.length);
     remoteStream = event.streams[0];
 
     remoteStream.getAudioTracks().forEach(t => {
-      console.log('[Call] ' +'Remote track: enabled=' + t.enabled + ' muted=' + t.muted + ' state=' + t.readyState);
+      dbg('Remote track: enabled=' + t.enabled + ' muted=' + t.muted + ' state=' + t.readyState);
     });
 
     const remoteAudio = document.getElementById('remoteAudio');
@@ -489,9 +502,9 @@ async function setupWebRTC(isInitiator) {
     // Force play
     var playAttempt = function() {
       remoteAudio.play().then(() => {
-        console.log('[Call] ' +'AUDIO PLAY OK');
+        dbg('AUDIO PLAY OK');
       }).catch(e => {
-        console.log('[Call] ' +'AUDIO PLAY FAIL: ' + e.message);
+        dbg('AUDIO PLAY FAIL: ' + e.message);
         setTimeout(playAttempt, 500);
       });
     };
@@ -513,7 +526,7 @@ async function setupWebRTC(isInitiator) {
 
   peerConnection.onconnectionstatechange = () => {
     const state = peerConnection.connectionState;
-    console.log('[Call] ' +'connState: ' + state);
+    dbg('connState: ' + state);
     if (state === 'connected') {
       setStatus('In call');
       startTimer();
@@ -524,22 +537,22 @@ async function setupWebRTC(isInitiator) {
   };
 
   peerConnection.oniceconnectionstatechange = () => {
-    console.log('[Call] ' +'iceState: ' + peerConnection.iceConnectionState);
+    dbg('iceState: ' + peerConnection.iceConnectionState);
   };
 
   peerConnection.onicegatheringstatechange = () => {
-    console.log('[Call] ' +'iceGathering: ' + peerConnection.iceGatheringState);
+    dbg('iceGathering: ' + peerConnection.iceGatheringState);
   };
 
   if (isInitiator) {
-    console.log('[Call] ' +'Creating offer...');
+    dbg('Creating offer...');
     const offer = await peerConnection.createOffer();
     await peerConnection.setLocalDescription(offer);
     const otherId = incomingCallerId || targetId;
-    console.log('[Call] ' +'Sending offer to ' + otherId);
+    dbg('Sending offer to ' + otherId);
     socket.emit('call:offer', { callId, targetUserId: otherId, offer });
   } else {
-    console.log('[Call] ' +'Waiting for offer (receiver)...');
+    dbg('Waiting for offer (receiver)...');
   }
 }
 
