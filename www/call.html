@@ -264,7 +264,7 @@ let peerConnection= null;
 let localStream   = null;
 let remoteStream  = null;
 let isMuted       = false;
-let isSpeaker     = false;
+let isSpeaker     = true; // default to speaker on
 let isRecording   = false;
 let mediaRecorder = null;
 let recordedChunks = [];
@@ -458,21 +458,28 @@ async function setupWebRTC(isInitiator) {
 
   // Handle remote stream
   peerConnection.ontrack = (event) => {
-    console.log('[Call] ontrack fired, streams:', event.streams.length);
+    console.log('[Call] ontrack fired, streams:', event.streams.length, 'tracks:', event.streams[0]?.getAudioTracks().length);
     remoteStream = event.streams[0];
+
+    // Log remote track state
+    remoteStream.getAudioTracks().forEach(t => {
+      console.log('[Call] Remote track:', t.label, 'enabled:', t.enabled, 'muted:', t.muted, 'readyState:', t.readyState);
+    });
+
     const remoteAudio = document.getElementById('remoteAudio');
     remoteAudio.srcObject = remoteStream;
+    remoteAudio.volume = 1.0;
+
     // Force play — mobile WebViews often block autoplay
-    remoteAudio.play().then(() => {
-      console.log('[Call] Remote audio playing');
-    }).catch(e => {
-      console.warn('[Call] Audio play blocked, retrying...', e);
-      // Retry on next user interaction
-      document.addEventListener('click', function retry() {
-        remoteAudio.play();
-        document.removeEventListener('click', retry);
-      }, { once: true });
-    });
+    var playAttempt = function() {
+      remoteAudio.play().then(() => {
+        console.log('[Call] Remote audio playing OK');
+      }).catch(e => {
+        console.warn('[Call] Audio play failed:', e.message);
+        setTimeout(playAttempt, 500);
+      });
+    };
+    playAttempt();
   };
 
   // ICE candidates
@@ -489,6 +496,7 @@ async function setupWebRTC(isInitiator) {
 
   peerConnection.onconnectionstatechange = () => {
     const state = peerConnection.connectionState;
+    console.log('[Call] connectionState:', state);
     if (state === 'connected') {
       setStatus('In call');
       startTimer();
@@ -496,6 +504,10 @@ async function setupWebRTC(isInitiator) {
       setStatus('Connection lost');
       endCall();
     }
+  };
+
+  peerConnection.oniceconnectionstatechange = () => {
+    console.log('[Call] iceConnectionState:', peerConnection.iceConnectionState);
   };
 
   if (isInitiator) {
