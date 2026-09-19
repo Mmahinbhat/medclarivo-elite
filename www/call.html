@@ -526,7 +526,10 @@ async function setupWebRTC(isInitiator) {
     return;
   }
 
-  peerConnection = new RTCPeerConnection({ iceServers: ICE_SERVERS });
+  peerConnection = new RTCPeerConnection({
+    iceServers: ICE_SERVERS,
+    iceTransportPolicy: 'relay'  // Skip host/srflx — go straight to TURN relay
+  });
 
   // Add local audio tracks
   localStream.getTracks().forEach(function(track) {
