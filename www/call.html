@@ -367,6 +367,7 @@ socket.on('call:offer', async ({ callId: cid, fromUserId, offer }) => {
   }
   await setupWebRTC(false);
   await peerConnection.setRemoteDescription(new RTCSessionDescription(offer));
+  await flushIceCandidates();
   const answer = await peerConnection.createAnswer();
   await peerConnection.setLocalDescription(answer);
   socket.emit('call:answer', { callId, targetUserId: fromUserId, answer });
@@ -374,17 +375,36 @@ socket.on('call:offer', async ({ callId: cid, fromUserId, offer }) => {
 
 socket.on('call:answer', async ({ answer }) => {
   if (peerConnection) {
+    dbg('Got answer — setting remote description');
     await peerConnection.setRemoteDescription(new RTCSessionDescription(answer));
+    await flushIceCandidates();
   }
 });
 
+let iceCandidateBuffer = [];
+
 socket.on('call:ice-candidate', async ({ candidate }) => {
-  if (peerConnection && candidate) {
+  if (!candidate) return;
+  if (peerConnection && peerConnection.remoteDescription) {
     try {
       await peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
-    } catch (e) { console.warn('[Call] ICE candidate error:', e); }
+      dbg('Added remote ICE: ' + candidate.type);
+    } catch (e) { dbg('ICE add err: ' + e.message); }
+  } else {
+    iceCandidateBuffer.push(candidate);
+    dbg('Buffered remote ICE candidate (' + iceCandidateBuffer.length + ')');
   }
 });
+
+async function flushIceCandidates() {
+  dbg('Flushing ' + iceCandidateBuffer.length + ' buffered ICE candidates');
+  for (const c of iceCandidateBuffer) {
+    try {
+      await peerConnection.addIceCandidate(new RTCIceCandidate(c));
+    } catch (e) { dbg('Buffered ICE err: ' + e.message); }
+  }
+  iceCandidateBuffer = [];
+}
 
 // Incoming call while already on this page (e.g. came directly)
 socket.on('call:incoming', ({ callId: cid, callerId, callerName, callerAvatar }) => {
@@ -452,6 +472,7 @@ async function setupWebRTC(isInitiator) {
   if (window._setupInProgress) { dbg('setupWebRTC BLOCKED - already in progress'); return; }
   if (peerConnection) { dbg('setupWebRTC BLOCKED - peerConnection exists'); return; }
   window._setupInProgress = true;
+    iceCandidateBuffer = [];
   try {
     dbg('Requesting mic...');
     localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
