@@ -25,9 +25,12 @@
     --line:rgba(255,255,255,0.08);
   }
   *{box-sizing:border-box; margin:0; padding:0;}
+  html{
+    background:#0A1424;
+  }
   body{
     font-family:'DM Sans', sans-serif;
-    background:var(--navy);
+    background:#0A1424;
     color:#fff;
     -webkit-font-smoothing:antialiased;
     min-height:100dvh;
@@ -238,16 +241,10 @@
 
 <div class="toast" id="toast"></div>
 
-<!-- DEBUG PANEL -->
-<div id="debugPanel" style="position:fixed;bottom:0;left:0;right:0;z-index:9999;background:rgba(0,0,0,0.85);color:#0f0;font-family:monospace;font-size:11px;padding:8px 12px;max-height:40vh;overflow-y:auto;"></div>
+<!-- Debug goes to console only -->
 <script>
 function dbg(msg){
-  var p=document.getElementById('debugPanel');
-  if(!p)return;
-  var t=new Date().toLocaleTimeString();
-  p.innerHTML += t+' '+msg+'<br>';
-  p.scrollTop=p.scrollHeight;
-  console.log('[DBG] '+msg);
+  console.log('[DBG] '+new Date().toLocaleTimeString()+' '+msg);
 }
 </script>
 
