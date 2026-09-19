@@ -529,7 +529,7 @@ async function setupWebRTC(isInitiator) {
 
   // ICE candidates
   peerConnection.onicecandidate = (event) => {
-    if (event.candidate) {
+    if (event.candidate) { var c = event.candidate; dbg("ICE candidate: " + c.type + " " + c.protocol + " " + c.address + ":" + c.port);
       const otherId = incomingCallerId || targetId;
       socket.emit('call:ice-candidate', {
         callId,
@@ -537,6 +537,7 @@ async function setupWebRTC(isInitiator) {
         candidate: event.candidate,
       });
     }
+    } else { dbg("ICE gathering complete"); }
   };
 
   peerConnection.onconnectionstatechange = () => {
@@ -549,6 +550,7 @@ async function setupWebRTC(isInitiator) {
       setStatus('Connection lost');
       endCall();
     }
+    } else { dbg("ICE gathering complete"); }
   };
 
   peerConnection.oniceconnectionstatechange = () => {
