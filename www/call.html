@@ -325,7 +325,13 @@ socket.on('call:accepted', async ({ callId: cid }) => {
   stopRingtone();
   setStatus('Connected');
   document.getElementById('bgPulse').classList.remove('ringing');
-  await setupWebRTC(true); // true = we are the caller, create offer
+  // Only the CALLER creates the offer - receiver waits for call:offer
+  if (mode !== 'incoming') {
+    console.log('I am the CALLER - creating offer');
+    await setupWebRTC(true);
+  } else {
+    console.log('I am the RECEIVER - waiting for offer');
+  }
 });
 
 socket.on('call:rejected', () => {
@@ -349,7 +355,16 @@ socket.on('call:ended', ({ duration }) => {
 
 socket.on('call:offer', async ({ callId: cid, fromUserId, offer }) => {
   callId = cid;
-  await setupWebRTC(false); // false = we are the receiver
+  console.log('Got offer from ' + fromUserId);
+  if (peerConnection) {
+    console.log('Already have peerConnection - setting remote desc only');
+    await peerConnection.setRemoteDescription(new RTCSessionDescription(offer));
+    const answer = await peerConnection.createAnswer();
+    await peerConnection.setLocalDescription(answer);
+    socket.emit('call:answer', { callId, targetUserId: fromUserId, answer });
+    return;
+  }
+  await setupWebRTC(false);
   await peerConnection.setRemoteDescription(new RTCSessionDescription(offer));
   const answer = await peerConnection.createAnswer();
   await peerConnection.setLocalDescription(answer);
