@@ -153,7 +153,8 @@
       userId: window._icCallerId,
       name: window._icCallerName,
       avatar: window._icCallerAvatar || '',
-      mode: 'incoming'
+      mode: 'incoming',
+      accepted: '1'
     });
     window.location.href = 'call.html?' + p.toString();
   };

@@ -267,6 +267,7 @@ const targetName  = params.get('name') || 'User';
 const targetAvatar= params.get('avatar') || '';
 const incomingCallId = params.get('callId'); // if we got here from an incoming call
 const mode        = params.get('mode');      // 'incoming' or null (outgoing)
+const alreadyAccepted = params.get('accepted') === '1'; // accepted from call-listener overlay
 
 // -- State --
 let callId        = incomingCallId || null;
@@ -311,7 +312,15 @@ dbg('Mode: ' + (mode || 'outgoing'));
 socket.on('connect', () => {
   dbg('Socket connected: ' + socket.id);
   if (mode === 'incoming' && incomingCallId) {
-    showIncomingUI();
+    if (alreadyAccepted) {
+      // Already accepted from call-listener overlay — skip the second overlay
+      dbg('Already accepted — auto-accepting');
+      setName(targetName, targetAvatar);
+      setStatus('Connecting...');
+      socket.emit('call:accept', { callId });
+    } else {
+      showIncomingUI();
+    }
   } else if (targetId) {
     initiateCall();
   }
