@@ -327,10 +327,10 @@ socket.on('call:accepted', async ({ callId: cid }) => {
   document.getElementById('bgPulse').classList.remove('ringing');
   // Only the CALLER creates the offer — the receiver waits for call:offer
   if (mode !== 'incoming') {
-    dbg('I am the CALLER — creating offer');
+    console.log('I am the CALLER — creating offer');
     await setupWebRTC(true);
   } else {
-    dbg('I am the RECEIVER — waiting for offer');
+    console.log('I am the RECEIVER — waiting for offer');
   }
 });
 
@@ -355,13 +355,13 @@ socket.on('call:ended', ({ duration }) => {
 
 socket.on('call:offer', async ({ callId: cid, fromUserId, offer }) => {
   callId = cid;
-  dbg('Got offer from ' + fromUserId);
+  console.log('Got offer from ' + fromUserId);
   if (peerConnection) {
-    dbg('Already have peerConnection — setting remote desc only');
+    console.log('Already have peerConnection — setting remote desc only');
     await peerConnection.setRemoteDescription(new RTCSessionDescription(offer));
     const answer = await peerConnection.createAnswer();
     await peerConnection.setLocalDescription(answer);
-    dbg('Sent answer (existing PC)');
+    console.log('Sent answer (existing PC)');
     socket.emit('call:answer', { callId, targetUserId: fromUserId, answer });
     return;
   }
@@ -450,14 +450,14 @@ function rejectIncoming() {
 // ── WebRTC Setup ──────────────────────────────────────────────
 async function setupWebRTC(isInitiator) {
   try {
-    dbg('Requesting mic...');
+    console.log('Requesting mic...');
     localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
-    dbg('MIC OK — tracks: ' + localStream.getAudioTracks().length);
+    console.log('MIC OK — tracks: ' + localStream.getAudioTracks().length);
     localStream.getAudioTracks().forEach(t => {
-      dbg('Local track: ' + t.label + ' enabled=' + t.enabled + ' muted=' + t.muted + ' state=' + t.readyState);
+      console.log('Local track: ' + t.label + ' enabled=' + t.enabled + ' muted=' + t.muted + ' state=' + t.readyState);
     });
   } catch (err) {
-    dbg('MIC DENIED: ' + err.message);
+    console.log('MIC DENIED: ' + err.message);
     setStatus('Microphone access denied');
     return;
   }
@@ -471,11 +471,11 @@ async function setupWebRTC(isInitiator) {
 
   // Handle remote stream
   peerConnection.ontrack = (event) => {
-    dbg('ONTRACK — streams:' + event.streams.length);
+    console.log('ONTRACK — streams:' + event.streams.length);
     remoteStream = event.streams[0];
 
     remoteStream.getAudioTracks().forEach(t => {
-      dbg('Remote track: enabled=' + t.enabled + ' muted=' + t.muted + ' state=' + t.readyState);
+      console.log('Remote track: enabled=' + t.enabled + ' muted=' + t.muted + ' state=' + t.readyState);
     });
 
     const remoteAudio = document.getElementById('remoteAudio');
@@ -485,9 +485,9 @@ async function setupWebRTC(isInitiator) {
     // Force play
     var playAttempt = function() {
       remoteAudio.play().then(() => {
-        dbg('AUDIO PLAY OK');
+        console.log('AUDIO PLAY OK');
       }).catch(e => {
-        dbg('AUDIO PLAY FAIL: ' + e.message);
+        console.log('AUDIO PLAY FAIL: ' + e.message);
         setTimeout(playAttempt, 500);
       });
     };
@@ -504,9 +504,9 @@ async function setupWebRTC(isInitiator) {
       setInterval(function(){
         analyser.getByteFrequencyData(buf);
         var avg = buf.reduce(function(a,b){return a+b;},0) / buf.length;
-        dbg('Audio level: ' + avg.toFixed(1));
+        console.log('Audio level: ' + avg.toFixed(1));
       }, 2000);
-    } catch(e) { dbg('Analyser err: ' + e.message); }
+    } catch(e) { console.log('Analyser err: ' + e.message); }
   };
 
   // ICE candidates
@@ -523,7 +523,7 @@ async function setupWebRTC(isInitiator) {
 
   peerConnection.onconnectionstatechange = () => {
     const state = peerConnection.connectionState;
-    dbg('connState: ' + state);
+    console.log('connState: ' + state);
     if (state === 'connected') {
       setStatus('In call');
       startTimer();
@@ -534,22 +534,22 @@ async function setupWebRTC(isInitiator) {
   };
 
   peerConnection.oniceconnectionstatechange = () => {
-    dbg('iceState: ' + peerConnection.iceConnectionState);
+    console.log('iceState: ' + peerConnection.iceConnectionState);
   };
 
   peerConnection.onicegatheringstatechange = () => {
-    dbg('iceGathering: ' + peerConnection.iceGatheringState);
+    console.log('iceGathering: ' + peerConnection.iceGatheringState);
   };
 
   if (isInitiator) {
-    dbg('Creating offer...');
+    console.log('Creating offer...');
     const offer = await peerConnection.createOffer();
     await peerConnection.setLocalDescription(offer);
     const otherId = incomingCallerId || targetId;
-    dbg('Sending offer to ' + otherId);
+    console.log('Sending offer to ' + otherId);
     socket.emit('call:offer', { callId, targetUserId: otherId, offer });
   } else {
-    dbg('Waiting for offer (receiver)...');
+    console.log('Waiting for offer (receiver)...');
   }
 }
 
