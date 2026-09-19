@@ -238,20 +238,7 @@
 
 <div class="toast" id="toast"></div>
 
-<!-- DEBUG PANEL — remove once audio works -->
-<div id="debugPanel" style="position:fixed;bottom:0;left:0;right:0;z-index:9999;background:rgba(0,0,0,0.85);color:#0f0;font-family:monospace;font-size:11px;padding:8px 12px;max-height:40vh;overflow-y:auto;"></div>
-<script>
-function dbg(msg){
-  var p=document.getElementById('debugPanel');
-  if(!p)return;
-  var t=new Date().toLocaleTimeString();
-  p.innerHTML += t+' '+msg+'<br>';
-  p.scrollTop=p.scrollHeight;
-  console.log('[DBG] '+msg);
-}
-</script>
-
-<audio id="remoteAudio" autoplay playsinline></audio>
+<audio id="remoteAudio" autoplay></audio>
 <audio id="ringtone" loop preload="auto">
   <!-- We'll generate a simple tone via Web Audio if needed -->
 </audio>
@@ -277,7 +264,7 @@ let peerConnection= null;
 let localStream   = null;
 let remoteStream  = null;
 let isMuted       = false;
-let isSpeaker     = true; // default to speaker on
+let isSpeaker     = false;
 let isRecording   = false;
 let mediaRecorder = null;
 let recordedChunks = [];
@@ -290,9 +277,9 @@ let ringtoneOsc    = null;
 const ICE_SERVERS = [
   { urls: 'stun:stun.l.google.com:19302' },
   { urls: 'stun:stun1.l.google.com:19302' },
-  { urls: 'turn:openrelay.metered.ca:80', username: 'openrelayproject', credential: 'openrelayproject' },
-  { urls: 'turn:openrelay.metered.ca:443', username: 'openrelayproject', credential: 'openrelayproject' },
-  { urls: 'turn:openrelay.metered.ca:443?transport=tcp', username: 'openrelayproject', credential: 'openrelayproject' },
+  { urls: 'stun:stun2.l.google.com:19302' },
+  // Metered.ca free TURN — sign up at metered.ca for your own credentials
+  // Replace these with your own if you set up a TURN server
 ];
 
 // ── Socket ────────────────────────────────────────────────────
@@ -323,15 +310,9 @@ socket.on('call:ringing', ({ callId: cid }) => {
 socket.on('call:accepted', async ({ callId: cid }) => {
   callId = cid;
   stopRingtone();
-  setStatus('Connecting...');
+  setStatus('Connected');
   document.getElementById('bgPulse').classList.remove('ringing');
-  // Only the CALLER creates the offer — the receiver waits for call:offer
-  if (mode !== 'incoming') {
-    console.log('I am the CALLER — creating offer');
-    await setupWebRTC(true);
-  } else {
-    console.log('I am the RECEIVER — waiting for offer');
-  }
+  await setupWebRTC(true); // true = we are the caller, create offer
 });
 
 socket.on('call:rejected', () => {
@@ -355,16 +336,6 @@ socket.on('call:ended', ({ duration }) => {
 
 socket.on('call:offer', async ({ callId: cid, fromUserId, offer }) => {
   callId = cid;
-  console.log('Got offer from ' + fromUserId);
-  if (peerConnection) {
-    console.log('Already have peerConnection — setting remote desc only');
-    await peerConnection.setRemoteDescription(new RTCSessionDescription(offer));
-    const answer = await peerConnection.createAnswer();
-    await peerConnection.setLocalDescription(answer);
-    console.log('Sent answer (existing PC)');
-    socket.emit('call:answer', { callId, targetUserId: fromUserId, answer });
-    return;
-  }
   await setupWebRTC(false); // false = we are the receiver
   await peerConnection.setRemoteDescription(new RTCSessionDescription(offer));
   const answer = await peerConnection.createAnswer();
@@ -450,14 +421,9 @@ function rejectIncoming() {
 // ── WebRTC Setup ──────────────────────────────────────────────
 async function setupWebRTC(isInitiator) {
   try {
-    console.log('Requesting mic...');
     localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
-    console.log('MIC OK — tracks: ' + localStream.getAudioTracks().length);
-    localStream.getAudioTracks().forEach(t => {
-      console.log('Local track: ' + t.label + ' enabled=' + t.enabled + ' muted=' + t.muted + ' state=' + t.readyState);
-    });
   } catch (err) {
-    console.log('MIC DENIED: ' + err.message);
+    console.error('[Call] Mic access denied:', err);
     setStatus('Microphone access denied');
     return;
   }
@@ -471,42 +437,9 @@ async function setupWebRTC(isInitiator) {
 
   // Handle remote stream
   peerConnection.ontrack = (event) => {
-    console.log('ONTRACK — streams:' + event.streams.length);
     remoteStream = event.streams[0];
-
-    remoteStream.getAudioTracks().forEach(t => {
-      console.log('Remote track: enabled=' + t.enabled + ' muted=' + t.muted + ' state=' + t.readyState);
-    });
-
     const remoteAudio = document.getElementById('remoteAudio');
     remoteAudio.srcObject = remoteStream;
-    remoteAudio.volume = 1.0;
-
-    // Force play
-    var playAttempt = function() {
-      remoteAudio.play().then(() => {
-        console.log('AUDIO PLAY OK');
-      }).catch(e => {
-        console.log('AUDIO PLAY FAIL: ' + e.message);
-        setTimeout(playAttempt, 500);
-      });
-    };
-    playAttempt();
-
-    // Check audio levels every 2s
-    try {
-      var actx = new AudioContext();
-      var src = actx.createMediaStreamSource(remoteStream);
-      var analyser = actx.createAnalyser();
-      analyser.fftSize = 256;
-      src.connect(analyser);
-      var buf = new Uint8Array(analyser.frequencyBinCount);
-      setInterval(function(){
-        analyser.getByteFrequencyData(buf);
-        var avg = buf.reduce(function(a,b){return a+b;},0) / buf.length;
-        console.log('Audio level: ' + avg.toFixed(1));
-      }, 2000);
-    } catch(e) { console.log('Analyser err: ' + e.message); }
   };
 
   // ICE candidates
@@ -523,7 +456,6 @@ async function setupWebRTC(isInitiator) {
 
   peerConnection.onconnectionstatechange = () => {
     const state = peerConnection.connectionState;
-    console.log('connState: ' + state);
     if (state === 'connected') {
       setStatus('In call');
       startTimer();
@@ -533,23 +465,11 @@ async function setupWebRTC(isInitiator) {
     }
   };
 
-  peerConnection.oniceconnectionstatechange = () => {
-    console.log('iceState: ' + peerConnection.iceConnectionState);
-  };
-
-  peerConnection.onicegatheringstatechange = () => {
-    console.log('iceGathering: ' + peerConnection.iceGatheringState);
-  };
-
   if (isInitiator) {
-    console.log('Creating offer...');
     const offer = await peerConnection.createOffer();
     await peerConnection.setLocalDescription(offer);
     const otherId = incomingCallerId || targetId;
-    console.log('Sending offer to ' + otherId);
     socket.emit('call:offer', { callId, targetUserId: otherId, offer });
-  } else {
-    console.log('Waiting for offer (receiver)...');
   }
 }
 
