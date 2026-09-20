@@ -16,7 +16,7 @@
 <script src="shared/auth-common.js"></script>
 <script src="shared/theme-native-bg.js"></script>
 <script src="shared/nav-student.js"></script>
-<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="fonts.css">
 <style>
   :root{
     --navy:#0A1424; --navy-2:#0F2038; --navy-3:#16304F;
@@ -417,89 +417,13 @@ lucide.createIcons();
   }
 </style>
 
-<!-- ═══ INCOMING CALL OVERLAY ═══ -->
-<div id="incomingCallOverlay" style="display:none;position:fixed;inset:0;z-index:200;background:rgba(10,20,36,0.92);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);flex-direction:column;align-items:center;justify-content:center;gap:16px;">
-  <div style="width:90px;height:90px;border-radius:50%;background:linear-gradient(135deg,var(--teal),var(--teal-deep));display:flex;align-items:center;justify-content:center;font-family:'DM Serif Display',serif;font-size:32px;color:#fff;box-shadow:0 0 0 4px rgba(15,168,154,0.25);animation:icRing 1.5s ease-in-out infinite;">
-    <span id="icInitials"></span>
-  </div>
-  <p style="font-family:'DM Serif Display',serif;font-size:22px;color:#fff;" id="icName"></p>
-  <p style="color:rgba(255,255,255,0.55);font-size:14px;">Incoming voice call...</p>
-  <div style="height:32px"></div>
-  <div style="display:flex;gap:40px;">
-    <button onclick="declineIncomingCall()" style="width:62px;height:62px;border-radius:50%;border:none;background:#DC2626;color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 8px 24px -4px rgba(220,38,38,0.5);">
-      <i data-lucide="phone-off" class="w-6 h-6"></i>
-    </button>
-    <button onclick="acceptIncomingCall()" style="width:62px;height:62px;border-radius:50%;border:none;background:#16A34A;color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 8px 24px -4px rgba(22,163,74,0.5);">
-      <i data-lucide="phone" class="w-6 h-6"></i>
-    </button>
-  </div>
-</div>
-<style>
-  @keyframes icRing{
-    0%,100%{box-shadow:0 0 0 4px rgba(15,168,154,0.25);}
-    50%{box-shadow:0 0 0 18px rgba(15,168,154,0.08);}
-  }
-</style>
+<!-- Incoming calls handled by shared/call-listener.js -->
 
 <script>
 // ── Call Mentor (navigate to call page) ───────────────────────
 function callMentor(mentorId, name, avatar) {
   const params = new URLSearchParams({ userId: mentorId, name: name, avatar: avatar || '' });
   window.location.href = 'call.html?' + params.toString();
-}
-
-// ── Incoming call listener (Socket.IO) ────────────────────────
-let _icCallId = null, _icCallerId = null, _icCallerName = '', _icCallerAvatar = '';
-
-(function initCallSocket() {
-  const token = localStorage.getItem('mc_token');
-  if (!token || typeof io === 'undefined') return;
-
-  const socketOrigin = API_BASE.replace(/\/api\/?$/, '');
-  const sock = io(socketOrigin, { auth: { token } });
-
-  sock.on('call:incoming', ({ callId, callerId, callerName, callerAvatar }) => {
-    _icCallId = callId;
-    _icCallerId = callerId;
-    _icCallerName = callerName;
-    _icCallerAvatar = callerAvatar;
-
-    const overlay = document.getElementById('incomingCallOverlay');
-    overlay.style.display = 'flex';
-    document.getElementById('icName').textContent = callerName || 'Unknown';
-    document.getElementById('icInitials').textContent =
-      (callerName || '').split(' ').map(w => w[0]).join('').slice(0,2).toUpperCase();
-    lucide.createIcons();
-  });
-
-  sock.on('call:missed', () => {
-    document.getElementById('incomingCallOverlay').style.display = 'none';
-  });
-})();
-
-function acceptIncomingCall() {
-  document.getElementById('incomingCallOverlay').style.display = 'none';
-  const params = new URLSearchParams({
-    callId: _icCallId,
-    userId: _icCallerId,
-    name: _icCallerName,
-    avatar: _icCallerAvatar || '',
-    mode: 'incoming',
-  });
-  window.location.href = 'call.html?' + params.toString();
-}
-
-function declineIncomingCall() {
-  document.getElementById('incomingCallOverlay').style.display = 'none';
-  if (_icCallId && typeof io !== 'undefined') {
-    const token = localStorage.getItem('mc_token');
-    const socketOrigin = API_BASE.replace(/\/api\/?$/, '');
-    const sock = io(socketOrigin, { auth: { token } });
-    sock.on('connect', () => {
-      sock.emit('call:reject', { callId: _icCallId });
-      setTimeout(() => sock.disconnect(), 1000);
-    });
-  }
 }
 </script>
 
@@ -515,5 +439,6 @@ function declineIncomingCall() {
   }
 })();
 </script>
+<script src="shared/call-listener.js"></script>
 </body>
 </html>
