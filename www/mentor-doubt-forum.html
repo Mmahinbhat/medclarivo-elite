@@ -8,11 +8,10 @@
 <meta http-equiv="Pragma" content="no-cache"/>
 <meta http-equiv="Expires" content="0"/>
 <title>MedClarivo Elite | Mentor — Doubt Forum</title>
-<link rel="stylesheet" href="tailwind.min.css">
-<link rel="stylesheet" href="fonts.css">
-<script src="https://cdn.socket.io/4.7.5/socket.io.min.js" defer></script>
-<script src="https://cdn.jsdelivr.net/npm/lucide@0.460.0/dist/umd/lucide.min.js"></script>
-
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@latest"></script>
+<script>tailwind.config={darkMode:"class",theme:{extend:{colors:{navy:"#0A1424","navy-2":"#0F2038","navy-3":"#16304F",teal:"#0FA89A","teal-2":"#33D9C8","teal-deep":"#0A6E64",gold:"#B9924F","gold-soft":"rgba(185,146,79,0.12)",mist:"#F5F7FA","mist-2":"#EEF2F6",ink:"#0B1220","ink-soft":"#56657B","ink-faint":"#8B97A8",line:"rgba(11,18,32,0.08)"},fontFamily:{display:["DM Serif Display","serif"],sans:["DM Sans","sans-serif"]}}}}</script>
 <style>
   :root{--navy:#0A1424;--navy-2:#0F2038;--navy-3:#16304F;--teal:#0FA89A;--teal-2:#33D9C8;--teal-deep:#0A6E64;--gold:#B9924F;--mist:#F5F7FA;--ink:#0B1220;--ink-soft:#56657B;--ink-faint:#8A93A3;}
   *{box-sizing:border-box;}html{scroll-behavior:smooth;}
@@ -102,10 +101,10 @@
 
     <div class="mx-3 mb-3 p-2.5 rounded-2xl bg-white/5 flex items-center gap-3 cursor-pointer hover:bg-white/8 transition-colors">
       <div class="avatar-ring flex-shrink-0">
-        <div class="w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-xs font-display" id="sidebarAvatar" style="background:linear-gradient(135deg,var(--teal),var(--teal-deep));">A</div>
+        <div class="w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-xs font-display" id="sidebarAvatar" style="background:linear-gradient(135deg,var(--teal),var(--teal-deep));"></div>
       </div>
       <div class="hide-on-collapse flex-1 min-w-0">
-        <p class="text-white font-semibold text-[13px] truncate" id="sidebarName">Dr. Arjun Mehta</p>
+        <p class="text-white font-semibold text-[13px] truncate" id="sidebarName"></p>
         <p class="text-white/35 text-[10.5px] truncate" id="sidebarCredentials">Mentor</p>
       </div>
       <i data-lucide="chevrons-up-down" class="hide-on-collapse w-3.5 h-3.5 text-white/25 flex-shrink-0"></i>
