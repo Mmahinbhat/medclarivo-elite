@@ -6,7 +6,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
 <title>Voice Call — MedClarivo Elite</title>
 <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
-<script src="https://unpkg.com/lucide@latest"></script>
+<script src="https://cdn.jsdelivr.net/npm/lucide@0.460.0/dist/umd/lucide.min.js"></script>
 <script src="shared/auth-common.js"></script>
 <script src="shared/theme-native-bg.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -224,9 +224,14 @@
 
 <div class="toast" id="toast"></div>
 
+<!-- TEMPORARY visible debug panel -->
+<div id="dbgPanel" style="position:fixed;top:0;left:0;right:0;z-index:9999;background:rgba(0,0,0,0.85);color:#0f0;font-family:monospace;font-size:10px;padding:4px 8px;max-height:35vh;overflow-y:auto;pointer-events:none;"></div>
 <script>
 function dbg(msg){
-  console.log('[DBG] '+new Date().toLocaleTimeString()+' '+msg);
+  var t = new Date().toLocaleTimeString();
+  console.log('[DBG] '+t+' '+msg);
+  var p = document.getElementById('dbgPanel');
+  if(p){ p.innerHTML += t+' '+msg+'<br>'; p.scrollTop = p.scrollHeight; }
 }
 </script>
 
@@ -302,12 +307,14 @@ socket.on('connect', () => {
   dbg('Socket connected: ' + socket.id);
   if (mode === 'incoming' && incomingCallId) {
     if (alreadyAccepted) {
+      // Already accepted from call-listener overlay — skip the second overlay.
+      // call-listener.js already emitted call:accept on its socket, but emit
+      // again here in case the first one didn't reach the server in time.
+      // The server should handle duplicate accepts gracefully.
       dbg('Already accepted — auto-accepting (no overlay)');
       setName(targetName, targetAvatar);
       setStatus('Connecting...');
       socket.emit('call:accept', { callId });
-      // Start getting mic + PeerConnection NOW while waiting for offer
-      prepareMedia();
     } else {
       showIncomingUI();
     }
@@ -359,20 +366,9 @@ socket.on('call:accepted', async ({ callId: cid }) => {
   // Only the CALLER creates the offer — receiver waits for call:offer
   if (mode !== 'incoming') {
     dbg('I am the CALLER — creating offer');
-    // Wait for prepareMedia to finish if still in progress
-    await _mediaReady;
-    if (!peerConnection) {
-      dbg('prepareMedia failed — cannot create offer');
-      return;
-    }
-    dbg('Creating offer...');
-    var offer = await peerConnection.createOffer();
-    await peerConnection.setLocalDescription(offer);
-    var otherId = incomingCallerId || targetId;
-    dbg('Sending offer to ' + otherId);
-    socket.emit('call:offer', { callId, targetUserId: otherId, offer: offer });
+    await setupWebRTC(true);
   } else {
-    dbg('I am the RECEIVER — waiting for offer (media already preparing)');
+    dbg('I am the RECEIVER — waiting for offer');
   }
 });
 
@@ -401,19 +397,18 @@ socket.on('call:offer', async ({ callId: cid, fromUserId, offer }) => {
   callId = cid;
   dbg('Got offer from ' + fromUserId);
 
-  // Wait for prepareMedia to finish if still in progress
-  await _mediaReady;
-
-  if (!peerConnection) {
-    dbg('No peerConnection — calling prepareMedia as fallback');
-    await prepareMedia();
-    if (!peerConnection) {
-      dbg('prepareMedia failed — cannot handle offer');
-      return;
-    }
+  if (peerConnection) {
+    dbg('Already have peerConnection — setting remote desc only');
+    await peerConnection.setRemoteDescription(new RTCSessionDescription(offer));
+    await flushIceCandidates();
+    var answer2 = await peerConnection.createAnswer();
+    await peerConnection.setLocalDescription(answer2);
+    dbg('Sent answer (existing PC)');
+    socket.emit('call:answer', { callId, targetUserId: fromUserId, answer: answer2 });
+    return;
   }
 
-  dbg('Setting remote description...');
+  await setupWebRTC(false); // false = receiver
   await peerConnection.setRemoteDescription(new RTCSessionDescription(offer));
   await flushIceCandidates();
   var answer = await peerConnection.createAnswer();
@@ -470,8 +465,6 @@ function initiateCall() {
     callerName: mcUser.name || 'User',
     callerAvatar: mcUser.avatar || '',
   });
-  // Start getting mic + PeerConnection NOW while ringing
-  prepareMedia();
 }
 
 // -- Incoming call UI --
@@ -529,8 +522,6 @@ function acceptIncoming() {
   stopRingtone();
   socket.emit('call:accept', { callId });
   setStatus('Connecting...');
-  // Start getting mic + PeerConnection NOW while waiting for offer
-  prepareMedia();
 }
 
 function rejectIncoming() {
@@ -541,32 +532,37 @@ function rejectIncoming() {
   setTimeout(() => goBack(), 1000);
 }
 
-// -- Prepare media + PeerConnection early (called before signaling completes) --
-let _mediaReady = Promise.resolve(); // resolves when prepareMedia finishes
-let _mediaStarted = false;
-
-async function prepareMedia() {
-  if (_mediaStarted) return; // only run once
-  if (peerConnection) return; // already set up
-  _mediaStarted = true;
-
-  var resolve;
-  _mediaReady = new Promise(function(r) { resolve = r; });
+// -- WebRTC Setup --
+async function setupWebRTC(isInitiator) {
+  // Guard against being called twice
+  if (window._setupInProgress) {
+    dbg('setupWebRTC BLOCKED — already in progress');
+    return;
+  }
+  if (peerConnection) {
+    dbg('setupWebRTC BLOCKED — peerConnection already exists');
+    return;
+  }
+  window._setupInProgress = true;
+  iceCandidateBuffer = [];
 
   try {
-    dbg('Requesting mic early...');
+    dbg('Requesting mic...');
     localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
     dbg('MIC OK — tracks: ' + localStream.getAudioTracks().length);
+    localStream.getAudioTracks().forEach(function(t) {
+      dbg('Local track: ' + t.label + ' enabled=' + t.enabled + ' muted=' + t.muted + ' state=' + t.readyState);
+    });
   } catch (err) {
     dbg('MIC DENIED: ' + err.message);
     setStatus('Microphone access denied');
-    resolve();
+    window._setupInProgress = false;
     return;
   }
 
   peerConnection = new RTCPeerConnection({
     iceServers: ICE_SERVERS,
-    iceTransportPolicy: 'relay'
+    iceTransportPolicy: 'relay'  // Skip host/srflx — go straight to TURN relay
   });
 
   // Add local audio tracks
@@ -664,8 +660,22 @@ async function prepareMedia() {
     dbg('iceGathering: ' + peerConnection.iceGatheringState);
   };
 
-  dbg('Media + PeerConnection ready');
-  resolve();
+  window._setupInProgress = false;
+
+  if (isInitiator) {
+    dbg('Creating offer...');
+    var offer = await peerConnection.createOffer();
+    await peerConnection.setLocalDescription(offer);
+    var otherId = incomingCallerId || targetId;
+    dbg('Sending offer to ' + otherId);
+    socket.emit('call:offer', {
+      callId: callId,
+      targetUserId: otherId,
+      offer: offer
+    });
+  } else {
+    dbg('Waiting for offer (receiver)...');
+  }
 }
 
 // -- Controls --

@@ -1,0 +1,28 @@
+/* Skeleton loading placeholders */
+.skeleton {
+  background: linear-gradient(90deg, rgba(11,18,32,0.06) 25%, rgba(11,18,32,0.12) 50%, rgba(11,18,32,0.06) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+  border-radius: 8px;
+}
+[data-theme="dark"] .skeleton {
+  background: linear-gradient(90deg, rgba(255,255,255,0.04) 25%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0.04) 75%);
+  background-size: 200% 100%;
+}
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+.skeleton-text { height: 14px; margin-bottom: 8px; }
+.skeleton-text.w-3\/4 { width: 75%; }
+.skeleton-text.w-1\/2 { width: 50%; }
+.skeleton-text.w-full { width: 100%; }
+.skeleton-circle { border-radius: 50%; }
+.skeleton-card {
+  padding: 20px;
+  border-radius: 16px;
+  border: 1px solid rgba(11,18,32,0.06);
+}
+[data-theme="dark"] .skeleton-card {
+  border-color: rgba(255,255,255,0.06);
+}

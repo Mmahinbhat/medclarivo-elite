@@ -20,9 +20,9 @@
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"/>
 <title>MedClarivo Elite | Dashboard</title>
-<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link rel="stylesheet" href="tailwind.min.css">
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
-<script src="https://unpkg.com/lucide@latest"></script>
+<script src="https://cdn.jsdelivr.net/npm/lucide@0.460.0/dist/umd/lucide.min.js"></script>
 <script src="shared/auth-common.js"></script>
 <script src="shared/theme-native-bg.js"></script>
 <script src="shared/spa-router.js"></script>
@@ -30,36 +30,7 @@
 <script src="shared/push-register.js"></script>
 <script src="https://cdn.socket.io/4.7.5/socket.io.min.js" defer></script>
 <script src="push-subscribe.js"></script>
-<script>
-  tailwind.config = {
-    darkMode: "class",
-    theme: {
-      extend: {
-        colors: {
-          navy:        "#0A1424",
-          "navy-2":    "#0F2038",
-          "navy-3":    "#16304F",
-          teal:        "#0FA89A",
-          "teal-2":    "#33D9C8",
-          "teal-deep": "#0A6E64",
-          gold:        "#B9924F",
-          "gold-soft": "rgba(185,146,79,0.12)",
-          mist:        "var(--mist)",
-          "mist-2":    "var(--mist-2)",
-          ink:         "var(--ink)",
-          "ink-soft":  "var(--ink-soft)",
-          "ink-faint": "var(--ink-faint)",
-          line:        "var(--line)",
-        },
-        fontFamily: {
-          display: ["DM Serif Display", "serif"],
-          sans:    ["DM Sans", "sans-serif"],
-          mono:    ["JetBrains Mono", "monospace"],
-        },
-      }
-    }
-  }
-</script>
+
 <style>
   :root{
     --navy:#0A1424; --navy-2:#0F2038; --navy-3:#16304F;
@@ -376,6 +347,7 @@
   }
 </style>
 <link rel="stylesheet" href="ios-safe-area.css">
+<link rel="stylesheet" href="skeleton.css">
 <script>
   if (window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform()) {
     document.documentElement.classList.add("native-app");
@@ -642,7 +614,9 @@
             <span class="text-ink-faint text-xs" id="subjectPerfSubtitle">Real progress, per subject</span>
           </div>
           <div id="subjectGrid" class="grid grid-cols-1 sm:grid-cols-3 gap-5">
-            <p class="text-ink-faint text-sm py-4">Loading subjects&hellip;</p>
+            <div class="skeleton-card"><div class="skeleton skeleton-circle" style="width:44px;height:44px;margin-bottom:12px"></div><div class="skeleton skeleton-text w-3/4"></div><div class="skeleton skeleton-text w-1/2"></div><div class="skeleton" style="height:8px;margin-top:12px;border-radius:4px"></div></div>
+            <div class="skeleton-card"><div class="skeleton skeleton-circle" style="width:44px;height:44px;margin-bottom:12px"></div><div class="skeleton skeleton-text w-3/4"></div><div class="skeleton skeleton-text w-1/2"></div><div class="skeleton" style="height:8px;margin-top:12px;border-radius:4px"></div></div>
+            <div class="skeleton-card"><div class="skeleton skeleton-circle" style="width:44px;height:44px;margin-bottom:12px"></div><div class="skeleton skeleton-text w-3/4"></div><div class="skeleton skeleton-text w-1/2"></div><div class="skeleton" style="height:8px;margin-top:12px;border-radius:4px"></div></div>
           </div>
         </section>
 
@@ -1779,7 +1753,7 @@
 <script>
 function acceptIncomingCall(){
   document.getElementById('incomingCallOverlay').style.display='none';
-  var p=new URLSearchParams({callId:window._icCallId,userId:window._icCallerId,name:window._icCallerName,avatar:window._icCallerAvatar||'',mode:'incoming',accepted:'1'});
+  var p=new URLSearchParams({callId:window._icCallId,userId:window._icCallerId,name:window._icCallerName,avatar:window._icCallerAvatar||'',mode:'incoming'});
   window.location.href='call.html?'+p.toString();
 }
 function declineIncomingCall(){

@@ -9,43 +9,14 @@
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"/>
 <title>MedClarivo Elite | Mentor Dashboard</title>
-<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link rel="stylesheet" href="tailwind.min.css">
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
-<script src="https://unpkg.com/lucide@latest"></script>
+<script src="https://cdn.jsdelivr.net/npm/lucide@0.460.0/dist/umd/lucide.min.js"></script>
 <script src="shared/theme-native-bg.js"></script>
   <script src="https://cdn.socket.io/4.7.5/socket.io.min.js" defer></script>
 <script src="push-subscribe.js"></script>
 <script src="shared/push-register.js"></script>
-<script>
-  tailwind.config = {
-    darkMode: "class",
-    theme: {
-      extend: {
-        colors: {
-          navy:        "#0A1424",
-          "navy-2":    "#0F2038",
-          "navy-3":    "#16304F",
-          teal:        "#0FA89A",
-          "teal-2":    "#33D9C8",
-          "teal-deep": "#0A6E64",
-          gold:        "#B9924F",
-          "gold-soft": "rgba(185,146,79,0.12)",
-          mist:        "#F5F7FA",
-          "mist-2":    "#EEF2F6",
-          ink:         "#0B1220",
-          "ink-soft":  "#56657B",
-          "ink-faint": "#8B97A8",
-          line:        "rgba(11,18,32,0.08)",
-        },
-        fontFamily: {
-          display: ["DM Serif Display", "serif"],
-          sans:    ["DM Sans", "sans-serif"],
-          mono:    ["JetBrains Mono", "monospace"],
-        },
-      }
-    }
-  }
-</script>
+
 <style>
   :root{
     --navy:#0A1424; --navy-2:#0F2038; --navy-3:#16304F;
@@ -290,6 +261,7 @@
   .toast.show{opacity:1;}
 </style>
 <link rel="stylesheet" href="ios-safe-area.css">
+<link rel="stylesheet" href="skeleton.css">
 </head>
 <body class="antialiased">
 
@@ -557,7 +529,9 @@
             <span class="text-ink-faint text-xs" id="menteeProgressSubtitle">Real progress, per mentee</span>
           </div>
           <div id="menteeGrid" class="grid grid-cols-1 sm:grid-cols-3 gap-5">
-            <p class="text-ink-faint text-sm py-4">Loading mentees&hellip;</p>
+            <div class="skeleton-card"><div class="skeleton skeleton-circle" style="width:44px;height:44px;margin-bottom:12px"></div><div class="skeleton skeleton-text w-3/4"></div><div class="skeleton skeleton-text w-1/2"></div></div>
+            <div class="skeleton-card"><div class="skeleton skeleton-circle" style="width:44px;height:44px;margin-bottom:12px"></div><div class="skeleton skeleton-text w-3/4"></div><div class="skeleton skeleton-text w-1/2"></div></div>
+            <div class="skeleton-card"><div class="skeleton skeleton-circle" style="width:44px;height:44px;margin-bottom:12px"></div><div class="skeleton skeleton-text w-3/4"></div><div class="skeleton skeleton-text w-1/2"></div></div>
           </div>
         </section>
 
@@ -2000,7 +1974,7 @@ async function submitAvailability(){
 <script>
 function acceptIncomingCall(){
   document.getElementById('incomingCallOverlay').style.display='none';
-  var p=new URLSearchParams({callId:window._icCallId,userId:window._icCallerId,name:window._icCallerName,avatar:window._icCallerAvatar||'',mode:'incoming',accepted:'1'});
+  var p=new URLSearchParams({callId:window._icCallId,userId:window._icCallerId,name:window._icCallerName,avatar:window._icCallerAvatar||'',mode:'incoming'});
   window.location.href='call.html?'+p.toString();
 }
 function declineIncomingCall(){
