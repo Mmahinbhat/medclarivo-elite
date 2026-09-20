@@ -67,12 +67,26 @@ function init(httpServer) {
 
         console.log(`[Call] Created call ${call._id}, emitting call:incoming to user:${receiverId}`);
 
-        io.to(`user:${receiverId}`).emit('call:incoming', {
+        const callPayload = {
           callId: call._id.toString(),
           callerId: socket.userId,
           callerName: callerName || 'Unknown',
           callerAvatar: callerAvatar || '',
-        });
+        };
+
+        io.to(`user:${receiverId}`).emit('call:incoming', callPayload);
+
+        // Send FCM push so the receiver's phone wakes up even if app is backgrounded/closed
+        sendFcmToUser(receiverId, {
+          title: 'Incoming Call',
+          body: (callerName || 'Someone') + ' is calling you',
+          type: 'call',
+          link: 'call.html?mode=incoming&callId=' + call._id.toString() +
+                '&userId=' + socket.userId +
+                '&name=' + encodeURIComponent(callerName || 'Unknown') +
+                '&avatar=' + encodeURIComponent(callerAvatar || ''),
+          _id: call._id,
+        }).catch(() => {});
 
         socket.emit('call:ringing', { callId: call._id.toString() });
 

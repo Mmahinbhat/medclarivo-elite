@@ -6,10 +6,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
 <title>Voice Call — MedClarivo Elite</title>
 <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/lucide@0.460.0/dist/umd/lucide.min.js"></script>
+<script src="https://unpkg.com/lucide@latest"></script>
 <script src="shared/auth-common.js"></script>
 <script src="shared/theme-native-bg.js"></script>
-<link rel="stylesheet" href="fonts.css">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
   :root{
     --navy:#0A1424; --navy-2:#0F2038; --navy-3:#16304F;
@@ -278,6 +278,8 @@ let ringtoneCtx    = null;
 let ringtoneOsc    = null;
 let iceCandidateBuffer = [];
 let callWasAccepted = alreadyAccepted; // tracks if call was already accepted (prevents double-overlay)
+let callEndedGracefully = false; // true when call:ended socket event arrived
+let iceDisconnectTimer = null;   // fallback timer for ICE disconnect without socket event
 
 // -- STUN/TURN (correct Metered.ca relay hostnames) --
 const ICE_SERVERS = [
@@ -386,6 +388,8 @@ socket.on('call:missed', () => {
 
 socket.on('call:ended', ({ duration }) => {
   dbg('call:ended received, duration=' + duration);
+  callEndedGracefully = true;
+  if (iceDisconnectTimer) { clearTimeout(iceDisconnectTimer); iceDisconnectTimer = null; }
   stopRingtone();
   setStatus(duration ? 'Call ended (' + formatDuration(duration) + ')' : 'Call ended');
   cleanupCall();
@@ -638,8 +642,19 @@ async function setupWebRTC(isInitiator) {
       setStatus('In call');
       startTimer();
     } else if (state === 'disconnected' || state === 'failed') {
+      if (callEndedGracefully) return; // already handled by call:ended socket event
       setStatus('Connection lost');
-      endCall();
+      // Wait 3s for the server's call:ended socket event to arrive.
+      // If it does, it shows "Call ended (duration)" and navigates.
+      // If not, fall back to endCall() ourselves.
+      if (!iceDisconnectTimer) {
+        iceDisconnectTimer = setTimeout(function() {
+          if (!callEndedGracefully) {
+            dbg('ICE disconnect fallback — no call:ended received');
+            endCall();
+          }
+        }, 3000);
+      }
     }
   };
 
@@ -651,7 +666,8 @@ async function setupWebRTC(isInitiator) {
       setStatus('In call');
       if (!timerInterval) startTimer();
     } else if (s === 'disconnected' || s === 'failed') {
-      setStatus('Connection lost');
+      if (!callEndedGracefully) setStatus('Connection lost');
+      // Don't call endCall() here — onconnectionstatechange handles the fallback
     }
     // Don't show "checking", "new", etc. — keep "Connecting..."
   };
@@ -870,6 +886,7 @@ function showToast(msg) {
 function cleanupCall() {
   dbg('cleanupCall()');
   stopRingtone();
+  if (iceDisconnectTimer) { clearTimeout(iceDisconnectTimer); iceDisconnectTimer = null; }
   if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
   if (localStream) { localStream.getTracks().forEach(function(t) { t.stop(); }); localStream = null; }
   if (peerConnection) { peerConnection.close(); peerConnection = null; }
@@ -882,7 +899,9 @@ function goBack() {
   if (window.history.length > 1) {
     window.history.back();
   } else {
-    window.location.href = 'my-mentor.html';
+    // Navigate based on user role
+    var role = (mcUser.role || '').toLowerCase();
+    window.location.href = (role === 'mentor') ? 'mentor-dashboard.html' : 'my-mentor.html';
   }
 }
 

@@ -7,6 +7,7 @@ const User     = require('../models/User');
 const { signToken } = require('../utils/jwt');
 const { protect }   = require('../middleware/auth');
 const { sendPasswordResetEmail } = require('../services/email.service');
+const { getAuth: getAdminAuth } = require('firebase-admin/auth');
 
 // ── Helper: send token response ───────────────────────────────
 const sendToken = (res, user, statusCode = 200) => {
@@ -207,6 +208,76 @@ router.post('/apple/callback',
   passport.authenticate('apple', { session: false, failureRedirect: `${process.env.CLIENT_URL}?error=apple_failed` }),
   (req, res) => redirectWithToken(res, req.user, req.body.state)
 );
+
+// ════════════════════════════════════════════════════════════════
+// POST /api/auth/phone-login  — Firebase Phone Auth (OTP)
+// Client sends a Firebase ID token after phone verification;
+// backend verifies it, finds or creates the user, returns JWT.
+// ════════════════════════════════════════════════════════════════
+router.post('/phone-login', [
+  body('firebaseIdToken').notEmpty().withMessage('Firebase ID token required.'),
+], async (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(422).json({ success: false, errors: errors.array() });
+  }
+
+  try {
+    // Verify the Firebase ID token
+    const decodedToken = await getAdminAuth().verifyIdToken(req.body.firebaseIdToken);
+    const phoneNumber = decodedToken.phone_number;
+
+    if (!phoneNumber) {
+      return res.status(400).json({ success: false, message: 'No phone number in token.' });
+    }
+
+    // Normalize phone — strip leading + for DB lookup, try with and without
+    const phoneVariants = [phoneNumber, phoneNumber.replace(/^\+/, '')];
+
+    // Find existing user by phone
+    let user = await User.findOne({ phone: { $in: phoneVariants } });
+
+    if (user) {
+      // Mark phone as verified
+      if (!user.phoneVerified) {
+        user.phoneVerified = true;
+        await user.save();
+      }
+
+      if (user.isActive === false) {
+        return res.status(403).json({
+          success: false,
+          message: 'This account has been suspended.' + (user.suspendedReason ? ` Reason: ${user.suspendedReason}` : ''),
+        });
+      }
+
+      await user.registerSuccessfulLogin();
+      return sendToken(res, user);
+    }
+
+    // No user found with this phone — create a new account
+    // Email is required+unique in the User model, so generate a placeholder
+    // that the user can update later in settings.
+    const placeholderEmail = `phone_${phoneNumber.replace(/\D/g, '')}@medclarivo.local`;
+    user = await User.create({
+      name: 'User',
+      email: placeholderEmail,
+      phone: phoneNumber,
+      phoneVerified: true,
+    });
+
+    sendToken(res, user, 201);
+  } catch (err) {
+    console.error('[Phone Login Error]', err.message);
+    if (err.code === 'auth/id-token-expired') {
+      return res.status(401).json({ success: false, message: 'OTP session expired. Please try again.' });
+    }
+    if (err.code === 'auth/argument-error' || err.code === 'auth/id-token-revoked') {
+      return res.status(401).json({ success: false, message: 'Invalid verification. Please try again.' });
+    }
+    res.status(500).json({ success: false, message: 'Server error.' });
+  }
+});
 
 // ════════════════════════════════════════════════════════════════
 // POST /api/auth/logout  (client just discards token; this is informational)

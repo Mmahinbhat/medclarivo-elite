@@ -18,6 +18,10 @@ const UserSchema = new mongoose.Schema({
     type: String,
     trim: true,
   },
+  phoneVerified: {
+    type: Boolean,
+    default: false,
+  },
   passwordHash: {
     type: String, // null for OAuth-only users
   },

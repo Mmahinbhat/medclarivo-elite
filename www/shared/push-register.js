@@ -55,13 +55,17 @@
   // Notification received while app is in foreground
   PushNotifications.addListener('pushNotificationReceived', (notification) => {
     console.log('Push received (foreground):', notification);
-    // Could show an in-app toast here if desired
+    // For calls: socket/call-listener.js already handles incoming calls — skip
+    if (notification.data?.type === 'call') return;
   });
 
   // User tapped a notification
   PushNotifications.addListener('pushNotificationActionPerformed', (action) => {
     const data = action.notification.data;
-    if (data?.link) {
+    if (data?.type === 'call' && data?.link) {
+      // Navigate to the call screen — the call might still be ringing
+      window.location.href = data.link;
+    } else if (data?.link) {
       window.location.href = data.link;
     }
   });
