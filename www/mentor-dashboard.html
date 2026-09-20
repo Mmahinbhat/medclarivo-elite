@@ -9,14 +9,43 @@
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"/>
 <title>MedClarivo Elite | Mentor Dashboard</title>
-<link rel="stylesheet" href="tailwind.min.css">
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/lucide@0.460.0/dist/umd/lucide.min.js"></script>
+<script src="https://unpkg.com/lucide@latest"></script>
 <script src="shared/theme-native-bg.js"></script>
   <script src="https://cdn.socket.io/4.7.5/socket.io.min.js" defer></script>
 <script src="push-subscribe.js"></script>
 <script src="shared/push-register.js"></script>
-
+<script>
+  tailwind.config = {
+    darkMode: "class",
+    theme: {
+      extend: {
+        colors: {
+          navy:        "#0A1424",
+          "navy-2":    "#0F2038",
+          "navy-3":    "#16304F",
+          teal:        "#0FA89A",
+          "teal-2":    "#33D9C8",
+          "teal-deep": "#0A6E64",
+          gold:        "#B9924F",
+          "gold-soft": "rgba(185,146,79,0.12)",
+          mist:        "#F5F7FA",
+          "mist-2":    "#EEF2F6",
+          ink:         "#0B1220",
+          "ink-soft":  "#56657B",
+          "ink-faint": "#8B97A8",
+          line:        "rgba(11,18,32,0.08)",
+        },
+        fontFamily: {
+          display: ["DM Serif Display", "serif"],
+          sans:    ["DM Sans", "sans-serif"],
+          mono:    ["JetBrains Mono", "monospace"],
+        },
+      }
+    }
+  }
+</script>
 <style>
   :root{
     --navy:#0A1424; --navy-2:#0F2038; --navy-3:#16304F;
@@ -261,7 +290,6 @@
   .toast.show{opacity:1;}
 </style>
 <link rel="stylesheet" href="ios-safe-area.css">
-<link rel="stylesheet" href="skeleton.css">
 </head>
 <body class="antialiased">
 
@@ -529,9 +557,7 @@
             <span class="text-ink-faint text-xs" id="menteeProgressSubtitle">Real progress, per mentee</span>
           </div>
           <div id="menteeGrid" class="grid grid-cols-1 sm:grid-cols-3 gap-5">
-            <div class="skeleton-card"><div class="skeleton skeleton-circle" style="width:44px;height:44px;margin-bottom:12px"></div><div class="skeleton skeleton-text w-3/4"></div><div class="skeleton skeleton-text w-1/2"></div></div>
-            <div class="skeleton-card"><div class="skeleton skeleton-circle" style="width:44px;height:44px;margin-bottom:12px"></div><div class="skeleton skeleton-text w-3/4"></div><div class="skeleton skeleton-text w-1/2"></div></div>
-            <div class="skeleton-card"><div class="skeleton skeleton-circle" style="width:44px;height:44px;margin-bottom:12px"></div><div class="skeleton skeleton-text w-3/4"></div><div class="skeleton skeleton-text w-1/2"></div></div>
+            <p class="text-ink-faint text-sm py-4">Loading mentees&hellip;</p>
           </div>
         </section>
 
@@ -1136,6 +1162,176 @@
     requestAnimationFrame(tick);
   }
 
+  // ── Render helpers (accept pre-fetched data, no network calls) ──
+  function renderSessions(sessData){
+    const mapSession = (s) => ({
+      id: s._id,
+      startsAt: s.startTime,
+      status: s.status,
+      type: s.type,
+      topic: s.topic,
+      menteeName: (s.mentee && s.mentee.name) || 'Mentee',
+      menteeId: (s.mentee && s.mentee._id) || null,
+      meetingLink: s.meetingLink || '',
+    });
+    allSessions = [...(sessData.upcoming || []), ...(sessData.recent || [])].map(mapSession);
+    const weeklyCompleted = sessData.weeklySessionsCompleted || 0;
+    const weeklyTarget = sessData.weeklySessionTarget || 8;
+
+    const now = new Date();
+    const today = allSessions.filter(s => new Date(s.startsAt).toDateString() === now.toDateString());
+    const todayDone = today.filter(s => s.status === 'completed').length;
+    const todayPct = today.length ? Math.round((todayDone / today.length) * 100) : 0;
+
+    document.getElementById('todayPct').textContent = todayPct;
+    document.getElementById('todayFraction').textContent = `${todayDone} / ${today.length} done`;
+    document.getElementById('orbitFill').style.strokeDashoffset = (515.2 * (1 - todayPct / 100)).toFixed(1);
+
+    const scheduleListEl = document.getElementById('scheduleList');
+    scheduleListEl.innerHTML = today.length
+      ? today.map(scheduleRowHTML).join('')
+      : '<p class="text-ink-faint text-sm py-2">Nothing scheduled for today.</p>';
+    document.getElementById('schedulePct').textContent = todayPct + '%';
+    document.getElementById('scheduleBar').style.width = todayPct + '%';
+
+    const upcoming = allSessions.filter(s => s.status !== 'completed');
+    const next = upcoming[0] || null;
+    nextSessionTarget = next ? next.startsAt : null;
+    updateCountdown();
+
+    const statusEl = document.getElementById('nextSessionStatus');
+    const joinBtn = document.getElementById('nextSessionJoinBtn');
+    const msgBtn = document.getElementById('nextSessionMessageBtn');
+    if (next) {
+      statusEl.style.display = '';
+      document.getElementById('nextSessionAvatar').textContent = (next.menteeName || '?').charAt(0).toUpperCase();
+      document.getElementById('nextSessionName').textContent = next.menteeName;
+      document.getElementById('nextSessionMeta').textContent = next.menteeExam || '';
+      const d = new Date(next.startsAt);
+      document.getElementById('nextSessionTime').textContent = d.toLocaleDateString([], { month: 'short', day: 'numeric' }) + ' · ' + d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+      document.getElementById('nextSessionTopic').textContent = next.topic || '';
+      document.getElementById('nextSessionWho').textContent = `${next.menteeName} · ${next.topic || ''}`;
+      if (next.meetingLink) {
+        joinBtn.disabled = false; joinBtn.style.opacity = ''; joinBtn.style.cursor = '';
+        joinBtn.onclick = () => window.open(next.meetingLink, '_blank', 'noopener');
+      } else {
+        joinBtn.disabled = true; joinBtn.style.opacity = '.5'; joinBtn.style.cursor = 'not-allowed'; joinBtn.onclick = null;
+      }
+      if (next.menteeId) {
+        msgBtn.disabled = false; msgBtn.style.opacity = ''; msgBtn.style.cursor = '';
+        msgBtn.onclick = () => openMessageModal(next.menteeId);
+      } else {
+        msgBtn.disabled = true; msgBtn.style.opacity = '.5'; msgBtn.style.cursor = 'not-allowed'; msgBtn.onclick = null;
+      }
+    } else {
+      statusEl.style.display = 'none';
+      document.getElementById('nextSessionAvatar').textContent = '–';
+      document.getElementById('nextSessionName').textContent = 'No session scheduled';
+      document.getElementById('nextSessionMeta').textContent = '';
+      document.getElementById('nextSessionTime').textContent = '—';
+      document.getElementById('nextSessionTopic').textContent = 'Set your availability so mentees can book you.';
+      document.getElementById('nextSessionWho').textContent = 'No session scheduled';
+      joinBtn.disabled = true; joinBtn.style.opacity = '.5'; joinBtn.style.cursor = 'not-allowed'; joinBtn.onclick = null;
+      msgBtn.disabled = true; msgBtn.style.opacity = '.5'; msgBtn.style.cursor = 'not-allowed'; msgBtn.onclick = null;
+    }
+
+    const weeklyPct = Math.min(100, Math.round((weeklyCompleted / weeklyTarget) * 100));
+    document.getElementById('weeklyPctLabel').textContent = weeklyPct + '%';
+    document.getElementById('weeklyFractionLabel').innerHTML = `${weeklyCompleted} <span class="text-ink-faint font-normal">/ ${weeklyTarget} sessions</span>`;
+    document.getElementById('weeklyRemainingLabel').textContent = `${Math.max(0, weeklyTarget - weeklyCompleted)} remaining`;
+    document.getElementById('weeklyBar').style.width = weeklyPct + '%';
+
+    const upcomingListEl = document.getElementById('upcomingSessionsList');
+    upcomingListEl.innerHTML = upcoming.length
+      ? upcoming.slice(0, 3).map(upcomingRowHTML).join('')
+      : '<p class="text-ink-faint text-sm">No upcoming sessions booked.</p>';
+    if (window.lucide) lucide.createIcons();
+  }
+
+  function renderMentees(mentees){
+    const gridEl = document.getElementById('menteeGrid');
+    const subtitleEl = document.getElementById('menteeProgressSubtitle');
+    if (subtitleEl) subtitleEl.textContent = `${mentees.length} mentee${mentees.length === 1 ? '' : 's'}`;
+    document.getElementById('statMenteeCount').textContent = mentees.length;
+    gridEl.innerHTML = mentees.length
+      ? mentees.map(menteeCardHTML).join('')
+      : '<p class="text-ink-faint text-sm py-4">No active mentees yet — accepted requests will appear here.</p>';
+    gridEl.querySelectorAll('.mentee-card-clickable').forEach(card => {
+      card.onclick = () => openMenteeModal(card.dataset.menteeId, card.dataset.menteeName);
+    });
+  }
+
+  function renderAnalytics(data){
+    const wrap = document.getElementById('heatmap');
+    document.getElementById('analyticsSessionsHeld').textContent = data.weeklySessionsCompleted;
+    document.getElementById('analyticsSessionsTarget').textContent = data.weeklySessionTarget;
+    document.getElementById('analyticsResponseRate').innerHTML = data.responseRate === null
+      ? '<span class="text-ink-faint text-base font-sans">No requests yet</span>'
+      : `${data.responseRate}<span class="text-ink-faint text-base font-sans">%</span>`;
+    document.getElementById('analyticsSatisfaction').innerHTML = (data.reviewCount || 0) > 0
+      ? `${data.rating.toFixed(1)}<span class="text-ink-faint text-base font-sans">/5 (${data.reviewCount})</span>`
+      : '<span class="text-ink-faint text-base font-sans">No reviews yet</span>';
+
+    const maxCount = Math.max(1, ...data.dailyCounts.map(d => d.count));
+    const dow = new Date().getDay();
+    const todayIdx = dow === 0 ? 6 : dow - 1;
+    data.dailyCounts.forEach((d, i) => {
+      const bar = document.getElementById(`abar-${i}`);
+      const label = document.getElementById(`abarlabel-${i}`);
+      if (!bar) return;
+      const pct = Math.round((d.count / maxCount) * 100);
+      bar.style.height = pct + '%';
+      if (i === todayIdx) {
+        bar.style.background = 'var(--gold)';
+        bar.classList.remove('fill');
+        if (label) { label.style.color = 'var(--gold)'; label.classList.add('font-bold'); }
+      }
+    });
+
+    if (wrap) {
+      wrap.innerHTML = '';
+      data.heatmap.forEach(week => {
+        const col = document.createElement('div');
+        col.className = 'flex flex-col gap-1';
+        week.forEach(day => {
+          const cell = document.createElement('div');
+          cell.className = 'heat-cell heat-' + day.level;
+          cell.title = `${day.date} · ${day.count} session${day.count === 1 ? '' : 's'}`;
+          col.appendChild(cell);
+        });
+        wrap.appendChild(col);
+      });
+    }
+
+    const recognitionEl = document.getElementById('recognitionGrid');
+    if (recognitionEl) {
+      recognitionEl.innerHTML = data.milestones.length
+        ? data.milestones.map(milestoneCardHTML).join('')
+        : '<p class="text-ink-faint text-sm">Complete more sessions to start earning recognition badges.</p>';
+    }
+    if (window.lucide) lucide.createIcons();
+  }
+
+  function renderRequests(requests){
+    const listEl = document.getElementById('requestsList');
+    const chipEl = document.getElementById('requestsCountChip');
+    if (chipEl) chipEl.textContent = `${requests.length} pending`;
+    if (listEl) {
+      listEl.innerHTML = requests.length
+        ? requests.map(requestRowHTML).join('')
+        : '<p class="text-ink-faint text-sm">No pending requests right now.</p>';
+      if (window.lucide) lucide.createIcons();
+    }
+  }
+
+  function renderAdminBadge(unread){
+    const badge = document.getElementById('adminMsgBadge');
+    if (badge) {
+      if (unread > 0) { badge.textContent = unread; badge.style.display = 'inline-block'; }
+      else { badge.style.display = 'none'; }
+    }
+  }
+
   // ── Fetch mentor identity, then everything else ──
   (async function loadMentorData(){
     const token = localStorage.getItem('mc_token');
@@ -1147,6 +1343,41 @@
       if (cached) user = JSON.parse(cached);
     } catch (e) {}
 
+    // ── Try batch endpoint first (single API call) ──
+    try {
+      const res = await fetch(`${API_BASE}/mentor/dashboard-data`, { headers: { Authorization: `Bearer ${token}` } });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        user = data.user;
+        localStorage.setItem('mc_user', JSON.stringify(user));
+
+        if (user.role && user.role !== 'mentor' && user.role !== 'admin') {
+          window.location.href = 'dashboard.html';
+          return;
+        }
+
+        currentMentorId = user._id || user.id || null;
+        const firstName = (user.name || 'Mentor').split(' ').slice(-1)[0];
+        document.getElementById('greetingName').textContent = firstName;
+        document.getElementById('sidebarName').textContent = user.name || 'Mentor';
+        document.getElementById('sidebarAvatar').textContent = firstName.charAt(0).toUpperCase();
+        document.getElementById('topbarAvatar').textContent = firstName.charAt(0).toUpperCase();
+        const profile = user.mentorProfile || {};
+        if (profile.title) {
+          document.getElementById('sidebarCredentials').textContent = profile.title;
+          document.getElementById('credentialsLabel').textContent = profile.title;
+        }
+
+        renderSessions(data.sessions);
+        renderMentees(data.mentees || []);
+        renderAnalytics(data.analytics);
+        renderRequests(data.requests || []);
+        renderAdminBadge(data.adminMessagesUnread || 0);
+        return; // done — batch succeeded
+      }
+    } catch (e) { /* batch failed, fall back to individual calls */ }
+
+    // ── Fallback: individual API calls ──
     try {
       const res = await fetch(`${API_BASE}/auth/me`, { headers: { Authorization: `Bearer ${token}` } });
       const data = await res.json();

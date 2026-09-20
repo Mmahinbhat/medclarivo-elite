@@ -20,9 +20,9 @@
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"/>
 <title>MedClarivo Elite | Dashboard</title>
-<link rel="stylesheet" href="tailwind.min.css">
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/lucide@0.460.0/dist/umd/lucide.min.js"></script>
+<script src="https://unpkg.com/lucide@latest"></script>
 <script src="shared/auth-common.js"></script>
 <script src="shared/theme-native-bg.js"></script>
 <script src="shared/spa-router.js"></script>
@@ -30,7 +30,36 @@
 <script src="shared/push-register.js"></script>
 <script src="https://cdn.socket.io/4.7.5/socket.io.min.js" defer></script>
 <script src="push-subscribe.js"></script>
-
+<script>
+  tailwind.config = {
+    darkMode: "class",
+    theme: {
+      extend: {
+        colors: {
+          navy:        "#0A1424",
+          "navy-2":    "#0F2038",
+          "navy-3":    "#16304F",
+          teal:        "#0FA89A",
+          "teal-2":    "#33D9C8",
+          "teal-deep": "#0A6E64",
+          gold:        "#B9924F",
+          "gold-soft": "rgba(185,146,79,0.12)",
+          mist:        "var(--mist)",
+          "mist-2":    "var(--mist-2)",
+          ink:         "var(--ink)",
+          "ink-soft":  "var(--ink-soft)",
+          "ink-faint": "var(--ink-faint)",
+          line:        "var(--line)",
+        },
+        fontFamily: {
+          display: ["DM Serif Display", "serif"],
+          sans:    ["DM Sans", "sans-serif"],
+          mono:    ["JetBrains Mono", "monospace"],
+        },
+      }
+    }
+  }
+</script>
 <style>
   :root{
     --navy:#0A1424; --navy-2:#0F2038; --navy-3:#16304F;
@@ -347,7 +376,6 @@
   }
 </style>
 <link rel="stylesheet" href="ios-safe-area.css">
-<link rel="stylesheet" href="skeleton.css">
 <script>
   if (window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform()) {
     document.documentElement.classList.add("native-app");
@@ -614,9 +642,7 @@
             <span class="text-ink-faint text-xs" id="subjectPerfSubtitle">Real progress, per subject</span>
           </div>
           <div id="subjectGrid" class="grid grid-cols-1 sm:grid-cols-3 gap-5">
-            <div class="skeleton-card"><div class="skeleton skeleton-circle" style="width:44px;height:44px;margin-bottom:12px"></div><div class="skeleton skeleton-text w-3/4"></div><div class="skeleton skeleton-text w-1/2"></div><div class="skeleton" style="height:8px;margin-top:12px;border-radius:4px"></div></div>
-            <div class="skeleton-card"><div class="skeleton skeleton-circle" style="width:44px;height:44px;margin-bottom:12px"></div><div class="skeleton skeleton-text w-3/4"></div><div class="skeleton skeleton-text w-1/2"></div><div class="skeleton" style="height:8px;margin-top:12px;border-radius:4px"></div></div>
-            <div class="skeleton-card"><div class="skeleton skeleton-circle" style="width:44px;height:44px;margin-bottom:12px"></div><div class="skeleton skeleton-text w-3/4"></div><div class="skeleton skeleton-text w-1/2"></div><div class="skeleton" style="height:8px;margin-top:12px;border-radius:4px"></div></div>
+            <p class="text-ink-faint text-sm py-4">Loading subjects&hellip;</p>
           </div>
         </section>
 
@@ -1450,44 +1476,192 @@
   }
 
   // ── Fetch real user data on load ──
+  // ── Render helpers (accept pre-fetched data, no network calls) ──
+  function renderStats(s){
+    const setText = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+    setText('streakBadge', s.streak);
+    setText('greetingStreakText', `${s.streak}-day streak`);
+    setText('achStreakText', `${s.streak}-Day Streak`);
+    setText('levelNumber', s.level);
+    if (window.countUp) countUp(document.getElementById('xpCount'), s.xp, 1000); else setText('xpCount', s.xp);
+    setText('xpMax', s.xpPerLevel);
+    setText('rankNumber', s.rank);
+    setText('rankTotal', s.totalUsers);
+    const todayHrs = (s.todayMinutes / 60).toFixed(1);
+    const targetHrs = (s.dailyTargetMinutes / 60).toFixed(1);
+    setText('goalHoursText', `${todayHrs} / ${targetHrs} hrs`);
+    if (window.countUp) countUp(document.getElementById('goalPct'), s.goalPct, 1000); else setText('goalPct', s.goalPct);
+    const orbitFillEl = document.getElementById('orbitFill');
+    if (orbitFillEl) { const CIRC = 515.2; orbitFillEl.setAttribute('stroke-dashoffset', String(CIRC * (1 - s.goalPct / 100))); }
+    setText('weeklyGoalPct', `${s.weeklyPct}%`);
+    const weekActualHrs = Math.round(s.weekMinutes / 60 * 10) / 10;
+    const weekTargetHrs = Math.round(s.weeklyTargetMinutes / 60 * 10) / 10;
+    setText('weeklyHoursActual', weekActualHrs);
+    setText('weeklyHoursTarget', weekTargetHrs);
+    const remainingHrs = Math.max(0, Math.round((s.weeklyTargetMinutes - s.weekMinutes) / 60 * 10) / 10);
+    setText('weeklyRemaining', `${remainingHrs}h remaining`);
+    const weeklyFillEl = document.getElementById('weeklyGoalFill');
+    if (weeklyFillEl) weeklyFillEl.style.width = `${s.weeklyPct}%`;
+  }
+
+  function renderSubjects(subjects){
+    const gridEl = document.getElementById('subjectGrid');
+    const subtitleEl = document.getElementById('subjectPerfSubtitle');
+    if (gridEl) {
+      if (subtitleEl) subtitleEl.textContent = `${subjects.length} subjects`;
+      gridEl.innerHTML = subjects.map((s, i) => subjectCardHTML(s, i)).join('');
+      gridEl.querySelectorAll('.subject-card-clickable').forEach(card => {
+        card.onclick = () => openSubjectModal(card.dataset.subjectId, card.dataset.subjectName, card.dataset.subjectColor);
+      });
+    }
+  }
+
+  function renderMissions(data){
+    const listEl = document.getElementById('tasksList');
+    const emptyEl = document.getElementById('tasksEmptyState');
+    if (!data.tasks || !data.tasks.length) {
+      listEl.innerHTML = '';
+      emptyEl.classList.remove('hidden');
+      document.getElementById('missionBar').style.width = '0%';
+      document.getElementById('missionPct').textContent = '0%';
+      return;
+    }
+    emptyEl.classList.add('hidden');
+    const completed = new Set(data.completedTaskIds || []);
+    listEl.innerHTML = data.tasks.map(t => taskRowHTML(t, completed.has(t.id))).join('');
+    if (window.lucide) lucide.createIcons();
+    updateMission();
+  }
+
+  function renderAnalytics(a, period){
+    const isMonth = period === 'month';
+    const set = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+    set('analyticsHoursLabel', isMonth ? 'Monthly Hours' : 'Weekly Hours');
+    if (isMonth) { set('analyticsWeeklyHours', a.monthlyHours.toFixed(1)); set('analyticsWeeklyTarget', Math.round(a.monthlyTargetHours)); }
+    else { set('analyticsWeeklyHours', a.weeklyHours.toFixed(1)); set('analyticsWeeklyTarget', Math.round(a.weeklyTargetHours)); }
+    set('analyticsConsistency', a.consistencyPct);
+    set('analyticsAvgSession', a.avgSessionMinutes);
+    const bars = isMonth
+      ? a.weeklyBuckets.map(b => ({ label: b.label, minutes: b.minutes }))
+      : a.dailyMinutes.map(d => ({ label: d.day, minutes: d.minutes }));
+    const chart = document.getElementById('analyticsBarChart');
+    if (chart) {
+      chart.style.gridTemplateColumns = `repeat(${bars.length},minmax(0,1fr))`;
+      const maxMinutes = Math.max(a.dailyTargetMinutes, ...bars.map(b => b.minutes), 1);
+      let highlightIdx = -1;
+      if (!isMonth) { const dow = new Date().getDay(); highlightIdx = dow === 0 ? 6 : dow - 1; }
+      else { highlightIdx = Math.floor((new Date().getDate() - 1) / 7); }
+      chart.innerHTML = bars.map((b, i) => {
+        const pct = Math.min(100, Math.round((b.minutes / maxMinutes) * 100));
+        const isToday = i === highlightIdx;
+        return `<div class="flex flex-col items-center gap-2"><div class="w-full h-20 bg-mist rounded-lg relative overflow-hidden flex items-end"><div class="w-full rounded-lg fill" style="height:${pct}%;${isToday ? 'background:var(--gold)' : ''}"></div></div><span class="text-[10px] font-semibold${isToday ? ' font-bold' : ' text-ink-faint'}" style="${isToday ? 'color:var(--gold)' : ''}">${b.label}</span></div>`;
+      }).join('');
+    }
+    const wrap = document.getElementById('heatmap');
+    if (wrap) {
+      wrap.innerHTML = '';
+      const heat = a.heatmap;
+      for (let w = 0; w < 9; w++){
+        const col = document.createElement('div'); col.className = 'flex flex-col gap-1';
+        for (let d = 0; d < 7; d++){
+          const idx = w * 7 + d; const entry = heat[idx];
+          const cell = document.createElement('div');
+          cell.className = 'heat-cell heat-' + (entry ? entry.level : 0);
+          if (entry) cell.title = entry.date + ' · ' + entry.minutes + ' min';
+          col.appendChild(cell);
+        }
+        wrap.appendChild(col);
+      }
+    }
+  }
+
+  function renderMentor(mentorData, token){
+    const loadingEl = document.getElementById('mentorLoading');
+    const emptyEl = document.getElementById('mentorEmptyState');
+    const filledEl = document.getElementById('mentorFilledState');
+    const badgeEl = document.getElementById('mentorStatusBadge');
+    loadingEl.classList.add('hidden');
+    if (!mentorData.mentorAssigned) { emptyEl.classList.remove('hidden'); return; }
+    const m = mentorData.mentor;
+    document.getElementById('mentorName').textContent = m.name || 'Your Mentor';
+    document.getElementById('mentorTitle').textContent = (m.mentorProfile && m.mentorProfile.title) || '';
+    document.getElementById('mentorAvatarInitial').textContent = (m.name || 'M').trim().charAt(0).toUpperCase();
+    const messageBtn = document.getElementById('mentorMessageBtn');
+    if (messageBtn) messageBtn.onclick = () => { window.location.href = `student-messages.html?mentor=${m._id || m.id}`; };
+    filledEl.classList.remove('hidden');
+    badgeEl.style.display = '';
+    if (window.lucide) lucide.createIcons();
+    initRequestChangeUI(token);
+  }
+
+  function renderAchievements(achData){
+    const grid = document.getElementById('achPreviewGrid');
+    if (!grid) return;
+    const top3 = [...achData.achievements].sort((a,b) => b.unlocked - a.unlocked).slice(0, 3);
+    const colorMap = { gold: 'rgba(185,146,79,0.14)', teal: 'rgba(15,168,154,0.1)', purple: 'rgba(124,58,237,0.08)', blue: 'rgba(37,99,235,0.08)', green: 'rgba(5,150,105,0.08)' };
+    const iconColorMap = { gold: 'var(--gold)', teal: 'var(--teal-deep)', purple: '#7C3AED', blue: '#2563EB', green: '#059669' };
+    grid.innerHTML = top3.map(a => `
+      <div class="flex items-center gap-3 p-3 rounded-xl" style="background:${colorMap[a.color]};opacity:${a.unlocked ? '1' : '0.45'}">
+        <div class="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style="background:rgba(255,255,255,0.5)">
+          <i data-lucide="${a.icon}" class="w-5 h-5" style="color:${iconColorMap[a.color]}"></i>
+        </div>
+        <div class="min-w-0">
+          <p class="text-ink font-bold text-[13px]">${a.title}</p>
+          <p class="text-ink-faint text-[11px]">${a.unlocked ? a.description : 'Locked'}</p>
+        </div>
+      </div>`).join('');
+    if (window.lucide) lucide.createIcons();
+  }
+
   (async function loadUserData(){
     const token = localStorage.getItem('mc_token');
-    if (!token) return; // not logged in via this flow; leave defaults
+    if (!token) return;
 
-    // Paint from cache immediately so the placeholder never shows —
-    // the fetch below will refresh it once the network responds.
+    // Paint from cache immediately so the placeholder never shows
     try {
       const cached = JSON.parse(localStorage.getItem('mc_user') || 'null');
       if (cached && cached.name) applyExamConfig(cached.onboarding, cached.name);
     } catch (e) {}
 
+    // ── Try batch endpoint first (single request instead of 7) ──
     try {
-      const res = await fetch(`${API_BASE}/auth/me`, {
+      const res = await fetch(`${API_BASE}/student/dashboard-data?period=${currentAnalyticsPeriod}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await res.json();
-      if (res.ok && data.success && data.user) {
+      if (res.ok && data.success) {
         localStorage.setItem('mc_user', JSON.stringify(data.user));
 
-        // Guard: a non-student token landing here gets sent to their own
-        // dashboard instead of silently rendering the student UI for them.
         const roleRedirects = {
-          mentor: 'mentor-dashboard.html',
-          assistant: 'assistant-dashboard.html',
-          parent: 'parent-dashboard.html',
-          admin: 'admin-dashboard.html',
-          super_admin: 'admin-dashboard.html',
+          mentor: 'mentor-dashboard.html', assistant: 'assistant-dashboard.html',
+          parent: 'parent-dashboard.html', admin: 'admin-dashboard.html', super_admin: 'admin-dashboard.html',
         };
-        if (data.user.role && roleRedirects[data.user.role]) {
-          window.location.href = roleRedirects[data.user.role];
-          return;
-        }
+        if (data.user.role && roleRedirects[data.user.role]) { window.location.href = roleRedirects[data.user.role]; return; }
 
         applyExamConfig(data.user.onboarding, data.user.name);
+        renderStats(data.stats);
+        renderSubjects(data.subjects);
+        renderMissions(data.missions);
+        renderAnalytics(data.analytics, data.analytics.period);
+        renderMentor(data.mentor, token);
+        renderAchievements(data.achievements);
+        return; // batch succeeded — done
       }
-    } catch (err) {
-      console.warn('Could not load live user data, showing defaults:', err);
+    } catch (e) {
+      console.warn('Batch endpoint failed, falling back to individual calls:', e);
     }
+
+    // ── Fallback: individual calls (if batch endpoint unavailable) ──
+    try {
+      const res = await fetch(`${API_BASE}/auth/me`, { headers: { Authorization: `Bearer ${token}` } });
+      const data = await res.json();
+      if (res.ok && data.success && data.user) {
+        localStorage.setItem('mc_user', JSON.stringify(data.user));
+        const roleRedirects = { mentor: 'mentor-dashboard.html', assistant: 'assistant-dashboard.html', parent: 'parent-dashboard.html', admin: 'admin-dashboard.html', super_admin: 'admin-dashboard.html' };
+        if (data.user.role && roleRedirects[data.user.role]) { window.location.href = roleRedirects[data.user.role]; return; }
+        applyExamConfig(data.user.onboarding, data.user.name);
+      }
+    } catch (err) { console.warn('Could not load live user data, showing defaults:', err); }
     loadSubjects(token);
     loadStats(token);
     loadMentor(token);
