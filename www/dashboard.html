@@ -28,7 +28,7 @@
 <script src="shared/spa-router.js"></script>
 <script src="shared/nav-student.js"></script>
 <script src="shared/push-register.js"></script>
-<script src="https://cdn.socket.io/4.7.5/socket.io.min.js" defer></script>
+<!-- Socket.IO lazy-loaded by call-listener.js -->
 <script src="push-subscribe.js"></script>
 <script>
   tailwind.config = {
@@ -1796,7 +1796,10 @@
 // ── Live notifications via Socket.io ──
   window.addEventListener('load', function initLiveNotifications(){
     const mcToken = localStorage.getItem('mc_token');
-    if (!mcToken || !window.io) return;
+    if (!mcToken) return;
+    // Wait for Socket.IO (lazy-loaded by call-listener.js)
+    function _whenIoReady(cb){ if(window.io) return cb(); setTimeout(function(){ _whenIoReady(cb); }, 200); }
+    _whenIoReady(function(){
 
     const socketOrigin = API_BASE.replace(/\/api\/?$/, ''); // strip trailing /api
     const socket = io(socketOrigin, {
@@ -1867,6 +1870,7 @@
     });
 
     window._callSocket = socket;
+    }); // end _whenIoReady
   });
 
   // ── Enable push notifications (phone/browser tray) ──

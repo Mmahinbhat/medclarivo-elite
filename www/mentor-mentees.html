@@ -8,11 +8,10 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
 <title>My Mentees — MedClarivo Elite</title>
-<link rel="stylesheet" href="tailwind.min.css">
-<script src="https://cdn.socket.io/4.7.5/socket.io.min.js" defer></script>
-<script src="https://cdn.jsdelivr.net/npm/lucide@0.460.0/dist/umd/lucide.min.js"></script>
-
-<link rel="stylesheet" href="fonts.css">
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/lucide@latest"></script>
+<!-- Socket.IO lazy-loaded on demand -->
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
   :root{
     --navy:#0A1424; --navy-2:#0F2038; --navy-3:#16304F;
@@ -515,10 +514,73 @@ function callMentee(menteeId, menteeName) {
   window.location.href = 'call.html?' + p.toString();
 }
 
-// Incoming calls handled by shared/call-listener.js
+// ── Socket.IO for incoming calls (lazy-loaded) ──
+(function(){
+  var mcToken = localStorage.getItem('mc_token');
+  if (!mcToken) return;
+  function _loadIoThen(cb){
+    if(window.io) return cb();
+    var s=document.createElement('script');
+    s.src='https://cdn.socket.io/4.7.5/socket.io.min.js';
+    s.onload=cb;
+    document.head.appendChild(s);
+  }
+  _loadIoThen(function(){
+  var socketOrigin = 'https://med-clarivo.onrender.com';
+  var socket = io(socketOrigin, { auth: { token: mcToken } });
+
+  socket.on('call:incoming', function(data) {
+    var overlay = document.getElementById('incomingCallOverlay');
+    if (!overlay) return;
+    window._icCallId = data.callId;
+    window._icCallerId = data.callerId;
+    window._icCallerName = data.callerName || 'Unknown';
+    window._icCallerAvatar = data.callerAvatar || '';
+    overlay.style.display = 'flex';
+    var nameEl = document.getElementById('icName');
+    var initEl = document.getElementById('icInitials');
+    if (nameEl) nameEl.textContent = data.callerName || 'Unknown';
+    if (initEl) initEl.textContent = (data.callerName || '').split(' ').map(function(w){ return w[0]; }).join('').slice(0,2).toUpperCase();
+    lucide.createIcons();
+  });
+
+  socket.on('call:missed', function() {
+    var overlay = document.getElementById('incomingCallOverlay');
+    if (overlay) overlay.style.display = 'none';
+  });
+
+  window._callSocket = socket;
+  }); // end _loadIoThen
+})();
+
+function acceptIncomingCall(){
+  document.getElementById('incomingCallOverlay').style.display='none';
+  var p=new URLSearchParams({callId:window._icCallId,userId:window._icCallerId,name:window._icCallerName,avatar:window._icCallerAvatar||'',mode:'incoming'});
+  window.location.href='call.html?'+p.toString();
+}
+function declineIncomingCall(){
+  document.getElementById('incomingCallOverlay').style.display='none';
+  if(window._callSocket&&window._icCallId){window._callSocket.emit('call:reject',{callId:window._icCallId});}
+}
 </script>
 
-<!-- Incoming call overlay injected by shared/call-listener.js -->
-<script src="shared/call-listener.js"></script>
+<!-- ═══ INCOMING CALL OVERLAY ═══ -->
+<div id="incomingCallOverlay" style="display:none;position:fixed;inset:0;z-index:200;background:rgba(10,20,36,0.92);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);flex-direction:column;align-items:center;justify-content:center;gap:16px;">
+  <div style="width:90px;height:90px;border-radius:50%;background:linear-gradient(135deg,#0FA89A,#0A6E64);display:flex;align-items:center;justify-content:center;font-family:'DM Serif Display',serif;font-size:32px;color:#fff;box-shadow:0 0 0 4px rgba(15,168,154,0.25);animation:icRing 1.5s ease-in-out infinite;">
+    <span id="icInitials"></span>
+  </div>
+  <p style="font-family:'DM Serif Display',serif;font-size:22px;color:#fff;" id="icName"></p>
+  <p style="color:rgba(255,255,255,0.55);font-size:14px;">Incoming voice call...</p>
+  <div style="height:32px"></div>
+  <div style="display:flex;gap:40px;">
+    <button onclick="declineIncomingCall()" style="width:62px;height:62px;border-radius:50%;border:none;background:#DC2626;color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 8px 24px -4px rgba(220,38,38,0.5);">
+      <i data-lucide="phone-off" class="w-6 h-6"></i>
+    </button>
+    <button onclick="acceptIncomingCall()" style="width:62px;height:62px;border-radius:50%;border:none;background:#16A34A;color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 8px 24px -4px rgba(22,163,74,0.5);">
+      <i data-lucide="phone" class="w-6 h-6"></i>
+    </button>
+  </div>
+</div>
+<style>@keyframes icRing{0%,100%{box-shadow:0 0 0 4px rgba(15,168,154,0.25);}50%{box-shadow:0 0 0 18px rgba(15,168,154,0.08);}}</style>
 </body>
 </html>

@@ -13,7 +13,7 @@
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://unpkg.com/lucide@latest"></script>
 <script src="shared/theme-native-bg.js"></script>
-  <script src="https://cdn.socket.io/4.7.5/socket.io.min.js" defer></script>
+<!-- Socket.IO lazy-loaded by call-listener.js -->
 <script src="push-subscribe.js"></script>
 <script src="shared/push-register.js"></script>
 <script>
@@ -2076,8 +2076,9 @@ async function submitAvailability(){
 // ── Live notifications via Socket.io ──
   window.addEventListener('load', function initLiveNotifications(){
     const mcToken = localStorage.getItem('mc_token');
-    if (!mcToken || !window.io) return;
-
+    if (!mcToken) return;
+    function _whenIoReady(cb){ if(window.io) return cb(); setTimeout(function(){ _whenIoReady(cb); }, 200); }
+    _whenIoReady(function(){
     const socketOrigin = API_BASE.replace(/\/api\/?$/, '');
     const socket = io(socketOrigin, {
       auth: { token: mcToken },
@@ -2138,6 +2139,7 @@ async function submitAvailability(){
     });
 
     window._callSocket = socket;
+    }); // end _whenIoReady
   });
 
   // ── Enable push notifications (phone/browser tray) ──
