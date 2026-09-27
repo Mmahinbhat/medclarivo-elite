@@ -48,6 +48,7 @@ app.use(helmet());
 app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(require('express-mongo-sanitize')());
 
 // CORS — allow GitHub Pages frontend
 app.use(cors({
