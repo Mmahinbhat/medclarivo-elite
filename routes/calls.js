@@ -34,6 +34,14 @@ router.get('/:id', protect, async (req, res) => {
 
     if (!call) return res.status(404).json({ success: false, message: 'Call not found' });
 
+    const me = String(req.user._id);
+    const isParticipant =
+      String(call.caller?._id || call.caller) === me ||
+      String(call.receiver?._id || call.receiver) === me;
+    if (!isParticipant && req.user.role !== 'admin') {
+      return res.status(404).json({ success: false, message: 'Call not found' });
+    }
+
     res.json({ success: true, call });
   } catch (err) {
     console.error('GET /api/calls/:id error:', err);
