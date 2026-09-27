@@ -159,17 +159,38 @@ router.patch('/progress/:chapterId', protect, async (req, res) => {
     const chapter = await Chapter.findById(req.params.chapterId);
     if (!chapter) return res.status(404).json({ success: false, message: 'Chapter not found.' });
 
+    // PROGRESS_GUARD: chapters are only marked completed by passing the chapter test.
     let { unitsCompleted, percentComplete, status } = req.body;
-    if (percentComplete === undefined && unitsCompleted !== undefined) {
-      percentComplete = Math.round((unitsCompleted / chapter.totalUnits) * 100);
+    const toNum = (v) => (v === undefined || v === null || v === '' ? undefined : Number(v));
+    unitsCompleted = toNum(unitsCompleted);
+    percentComplete = toNum(percentComplete);
+    if ([unitsCompleted, percentComplete].some(v => v !== undefined && !Number.isFinite(v))) {
+      return res.status(400).json({ success: false, message: 'Invalid progress values.' });
     }
-    if (!status) {
-      status = percentComplete >= 100 ? 'completed' : 'in_progress';
+    if (status !== undefined && !['not_started', 'in_progress'].includes(status)) {
+      return res.status(400).json({ success: false, message: 'Chapters are marked complete by passing the chapter test.' });
     }
 
-    const update = { status, lastAccessedAt: new Date() };
+    const totalUnits = Number(chapter.totalUnits) || 0;
+    if (unitsCompleted !== undefined) {
+      unitsCompleted = Math.max(0, Math.min(Math.round(unitsCompleted), totalUnits));
+    }
+    if (percentComplete === undefined && unitsCompleted !== undefined && totalUnits > 0) {
+      percentComplete = Math.round((unitsCompleted / totalUnits) * 100);
+    }
+    if (percentComplete !== undefined) {
+      percentComplete = Math.max(0, Math.min(99, Math.round(percentComplete)));
+    }
+
+    const existing = await UserProgress.findOne({ user: req.user._id, chapter: chapter._id }).select('status').lean();
+    const alreadyCompleted = !!(existing && existing.status === 'completed');
+
+    const update = { lastAccessedAt: new Date() };
     if (unitsCompleted !== undefined) update.unitsCompleted = unitsCompleted;
-    if (percentComplete !== undefined) update.percentComplete = Math.min(100, Math.max(0, percentComplete));
+    if (!alreadyCompleted) {
+      update.status = status || 'in_progress';
+      if (percentComplete !== undefined) update.percentComplete = percentComplete;
+    }
 
     const progress = await UserProgress.findOneAndUpdate(
       { user: req.user._id, chapter: chapter._id },
