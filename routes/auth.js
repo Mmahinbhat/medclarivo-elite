@@ -39,6 +39,7 @@ router.post('/register', [
   body('email').isEmail().withMessage('Valid email required.'),
   body('password').isLength({ min: 8 }).withMessage('Password must be at least 8 characters.'),
   body('name').notEmpty().withMessage('Name is required.'),
+  body('phone').optional({ checkFalsy: true }).isMobilePhone('any').withMessage('Valid phone number required.'),
 ], async (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
@@ -57,6 +58,7 @@ router.post('/register', [
       name,
       email,
       phone,
+      phoneVerified: false,
       passwordHash: password, // hashed by pre-save hook
     });
 
@@ -235,7 +237,13 @@ router.post('/phone-login', [
     const phoneVariants = [phoneNumber, phoneNumber.replace(/^\+/, '')];
 
     // Find existing user by phone
-    let user = await User.findOne({ phone: { $in: phoneVariants } });
+    // Only trust numbers already verified by OTP. An unverified number (typed in at
+    // email signup) is released, so nobody can claim someone else's phone.
+    await User.updateMany(
+      { phone: { $in: phoneVariants }, phoneVerified: { $ne: true } },
+      { $unset: { phone: 1 } }
+    );
+    let user = await User.findOne({ phone: { $in: phoneVariants }, phoneVerified: true });
 
     if (user) {
       // Mark phone as verified
