@@ -216,6 +216,88 @@ router.post('/apple/callback',
 // Client sends a Firebase ID token after phone verification;
 // backend verifies it, finds or creates the user, returns JWT.
 // ════════════════════════════════════════════════════════════════
+// ════════════════════════════════════════════════════════════════
+// POST /api/auth/otp-request — ask permission BEFORE sending an SMS.
+// Limits: 5 OTPs per phone number and 20 per network, per rolling 24h.
+// ════════════════════════════════════════════════════════════════
+const OtpRequest = require('../models/OtpRequest');
+const OTP_PER_PHONE_PER_DAY = 5;
+const OTP_PER_IP_PER_DAY = 20;
+
+router.post('/otp-request', [
+  body('phone').matches(/^\+[1-9]\d{7,14}$/).withMessage('Phone must be in +91XXXXXXXXXX format.'),
+], async (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(422).json({ success: false, errors: errors.array() });
+  }
+  try {
+    const phone = req.body.phone;
+    const since = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    const [byPhone, byIp] = await Promise.all([
+      OtpRequest.countDocuments({ phone, createdAt: { $gte: since } }),
+      OtpRequest.countDocuments({ ip: req.ip, createdAt: { $gte: since } }),
+    ]);
+    if (byPhone >= OTP_PER_PHONE_PER_DAY) {
+      return res.status(429).json({ success: false, message: "You've reached the limit of 5 OTPs for this number today. Please try again tomorrow." });
+    }
+    if (byIp >= OTP_PER_IP_PER_DAY) {
+      return res.status(429).json({ success: false, message: 'Too many OTP requests from this network today. Please try again tomorrow.' });
+    }
+    await OtpRequest.create({ phone, ip: req.ip });
+    res.json({ success: true, remainingToday: OTP_PER_PHONE_PER_DAY - byPhone - 1 });
+  } catch (err) {
+    console.error('[OTP Request Error]', err.message);
+    res.status(500).json({ success: false, message: 'Server error.' });
+  }
+});
+
+// ════════════════════════════════════════════════════════════════
+// POST /api/auth/link-phone  (logged in) — verify a phone via Firebase OTP
+// and link it to the CURRENT account (Settings → Verify phone).
+// ════════════════════════════════════════════════════════════════
+router.post('/link-phone', protect, [
+  body('firebaseIdToken').notEmpty().withMessage('Firebase ID token required.'),
+], async (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(422).json({ success: false, errors: errors.array() });
+  }
+  try {
+    const decoded = await getAdminAuth().verifyIdToken(req.body.firebaseIdToken);
+    const phoneNumber = decoded.phone_number;
+    if (!phoneNumber) {
+      return res.status(400).json({ success: false, message: 'No phone number in token.' });
+    }
+    const variants = [phoneNumber, phoneNumber.replace(/^\+/, '')];
+
+    const taken = await User.findOne({
+      _id: { $ne: req.user._id }, phone: { $in: variants }, phoneVerified: true,
+    }).select('_id').lean();
+    if (taken) {
+      return res.status(409).json({ success: false, message: 'This number is already linked to another account.' });
+    }
+
+    await User.updateMany(
+      { _id: { $ne: req.user._id }, phone: { $in: variants }, phoneVerified: { $ne: true } },
+      { $unset: { phone: 1 } }
+    );
+
+    const me = await User.findById(req.user._id);
+    me.phone = phoneNumber;
+    me.phoneVerified = true;
+    await me.save();
+
+    res.json({ success: true, phone: phoneNumber, phoneVerified: true });
+  } catch (err) {
+    console.error('[Link Phone Error]', err.message);
+    if (typeof err.code === 'string' && err.code.startsWith('auth/')) {
+      return res.status(401).json({ success: false, message: 'Invalid verification. Please try again.' });
+    }
+    res.status(500).json({ success: false, message: 'Server error.' });
+  }
+});
+
 router.post('/phone-login', [
   body('firebaseIdToken').notEmpty().withMessage('Firebase ID token required.'),
 ], async (req, res) => {
