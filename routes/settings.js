@@ -28,7 +28,9 @@ router.put('/profile', protect, async (req, res) => {
 
     req.user.name = name?.trim() ?? req.user.name;
     req.user.email = email.toLowerCase().trim();
+    const _prevPhone = req.user.phone;
     req.user.phone = phone?.trim() ?? req.user.phone;
+    if ((req.user.phone || '') !== (_prevPhone || '')) req.user.phoneVerified = false;
     await req.user.save();
 
     res.json({ success: true, user: req.user });
