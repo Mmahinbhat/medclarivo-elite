@@ -69,7 +69,7 @@ app.use(cors({
 // Rate limiting
 app.use('/api/', rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 100,
+  max: 500,
   message: { success: false, message: 'Too many requests. Please try again later.' },
 }));
 
@@ -83,6 +83,30 @@ app.use('/api/auth/forgot-password', rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 5,
   message: { success: false, message: 'Too many reset requests. Try again in 15 minutes.' },
+}));
+
+app.use('/api/auth/register', rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 5,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { success: false, message: 'Too many sign-up attempts. Try again in an hour.' },
+}));
+
+app.use('/api/auth/reset-password', rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 5,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { success: false, message: 'Too many reset attempts. Try again in 15 minutes.' },
+}));
+
+app.use('/api/auth/phone-login', rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { success: false, message: 'Too many attempts. Try again in 15 minutes.' },
 }));
 
 app.use(passport.initialize());

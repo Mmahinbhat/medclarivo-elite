@@ -272,7 +272,7 @@ router.post('/phone-login', [
     if (err.code === 'auth/id-token-expired') {
       return res.status(401).json({ success: false, message: 'OTP session expired. Please try again.' });
     }
-    if (err.code === 'auth/argument-error' || err.code === 'auth/id-token-revoked') {
+    if (typeof err.code === 'string' && err.code.startsWith('auth/')) {
       return res.status(401).json({ success: false, message: 'Invalid verification. Please try again.' });
     }
     res.status(500).json({ success: false, message: 'Server error.' });
