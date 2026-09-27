@@ -13,7 +13,7 @@ router.get('/', async (req, res) => {
       : {}; // mentors/admins see all
     const doubts = await Doubt.find(filter)
       .sort({ createdAt: -1 })
-      .populate('student', 'name email avatar')
+      .populate('student', 'name avatar')
       .populate('replies.author', 'name role avatar')
       .lean();
     res.json({ success: true, doubts });
@@ -35,7 +35,7 @@ router.post('/', async (req, res) => {
       tags: tags || [],
       priority: priority || 'medium',
     });
-    await doubt.populate('student', 'name email avatar');
+    await doubt.populate('student', 'name avatar');
     res.status(201).json({ success: true, doubt });
   } catch (err) {
     res.status(500).json({ success: false, message: 'Server error.' });
@@ -46,7 +46,7 @@ router.post('/', async (req, res) => {
 router.get('/:id', async (req, res) => {
   try {
     const doubt = await Doubt.findById(req.params.id)
-      .populate('student', 'name email avatar')
+      .populate('student', 'name avatar')
       .populate('replies.author', 'name role avatar');
     if (!doubt) return res.status(404).json({ success: false, message: 'Doubt not found.' });
     doubt.views += 1;

@@ -203,6 +203,17 @@ router.get('/:id', protect, async (req, res) => {
       .populate('questions.question', 'text options explanation')
       .lean();
     if (!attempt) return res.status(404).json({ success: false, message: 'Test attempt not found.' });
+
+    // HIDE_ANSWERS_UNTIL_SUBMITTED
+    if (attempt.status !== 'submitted') {
+      attempt.questions = (attempt.questions || []).map(({ correctKey, isCorrect, ...q }) => {
+        if (q.question && typeof q.question === 'object') {
+          const { explanation, ...rest } = q.question;
+          q.question = rest;
+        }
+        return q;
+      });
+    }
     res.json({ success: true, attempt });
   } catch (err) {
     console.error(err);

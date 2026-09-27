@@ -55,7 +55,7 @@ router.get('/with/:userId', async (req, res) => {
     const me    = req.user._id;
     const other = req.params.userId;
 
-    const otherUser = await User.findById(other).select('name email role avatar').lean();
+    const otherUser = await User.findById(other).select('name role avatar').lean();
     if (!otherUser) return res.status(404).json({ success: false, message: 'User not found.' });
 
     const messages = await Message.find({
@@ -133,7 +133,7 @@ router.get('/contacts', async (req, res) => {
     const contacts = await User.find({
       _id: req.user.mentorId,
       role: 'mentor',
-    }).select('name email role avatar').sort('name').lean();
+    }).select('name role avatar').sort('name').lean();
 
     res.json({ success: true, contacts });
   } catch (err) {
