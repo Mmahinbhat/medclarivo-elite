@@ -134,6 +134,13 @@ app.use('/api/auth/resend-verification', rateLimit({
   message: { success: false, message: 'Too many requests. Try again in 15 minutes.' },
 }));
 
+// Firebase App Check on sensitive auth routes (monitor mode unless APP_CHECK_ENFORCE=true)
+app.use([
+  '/api/auth/otp-request', '/api/auth/phone-login', '/api/auth/link-phone',
+  '/api/auth/login', '/api/auth/register', '/api/auth/verify-email',
+  '/api/auth/resend-verification', '/api/auth/forgot-password', '/api/auth/reset-password',
+], require('./middleware/appCheck'));
+
 app.use(passport.initialize());
 
 // ── Routes ───────────────────────────────────────────────────

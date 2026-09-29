@@ -27,6 +27,11 @@
           "@capacitor-firebase/authentication": [
             "Lite"
           ]
+        },
+        "packageOptions": {
+          "@capacitor-firebase/app-check": {
+            "symlink": true
+          }
         }
       }
     }

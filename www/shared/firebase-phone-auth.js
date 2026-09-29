@@ -62,26 +62,25 @@
 
   // ── Web: load Firebase SDK dynamically ───────────────────
   function loadFirebaseSDK() {
-    return new Promise((resolve, reject) => {
-      if (sdkLoaded) return resolve();
-      const appScript = document.createElement('script');
-      appScript.src = 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js';
-      appScript.onload = () => {
-        const authScript = document.createElement('script');
-        authScript.src = 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js';
-        authScript.onload = () => {
-          sdkLoaded = true;
-          if (!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
-          firebaseAuth = firebase.auth();
-          firebaseAuth.useDeviceLanguage();
-          resolve();
-        };
-        authScript.onerror = () => reject(new Error('Failed to load Firebase Auth SDK'));
-        document.head.appendChild(authScript);
-      };
-      appScript.onerror = () => reject(new Error('Failed to load Firebase SDK'));
-      document.head.appendChild(appScript);
+    const SDK = 'https://www.gstatic.com/firebasejs/10.12.0/';
+    const load = (src) => new Promise((resolve, reject) => {
+      const s = document.createElement('script');
+      s.src = src;
+      s.onload = resolve;
+      s.onerror = () => reject(new Error('Failed to load ' + src));
+      document.head.appendChild(s);
     });
+    if (sdkLoaded) return Promise.resolve();
+    return (async () => {
+      // Firebase may already be loaded by app-check.js — never load it twice,
+      // or the second copy would wipe out App Check.
+      if (!(window.firebase && window.firebase.initializeApp)) await load(SDK + 'firebase-app-compat.js');
+      if (!(window.firebase && window.firebase.auth)) await load(SDK + 'firebase-auth-compat.js');
+      if (!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
+      firebaseAuth = firebase.auth();
+      firebaseAuth.useDeviceLanguage();
+      sdkLoaded = true;
+    })();
   }
 
   async function ensureWebRecaptcha() {
