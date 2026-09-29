@@ -6,7 +6,7 @@ const passport = require('../config/passport');
 const User     = require('../models/User');
 const { signToken } = require('../utils/jwt');
 const { protect }   = require('../middleware/auth');
-const { sendPasswordResetEmail } = require('../services/email.service');
+const { sendPasswordResetEmail, sendVerificationCodeEmail } = require('../services/email.service');
 const { getAuth: getAdminAuth } = require('firebase-admin/auth');
 
 // ── Helper: send token response ───────────────────────────────
@@ -18,6 +18,47 @@ const sendToken = (res, user, statusCode = 200) => {
     user,
   });
 };
+
+// ── EMAIL_OTP_V1: 6-digit email code at signup ────────────────
+const EmailVerification = require('../models/EmailVerification');
+const EMAIL_CODE_TTL_MS         = 10 * 60 * 1000; // code valid 10 min
+const EMAIL_CODE_MAX_ATTEMPTS   = 5;              // wrong tries per code
+const EMAIL_RESEND_COOLDOWN_MS  = 60 * 1000;      // 1 send per minute
+const EMAIL_MAX_SENDS_PER_HOUR  = 5;
+
+const hashEmailCode = (userId, code) =>
+  crypto.createHash('sha256').update(`${userId}:${code}`).digest('hex');
+
+// Password accounts that never confirmed their email can't log in yet.
+const needsEmailVerification = (user) => !user.isVerified && !!user.passwordHash;
+
+const emailQuery = (raw) => {
+  const e = String(raw || '').trim();
+  return { email: { $in: [...new Set([e, e.toLowerCase()])] } };
+};
+
+async function issueEmailCode(user) {
+  const now = Date.now();
+  let rec = await EmailVerification.findOne({ user: user._id });
+  if (!rec) rec = new EmailVerification({ user: user._id, sends: [] });
+
+  const recent = (rec.sends || []).filter((t) => now - new Date(t).getTime() < 60 * 60 * 1000);
+  const last = recent.length ? new Date(recent[recent.length - 1]).getTime() : 0;
+  if (last && now - last < EMAIL_RESEND_COOLDOWN_MS) {
+    return { sent: false, retryAfter: Math.ceil((EMAIL_RESEND_COOLDOWN_MS - (now - last)) / 1000) };
+  }
+  if (recent.length >= EMAIL_MAX_SENDS_PER_HOUR) return { sent: false, limited: true };
+
+  const code = String(crypto.randomInt(0, 1000000)).padStart(6, '0');
+  rec.codeHash = hashEmailCode(user._id, code);
+  rec.codeExpiresAt = new Date(now + EMAIL_CODE_TTL_MS);
+  rec.attempts = 0;
+  rec.sends = [...recent, new Date(now)];
+  rec.expireAt = new Date(now + 24 * 60 * 60 * 1000);
+  await rec.save();
+  await sendVerificationCodeEmail(user, code);
+  return { sent: true };
+}
 
 // ── Helper: redirect with token (OAuth flows) ─────────────────
 const redirectWithToken = (res, user, state) => {
@@ -51,6 +92,12 @@ router.post('/register', [
 
     const existing = await User.findOne({ email });
     if (existing) {
+      // Signed up before but never entered the code? Same password -> send a fresh code.
+      if (needsEmailVerification(existing) && await existing.comparePassword(password)) {
+        await issueEmailCode(existing).catch((e) => console.error('[Email OTP] send failed:', e.message));
+        return res.json({ success: true, needsVerification: true, email: existing.email,
+          message: 'We sent a 6-digit code to your email.' });
+      }
       return res.status(409).json({ success: false, message: 'Email already registered.' });
     }
 
@@ -62,7 +109,10 @@ router.post('/register', [
       passwordHash: password, // hashed by pre-save hook
     });
 
-    sendToken(res, user, 201);
+    // No login token yet — the account must confirm its email first.
+    try { await issueEmailCode(user); } catch (e) { console.error('[Email OTP] send failed:', e.message); }
+    res.status(201).json({ success: true, needsVerification: true, email: user.email,
+      message: 'We sent a 6-digit code to your email.' });
   } catch (err) {
     console.error(err);
     res.status(500).json({ success: false, message: 'Server error.' });
@@ -72,6 +122,91 @@ router.post('/register', [
 // ════════════════════════════════════════════════════════════════
 // POST /api/auth/login
 // ════════════════════════════════════════════════════════════════
+// ════════════════════════════════════════════════════════════════
+// POST /api/auth/verify-email  { email, code } — confirm signup code, then log in
+// ════════════════════════════════════════════════════════════════
+router.post('/verify-email', [
+  body('email').isEmail().withMessage('Valid email required.'),
+  body('code').matches(/^\d{6}$/).withMessage('Enter the 6-digit code.'),
+], async (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(422).json({ success: false, errors: errors.array() });
+  }
+  const invalid = () => res.status(400).json({ success: false, message: 'This code is invalid or has expired. Tap "Resend code".' });
+
+  try {
+    const user = await User.findOne(emailQuery(req.body.email));
+    const rec = user ? await EmailVerification.findOne({ user: user._id }) : null;
+    if (!user || !rec) return invalid();
+
+    if (user.isVerified) {
+      await rec.deleteOne();
+      return res.status(400).json({ success: false, message: 'This email is already verified. Please log in.' });
+    }
+    if (rec.codeExpiresAt < new Date()) return invalid();
+    if (rec.attempts >= EMAIL_CODE_MAX_ATTEMPTS) {
+      return res.status(429).json({ success: false, message: 'Too many wrong tries. Tap "Resend code" to get a new one.' });
+    }
+
+    const given = Buffer.from(hashEmailCode(user._id, req.body.code), 'hex');
+    const stored = Buffer.from(rec.codeHash, 'hex');
+    if (given.length !== stored.length || !crypto.timingSafeEqual(given, stored)) {
+      rec.attempts += 1;
+      await rec.save();
+      const left = EMAIL_CODE_MAX_ATTEMPTS - rec.attempts;
+      return res.status(400).json({
+        success: false,
+        message: left > 0 ? `Incorrect code. ${left} ${left === 1 ? 'try' : 'tries'} left.` : 'Too many wrong tries. Tap "Resend code" to get a new one.',
+      });
+    }
+
+    user.isVerified = true;
+    await user.save();
+    await rec.deleteOne();
+
+    if (user.isActive === false) {
+      return res.status(403).json({ success: false, message: 'This account has been suspended.' });
+    }
+    await user.registerSuccessfulLogin();
+    sendToken(res, user);
+  } catch (err) {
+    console.error('[Verify Email Error]', err.message);
+    res.status(500).json({ success: false, message: 'Server error.' });
+  }
+});
+
+// ════════════════════════════════════════════════════════════════
+// POST /api/auth/resend-verification  { email }
+// ════════════════════════════════════════════════════════════════
+router.post('/resend-verification', [
+  body('email').isEmail().withMessage('Valid email required.'),
+], async (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(422).json({ success: false, errors: errors.array() });
+  }
+  const generic = { success: true, message: 'If that account still needs verifying, a new code has been sent.' };
+  try {
+    const user = await User.findOne(emailQuery(req.body.email));
+    if (!user || !needsEmailVerification(user)) return res.json(generic);
+
+    const r = await issueEmailCode(user);
+    if (r.retryAfter) {
+      return res.status(429).json({ success: false, retryAfter: r.retryAfter,
+        message: `Please wait ${r.retryAfter}s before asking for another code.` });
+    }
+    if (r.limited) {
+      return res.status(429).json({ success: false, retryAfter: 3600,
+        message: 'Too many codes requested. Please try again in an hour.' });
+    }
+    res.json(generic);
+  } catch (err) {
+    console.error('[Resend Verification Error]', err.message);
+    res.status(500).json({ success: false, message: 'Could not send a new code. Please try again.' });
+  }
+});
+
 router.post('/login', [
   body('identifier').notEmpty().withMessage('Email or phone required.'),
   body('password').notEmpty().withMessage('Password required.'),
@@ -112,6 +247,15 @@ router.post('/login', [
       return res.status(403).json({
         success: false,
         message: 'This account has been suspended.' + (user.suspendedReason ? ` Reason: ${user.suspendedReason}` : ''),
+      });
+    }
+
+    if (needsEmailVerification(user)) {
+      const r = await issueEmailCode(user).catch((e) => { console.error('[Email OTP] send failed:', e.message); return {}; });
+      return res.status(403).json({
+        success: false, needsVerification: true, email: user.email,
+        message: r.sent ? 'Please verify your email — we sent you a new 6-digit code.'
+                        : 'Please verify your email with the code we sent you.',
       });
     }
 
@@ -478,6 +622,7 @@ router.post('/reset-password', [
     user.resetPasswordTokenHash = null;
     user.resetPasswordExpires = null;
     user.permissionVersion += 1; // invalidate any existing JWTs
+    user.isVerified = true; // the reset link proved they own this inbox
     user.failedLoginAttempts = 0;
     user.lockUntil = null;
     await user.save();

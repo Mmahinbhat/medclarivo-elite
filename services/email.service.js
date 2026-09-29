@@ -68,4 +68,25 @@ async function sendPasswordResetEmail(user, resetUrl) {
   });
 }
 
-module.exports = { sendMail, sendPasswordResetEmail };
+const escapeHtml = (s) => String(s || '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+async function sendVerificationCodeEmail(user, code) {
+  const name = user.name || 'there';
+  return sendMail({
+    to: user.email,
+    subject: `${code} is your MedClarivo verification code`,
+    text:
+      `Hi ${name},\n\n` +
+      `Your MedClarivo verification code is: ${code}\n\n` +
+      `It expires in 10 minutes. Enter it in the app to finish creating your account.\n\n` +
+      `If you didn't sign up for MedClarivo, you can ignore this email.`,
+    html:
+      `<p>Hi ${escapeHtml(name)},</p>` +
+      `<p>Your MedClarivo verification code is:</p>` +
+      `<p style="font-size:28px;font-weight:700;letter-spacing:6px;font-family:monospace;">${code}</p>` +
+      `<p>It expires in 10 minutes. Enter it in the app to finish creating your account.</p>` +
+      `<p style="color:#666;">If you didn't sign up for MedClarivo, you can ignore this email.</p>`,
+  });
+}
+
+module.exports = { sendMail, sendPasswordResetEmail, sendVerificationCodeEmail };

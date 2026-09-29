@@ -18,7 +18,18 @@ if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
 
       if (user) {
         // Link Google ID if signing in via email account for first time
-        if (!user.googleId) { user.googleId = profile.id; await user.save(); }
+        if (!user.googleId) {
+          user.googleId = profile.id;
+          if (!user.isVerified) {
+            // Someone registered this email without proving they own it.
+            // The real owner just proved it via the provider: remove the
+            // unverified password and log out every existing session.
+            user.passwordHash = null;
+            user.permissionVersion = (user.permissionVersion || 1) + 1;
+          }
+          user.isVerified = true;
+          await user.save();
+        }
       } else {
         user = await User.create({
           googleId:   profile.id,
@@ -63,7 +74,18 @@ if (process.env.APPLE_CLIENT_ID && process.env.APPLE_TEAM_ID && process.env.APPL
       let user = await User.findOne({ $or: [{ appleId }, ...(email ? [{ email }] : [])] });
 
       if (user) {
-        if (!user.appleId) { user.appleId = appleId; await user.save(); }
+        if (!user.appleId) {
+          user.appleId = appleId;
+          if (!user.isVerified) {
+            // Someone registered this email without proving they own it.
+            // The real owner just proved it via the provider: remove the
+            // unverified password and log out every existing session.
+            user.passwordHash = null;
+            user.permissionVersion = (user.permissionVersion || 1) + 1;
+          }
+          user.isVerified = true;
+          await user.save();
+        }
       } else {
         user = await User.create({
           appleId,

@@ -118,6 +118,22 @@ app.use('/api/auth/link-phone', rateLimit({
   message: { success: false, message: 'Too many attempts. Try again in 15 minutes.' },
 }));
 
+app.use('/api/auth/verify-email', rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { success: false, message: 'Too many attempts. Try again in 15 minutes.' },
+}));
+
+app.use('/api/auth/resend-verification', rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { success: false, message: 'Too many requests. Try again in 15 minutes.' },
+}));
+
 app.use(passport.initialize());
 
 // ── Routes ───────────────────────────────────────────────────

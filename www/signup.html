@@ -185,6 +185,7 @@
 
 
 
+<script src="shared/email-verify.js"></script>
 <script>
   const API_BASE = 'https://med-clarivo.onrender.com/api';
 
@@ -267,7 +268,14 @@
       });
       const data = await res.json();
 
-      if (res.ok && data.success) {
+      if (res.ok && data.success && data.needsVerification) {
+        showEmailVerify(data.email, function (d) {
+          localStorage.setItem('mc_token', d.token);
+          localStorage.setItem('mc_user', JSON.stringify(d.user));
+          showToast(`🎉 Welcome, ${name.split(' ')[0]}!`, 'success');
+          setTimeout(() => window.location.href = 'onboarding.html', 1000);
+        });
+      } else if (res.ok && data.success) {
         localStorage.setItem('mc_token', data.token);
         localStorage.setItem('mc_user',  JSON.stringify(data.user));
         showToast(`🎉 Welcome, ${name.split(' ')[0]}!`, 'success');

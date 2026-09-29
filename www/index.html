@@ -895,7 +895,15 @@ async function redirectToDashboard() {
 
       const data = await res.json();
 
-      if (res.ok && data.success) {
+      if (!res.ok && data.needsVerification) {
+        showToast(data.message || 'Please verify your email.', 'error');
+        showEmailVerify(data.email, function (d) {
+          localStorage.setItem('mc_token', d.token);
+          localStorage.setItem('mc_user', JSON.stringify(d.user));
+          showToast('✅ Email verified!', 'success');
+          setTimeout(() => redirectToDashboard(), 800);
+        });
+      } else if (res.ok && data.success) {
         localStorage.setItem('mc_token', data.token);
         localStorage.setItem('mc_user',  JSON.stringify(data.user));
         showToast(`✅ Welcome back${data.user?.name ? ', ' + data.user.name.split(' ')[0] : ''}!`, 'success');
@@ -978,6 +986,7 @@ function handleNativeAuthUrl(urlString) {
     }
   });
 </script>
+<script src="shared/email-verify.js"></script>
 <script src="shared/firebase-phone-auth.js"></script>
 </body>
 </html>
