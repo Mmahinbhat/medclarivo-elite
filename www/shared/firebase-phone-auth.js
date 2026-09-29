@@ -381,6 +381,11 @@
     document.body.appendChild(modal);
     setupOTPInputs();
 
+    // PHONE_DIGITS_ONLY
+    document.getElementById('pamPhone').addEventListener('input', function () {
+      const clean = this.value.replace(/\D/g, '').slice(0, 10);
+      if (this.value !== clean) this.value = clean;
+    });
     document.getElementById('pamPhone').addEventListener('keydown', (e) => {
       if (e.key === 'Enter') { e.preventDefault(); window.sendOTP(); }
     });
@@ -492,7 +497,7 @@
 
   function showOtpStep(phone) {
     document.querySelector('[data-step="phone"]').style.display = 'none';
-    document.querySelector('[data-step="otp"]').style.display = '';
+    document.querySelector('[data-step="otp"]').style.display = 'block';
     document.getElementById('pamOtpSub').textContent =
       'Code sent to +91 ' + phone.slice(0, 3) + '****' + phone.slice(7);
     document.querySelectorAll('.pam-otp-digit').forEach(d => { d.value = ''; });
