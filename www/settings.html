@@ -111,6 +111,11 @@
           <div>
             <label class="field-label">Phone</label>
             <input id="phoneInput" type="text" class="field-input" />
+            <div style="display:flex;align-items:center;gap:10px;margin-top:8px;">
+              <span id="phoneVerifiedBadge" style="display:none;font-size:13px;font-weight:600;color:#16A34A;">✓ Verified</span>
+              <button id="verifyPhoneBtn" type="button" style="font-size:13px;font-weight:600;color:#1B4FD8;background:none;border:none;padding:0;cursor:pointer;"
+                onclick="showPhoneVerify(function(p){ document.getElementById('phoneInput').value = p; refreshPhoneBadge(); })">Verify phone with OTP</button>
+            </div>
           </div>
         </div>
         <div class="mb-6">
@@ -371,5 +376,19 @@
 })();
 </script>
 <script src="shared/call-listener.js" defer></script>
+<script src="shared/firebase-phone-auth.js"></script>
+<script>
+  function refreshPhoneBadge() {
+    let u = {};
+    try { u = JSON.parse(localStorage.getItem('mc_user') || '{}'); } catch (e) {}
+    const verified = !!u.phoneVerified && !!u.phone && document.getElementById('phoneInput').value === u.phone;
+    document.getElementById('phoneVerifiedBadge').style.display = verified ? '' : 'none';
+    document.getElementById('verifyPhoneBtn').textContent = verified ? 'Change number' : 'Verify phone with OTP';
+  }
+  window.addEventListener('load', function () {
+    refreshPhoneBadge();
+    document.getElementById('phoneInput').addEventListener('input', refreshPhoneBadge);
+  });
+</script>
 </body>
 </html>
