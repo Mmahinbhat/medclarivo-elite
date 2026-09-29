@@ -10,5 +10,25 @@
   },
   "android": {
     "backgroundColor": "#F5F7FA"
+  },
+  "plugins": {
+    "FirebaseAuthentication": {
+      "skipNativeAuth": false,
+      "providers": [
+        "phone"
+      ]
+    }
+  },
+  "experimental": {
+    "ios": {
+      "spm": {
+        "swiftToolsVersion": "6.1",
+        "packageTraits": {
+          "@capacitor-firebase/authentication": [
+            "Lite"
+          ]
+        }
+      }
+    }
   }
 }
