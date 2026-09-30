@@ -129,6 +129,12 @@
 
       <!-- Password -->
       <section class="panel p-6 md:p-7">
+        <h2 class="font-display text-xl text-ink mb-1">Devices</h2>
+        <p style="font-size:14px;color:#64748B;margin:4px 0 16px;">Lost your phone or changed your number? Sign out everywhere — you'll need to log in again on each device.</p>
+        <button type="button" onclick="logoutAllDevices()" style="padding:10px 18px;border-radius:10px;border:1.5px solid #DC2626;color:#DC2626;background:transparent;font-weight:600;font-size:14px;cursor:pointer;">Log out of all devices</button>
+      </section>
+
+      <section class="panel p-6 md:p-7">
         <h2 class="font-display text-xl text-ink mb-1">Password</h2>
         <p class="text-ink-faint text-sm mb-6">Change your account password.</p>
 
@@ -219,6 +225,11 @@
   }
 
   async function loadSettings(){
+    try {
+      const c = JSON.parse(localStorage.getItem('mc_user') || '{}');
+      const set = (id, v) => { const el = document.getElementById(id); if (el && !el.value) el.value = v || ''; };
+      set('nameInput', c.name); set('emailInput', c.email); set('phoneInput', c.phone); set('avatarInput', c.avatar);
+    } catch (e) {}
     try {
       const res = await fetch(`${API_BASE}/settings`, { headers: { Authorization: `Bearer ${token}` } });
       const data = await res.json();
@@ -390,6 +401,19 @@
     refreshPhoneBadge();
     document.getElementById('phoneInput').addEventListener('input', refreshPhoneBadge);
   });
+</script>
+<script>
+  async function logoutAllDevices() {
+    if (!confirm('Log out of MedClarivo on all phones and browsers, including this one?')) return;
+    const base = (typeof API_BASE !== 'undefined') ? API_BASE : 'https://med-clarivo.onrender.com/api';
+    try {
+      const r = await fetch(base + '/auth/logout-all', { method: 'POST', headers: { 'Authorization': 'Bearer ' + (localStorage.getItem('mc_token') || '') } });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok || !d.success) { alert(d.message || 'Could not log out of all devices.'); return; }
+    } catch (e) { alert('Cannot reach server. Please try again.'); return; }
+    ['mc_token', 'admin_token', 'mc_user'].forEach((k) => localStorage.removeItem(k));
+    window.location.href = 'index.html';
+  }
 </script>
 </body>
 </html>

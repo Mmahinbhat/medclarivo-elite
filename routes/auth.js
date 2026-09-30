@@ -520,6 +520,20 @@ router.post('/logout', protect, (req, res) => {
   res.json({ success: true, message: 'Logged out successfully.' });
 });
 
+// POST /api/auth/logout-all — invalidate every existing login token for this user
+router.post('/logout-all', protect, async (req, res) => {
+  try {
+    await User.updateOne(
+      { _id: req.user._id },
+      { $set: { permissionVersion: (req.user.permissionVersion || 1) + 1 } }
+    );
+    res.json({ success: true, message: 'Logged out of all devices.' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: 'Server error.' });
+  }
+});
+
 
 // ════════════════════════════════════════════════════════════════
 // PATCH /api/auth/profile  (protected) — update own name/avatar
