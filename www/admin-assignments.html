@@ -106,6 +106,17 @@
         <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4" id="mentorDirectory"></div>
       </div>
     </div>
+    <section class="bg-white rounded-2xl border border-slate-200 p-6 mt-6">
+      <div class="flex items-center justify-between gap-3 flex-wrap mb-1">
+        <h2 class="font-display text-lg text-ink">Mentor Change Requests</h2>
+        <select id="changeReqFilter" class="text-sm border border-slate-200 rounded-lg px-2 py-1" onchange="loadChangeRequests()">
+          <option value="pending">Pending</option><option value="approved">Approved</option>
+          <option value="declined">Declined</option><option value="all">All</option>
+        </select>
+      </div>
+      <p class="text-ink-faint text-xs mb-4" id="changeRequestsCount">Loading…</p>
+      <div id="changeRequestsList" class="space-y-3"></div>
+    </section>
   </main>
 </div>
 
@@ -258,6 +269,83 @@ document.getElementById('signOutLink').addEventListener('click', e => {
 });
 
 window.addEventListener('load', () => { lucide.createIcons(); loadCurrentUser(); loadData(); });
+</script>
+<script>
+(function () {
+  const BASE = (typeof API !== 'undefined') ? API : 'https://med-clarivo.onrender.com/api';
+  const tok = () => (typeof getToken === 'function' ? getToken() : localStorage.getItem('mc_token'));
+  const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const say = (m) => { const t = document.getElementById('toast'); if (t) { t.textContent = m; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 3000); } else { alert(m); } };
+  let mentors = [];
+
+  async function loadMentors() {
+    try {
+      const r = await fetch(BASE + '/admin/users', { headers: { Authorization: 'Bearer ' + tok() } });
+      const d = await r.json();
+      const all = Array.isArray(d) ? d : (d.users || d.data || []);
+      mentors = all.filter((u) => u.role === 'mentor');
+    } catch (e) { mentors = []; }
+  }
+
+  window.loadChangeRequests = async function () {
+    const list = document.getElementById('changeRequestsList');
+    const count = document.getElementById('changeRequestsCount');
+    const status = document.getElementById('changeReqFilter').value;
+    list.innerHTML = '';
+    count.textContent = 'Loading…';
+    try {
+      if (!mentors.length) await loadMentors();
+      const r = await fetch(BASE + '/mentor/change-requests?status=' + encodeURIComponent(status), { headers: { Authorization: 'Bearer ' + tok() } });
+      const d = await r.json();
+      if (!r.ok || !d.success) { count.textContent = d.message || 'Could not load requests.'; return; }
+      const reqs = d.requests || [];
+      count.textContent = reqs.length ? reqs.length + ' request(s)' : 'No ' + (status === 'all' ? '' : status + ' ') + 'requests.';
+      reqs.forEach((q) => {
+        const card = document.createElement('div');
+        card.className = 'border border-slate-200 rounded-xl p-4';
+        const opts = mentors
+          .filter((m) => String(m._id) !== String(q.currentMentor && q.currentMentor._id))
+          .map((m) => '<option value="' + esc(m._id) + '"' + (q.preferredMentor && String(q.preferredMentor._id) === String(m._id) ? ' selected' : '') + '>' + esc(m.name) + '</option>').join('');
+        const pending = q.status === 'pending';
+        card.innerHTML =
+          '<div class="flex justify-between gap-2 flex-wrap text-sm"><strong>' + esc(q.student && q.student.name || 'Student') + '</strong>' +
+          '<span class="text-xs text-slate-500">' + esc(new Date(q.createdAt).toLocaleString()) + ' · ' + esc(q.status) + '</span></div>' +
+          '<div class="text-xs text-slate-600 mt-1">Current: ' + esc(q.currentMentor && q.currentMentor.name || '—') +
+          ' · Preferred: ' + esc(q.preferredMentor && q.preferredMentor.name || 'No preference') +
+          (q.newMentor ? ' · Assigned: ' + esc(q.newMentor.name) : '') + '</div>' +
+          '<p class="text-sm mt-2 whitespace-pre-wrap">' + esc(q.reason) + '</p>' +
+          (q.adminNote ? '<p class="text-xs text-slate-500 mt-1">Note: ' + esc(q.adminNote) + '</p>' : '') +
+          (pending ? '<div class="flex gap-2 mt-3 flex-wrap items-center">' +
+            '<select class="cr-mentor text-sm border border-slate-200 rounded-lg px-2 py-1"><option value="">Choose new mentor…</option>' + opts + '</select>' +
+            '<button class="cr-approve text-sm px-3 py-1 rounded-lg bg-emerald-600 text-white">Approve &amp; reassign</button>' +
+            '<button class="cr-decline text-sm px-3 py-1 rounded-lg border border-red-500 text-red-600">Decline</button></div>' : '');
+        if (pending) {
+          card.querySelector('.cr-approve').onclick = () => act(q._id, 'approve', card.querySelector('.cr-mentor').value);
+          card.querySelector('.cr-decline').onclick = () => act(q._id, 'decline');
+        }
+        list.appendChild(card);
+      });
+    } catch (e) { count.textContent = 'Cannot reach server.'; }
+  };
+
+  async function act(id, action, newMentorId) {
+    if (action === 'approve' && !newMentorId) { say('Choose the new mentor first.'); return; }
+    const note = prompt(action === 'approve' ? 'Optional note for the record:' : 'Reason for declining (optional):') || '';
+    try {
+      const r = await fetch(BASE + '/mentor/change-requests/' + encodeURIComponent(id), {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + tok() },
+        body: JSON.stringify({ action, newMentorId: newMentorId || undefined, note }),
+      });
+      const d = await r.json();
+      if (!r.ok || !d.success) { say(d.message || 'Failed.'); return; }
+      say(action === 'approve' ? 'Approved — student reassigned.' : 'Request declined.');
+      loadChangeRequests();
+    } catch (e) { say('Cannot reach server.'); }
+  }
+
+  window.addEventListener('load', () => loadChangeRequests());
+})();
 </script>
 </body>
 </html>
