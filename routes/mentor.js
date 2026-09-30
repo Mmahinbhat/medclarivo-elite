@@ -232,6 +232,137 @@ router.post('/ai/draft-reply', protect, restrictTo('mentor', 'admin'), async (re
 // ════════════════════════════════════════════════════════════════
 // GET /api/mentor/available  (student only)
 // ════════════════════════════════════════════════════════════════
+// ════════════════════════════════════════════════════════════════
+// Mentor change requests (student asks → admin approves/declines)
+// ════════════════════════════════════════════════════════════════
+const MentorChangeRequest = require('../models/MentorChangeRequest');
+const { isValidObjectId } = require('mongoose');
+
+// GET /api/mentor/list — mentors a student can pick as "preferred"
+router.get('/list', protect, restrictTo('student'), async (req, res) => {
+  try {
+    const mentors = await User.find({ role: 'mentor', isActive: { $ne: false } })
+      .select('name mentorProfile').sort('name').lean();
+    res.json({
+      success: true,
+      mentors: mentors.map((m) => ({
+        id: m._id,
+        name: m.name,
+        title: (m.mentorProfile && (m.mentorProfile.title || m.mentorProfile.headline)) || '',
+      })),
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: 'Failed to load mentors.' });
+  }
+});
+
+// GET /api/mentor/my-change-requests — the student's own requests
+router.get('/my-change-requests', protect, restrictTo('student'), async (req, res) => {
+  try {
+    const requests = await MentorChangeRequest.find({ student: req.user._id })
+      .sort('-createdAt').limit(10)
+      .populate('preferredMentor', 'name').populate('newMentor', 'name').lean();
+    res.json({ success: true, requests });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: 'Failed to load requests.' });
+  }
+});
+
+// POST /api/mentor/request-change — { reason, preferredMentorId? }
+router.post('/request-change', protect, restrictTo('student'), async (req, res) => {
+  try {
+    const reason = String(req.body.reason || '').trim();
+    const preferredMentorId = req.body.preferredMentorId || null;
+    if (!reason) return res.status(400).json({ success: false, message: 'Please tell us why you want to change mentor.' });
+    if (reason.length > 1000) return res.status(400).json({ success: false, message: 'Reason is too long (max 1000 characters).' });
+    if (!req.user.mentorId) return res.status(400).json({ success: false, message: 'You do not have a mentor assigned yet.' });
+
+    const pending = await MentorChangeRequest.findOne({ student: req.user._id, status: 'pending' }).select('_id').lean();
+    if (pending) return res.status(400).json({ success: false, message: 'You already have a pending change request.' });
+
+    let preferred = null;
+    if (preferredMentorId) {
+      if (!isValidObjectId(preferredMentorId)) return res.status(400).json({ success: false, message: 'Invalid mentor selected.' });
+      preferred = await User.findOne({ _id: preferredMentorId, role: 'mentor' }).select('_id').lean();
+      if (!preferred) return res.status(404).json({ success: false, message: 'Selected mentor not found.' });
+      if (String(preferred._id) === String(req.user.mentorId)) {
+        return res.status(400).json({ success: false, message: 'That mentor is already assigned to you.' });
+      }
+    }
+
+    const request = await MentorChangeRequest.create({
+      student: req.user._id,
+      currentMentor: req.user.mentorId,
+      preferredMentor: preferred ? preferred._id : undefined,
+      reason,
+    });
+    res.status(201).json({ success: true, request });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: 'Could not submit request.' });
+  }
+});
+
+// GET /api/mentor/change-requests?status=pending|approved|declined|all — admin review list
+router.get('/change-requests', protect, restrictTo('admin', 'super_admin'), async (req, res) => {
+  try {
+    const status = ['pending', 'approved', 'declined'].includes(req.query.status) ? req.query.status : (req.query.status === 'all' ? null : 'pending');
+    const requests = await MentorChangeRequest.find(status ? { status } : {})
+      .sort('-createdAt').limit(200)
+      .populate('student', 'name phone')
+      .populate('currentMentor', 'name')
+      .populate('preferredMentor', 'name')
+      .populate('newMentor', 'name')
+      .lean();
+    res.json({ success: true, requests });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: 'Failed to load change requests.' });
+  }
+});
+
+// PATCH /api/mentor/change-requests/:id — admin: { action: 'approve'|'decline', newMentorId?, note? }
+router.patch('/change-requests/:id', protect, restrictTo('admin', 'super_admin'), async (req, res) => {
+  try {
+    if (!isValidObjectId(req.params.id)) return res.status(400).json({ success: false, message: 'Invalid request id.' });
+    const { action } = req.body;
+    const note = String(req.body.note || '').trim().slice(0, 1000);
+    if (!['approve', 'decline'].includes(action)) return res.status(400).json({ success: false, message: "action must be 'approve' or 'decline'." });
+
+    const request = await MentorChangeRequest.findById(req.params.id);
+    if (!request) return res.status(404).json({ success: false, message: 'Request not found.' });
+    if (request.status !== 'pending') return res.status(400).json({ success: false, message: 'This request has already been resolved.' });
+
+    if (action === 'approve') {
+      const targetId = req.body.newMentorId || request.preferredMentor;
+      if (!targetId || !isValidObjectId(targetId)) return res.status(400).json({ success: false, message: 'Choose the new mentor to assign.' });
+      const mentor = await User.findOne({ _id: targetId, role: 'mentor' }).select('_id').lean();
+      if (!mentor) return res.status(404).json({ success: false, message: 'Mentor not found.' });
+
+      const student = await User.findOne({ _id: request.student, role: 'student' });
+      if (!student) return res.status(404).json({ success: false, message: 'Student not found.' });
+      student.mentorId = mentor._id;
+      await student.save();
+
+      request.status = 'approved';
+      request.newMentor = mentor._id;
+    } else {
+      request.status = 'declined';
+    }
+    request.adminNote = note;
+    request.resolvedBy = req.user._id;
+    request.resolvedAt = new Date();
+    await request.save();
+
+    res.json({ success: true, request });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: 'Failed to update request.' });
+  }
+});
+
 router.get('/available', protect, restrictTo('student'), async (req, res) => {
   try {
     const mentors = await User.find({ role: 'mentor' })
