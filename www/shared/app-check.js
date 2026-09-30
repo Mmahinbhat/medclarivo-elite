@@ -16,7 +16,7 @@
 (function () {
   // ── Settings ─────────────────────────────────────────────────
   // reCAPTCHA v3 SITE key (public — safe to ship). Leave empty until created.
-  const RECAPTCHA_V3_SITE_KEY = '';
+  const RECAPTCHA_V3_SITE_KEY = '6LcBI9ctAAAAANFIsKK7qrynmEgTGtLCUZgKqkLo';
 
   // ⚠️ MUST be false before any App Store / Play Store release.
   // true = the Simulator/emulator uses Firebase's debug provider and prints a
@@ -66,7 +66,7 @@
       await loadScript(SDK + 'firebase-app-check-compat.js');
       if (!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
       const ac = firebase.appCheck();
-      ac.activate(new firebase.appCheck.ReCaptchaV3Provider(RECAPTCHA_V3_SITE_KEY), true);
+      ac.activate(new firebase.appCheck.ReCaptchaEnterpriseProvider(RECAPTCHA_V3_SITE_KEY), true);
       return async () => (await ac.getToken()).token;
     })().catch((e) => { console.warn('[AppCheck] init failed:', e && e.message); return null; });
     return getterPromise;
