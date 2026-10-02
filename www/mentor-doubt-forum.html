@@ -344,17 +344,20 @@ function updateStats(){
   const open=allDoubts.filter(d=>d.status==='open');
   const answered=allDoubts.filter(d=>d.status==='answered');
 
-  document.getElementById('statUrgent').textContent=urgent.length;
-  document.getElementById('statOpen').textContent=open.length;
-  document.getElementById('statAnswered').textContent=answered.length;
-  document.getElementById('statTotal').textContent=allDoubts.length;
-  document.getElementById('openNum').textContent=open.length;
-  document.getElementById('openBadge').textContent=open.length;
-  if(open.length>0) document.getElementById('openBadge').style.display='inline-flex';
+  // Some of these badges don't exist on every layout — only update the ones that do
+  const setText=(id,v)=>{ const el=document.getElementById(id); if(el) el.textContent=v; };
+  const show=(id)=>{ const el=document.getElementById(id); if(el) el.style.display='inline-flex'; };
+  setText('statUrgent',urgent.length);
+  setText('statOpen',open.length);
+  setText('statAnswered',answered.length);
+  setText('statTotal',allDoubts.length);
+  setText('openNum',open.length);
+  setText('openBadge',open.length);
+  if(open.length>0) show('openBadge');
 
   if(urgent.length>0){
-    document.getElementById('urgentCount').style.display='inline-flex';
-    document.getElementById('urgentNum').textContent=urgent.length;
+    show('urgentCount');
+    setText('urgentNum',urgent.length);
   }
 }
 
