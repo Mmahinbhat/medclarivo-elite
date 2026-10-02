@@ -56,7 +56,8 @@ async function issueEmailCode(user) {
   rec.sends = [...recent, new Date(now)];
   rec.expireAt = new Date(now + 24 * 60 * 60 * 1000);
   await rec.save();
-  await sendVerificationCodeEmail(user, code);
+  // Send in the background so signup isn't kept waiting on Gmail (code is already saved)
+  sendVerificationCodeEmail(user, code).catch((e) => console.error('[Email OTP] send failed:', e.message));
   return { sent: true };
 }
 
@@ -593,7 +594,8 @@ router.post('/forgot-password', [
     const clientUrl = process.env.CLIENT_URL || 'http://localhost:3000';
     const resetUrl = `${clientUrl}/reset-password.html?token=${rawToken}&email=${encodeURIComponent(user.email)}`;
 
-    await sendPasswordResetEmail(user, resetUrl);
+    // Send in the background — the response is the same either way
+    sendPasswordResetEmail(user, resetUrl).catch((e) => console.error('[Reset email] send failed:', e.message));
 
     res.json(genericResponse);
   } catch (err) {
