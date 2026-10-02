@@ -8,7 +8,11 @@
 
 let transporter = null;
 
-function getTransporter() {
+// Render's servers have no IPv6 internet route, but smtp.gmail.com resolves to an
+// IPv6 address first → "ENETUNREACH 2607:f8b0:...". So we look up the IPv4
+// address ourselves and connect to that, while still checking Gmail's TLS
+// certificate against the real hostname.
+async function getTransporter() {
   if (transporter) return transporter;
 
   const { SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS } = process.env;
@@ -16,12 +20,21 @@ function getTransporter() {
     return null; // not configured — caller falls back to console logging
   }
 
+  let host = SMTP_HOST;
+  try {
+    const ips = await require('dns').promises.resolve4(SMTP_HOST);
+    if (ips && ips.length) host = ips[0];
+  } catch (e) {
+    console.warn('[Email] IPv4 lookup failed, using hostname:', e.message);
+  }
+
   const nodemailer = require('nodemailer');
   transporter = nodemailer.createTransport({
-    host: SMTP_HOST,
+    host,
     port: Number(SMTP_PORT) || 587,
     secure: Number(SMTP_PORT) === 465,
     auth: { user: SMTP_USER, pass: SMTP_PASS },
+    tls: { servername: SMTP_HOST }, // certificate is checked for smtp.gmail.com
     pool: true,            // keep the Gmail connection open and reuse it — much faster after the first email
     maxConnections: 2,
     connectionTimeout: 10000,
@@ -32,7 +45,7 @@ function getTransporter() {
 }
 
 async function sendMail({ to, subject, text, html }) {
-  const t = getTransporter();
+  const t = await getTransporter();
 
   if (!t) {
     // Local-dev / unconfigured fallback — never silently drop the
