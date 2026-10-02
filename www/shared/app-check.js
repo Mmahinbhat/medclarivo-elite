@@ -18,10 +18,13 @@
   // reCAPTCHA v3 SITE key (public — safe to ship). Leave empty until created.
   const RECAPTCHA_V3_SITE_KEY = '6LcBI9ctAAAAANFIsKK7qrynmEgTGtLCUZgKqkLo';
 
-  // ⚠️ MUST be false before any App Store / Play Store release.
-  // true = the Simulator/emulator uses Firebase's debug provider and prints a
-  // debug token in the Xcode / Logcat console that you register in Firebase.
-  const NATIVE_DEBUG = true;
+  // Debug mode is chosen automatically: Simulator / emulator → Firebase debug
+  // provider (uses the debug token you registered in Firebase); a real phone →
+  // real App Attest (iPhone) / Play Integrity (Android). TestFlight and store
+  // builds therefore always use the real checks.
+  // To test a debug build on a real phone (e.g. Saqib's Android from Android
+  // Studio), temporarily set FORCE_NATIVE_DEBUG = true — never ship it that way.
+  const FORCE_NATIVE_DEBUG = false;
 
   const FIREBASE_CONFIG = {
     apiKey: "AIzaSyCAf2tEBniU0C4HwvkmD9E5MN9lgCKBNzo",
@@ -57,7 +60,12 @@
       if (isNative) {
         const P = window.Capacitor.Plugins && window.Capacitor.Plugins.FirebaseAppCheck;
         if (!P) { console.warn('[AppCheck] native plugin missing'); return null; }
-        await P.initialize({ debugToken: NATIVE_DEBUG, isTokenAutoRefreshEnabled: true });
+        let useDebug = FORCE_NATIVE_DEBUG;
+        try {
+          const Device = window.Capacitor.Plugins && window.Capacitor.Plugins.Device;
+          if (Device) useDebug = useDebug || !!(await Device.getInfo()).isVirtual;
+        } catch (e) { /* treat as a real device */ }
+        await P.initialize({ debugToken: useDebug, isTokenAutoRefreshEnabled: true });
         return async () => (await P.getToken()).token;
       }
 
