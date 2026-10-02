@@ -44,7 +44,31 @@ async function getTransporter() {
   return transporter;
 }
 
+// Brevo sends over HTTPS, which Render's free plan allows (it blocks SMTP ports).
+// Used whenever BREVO_API_KEY is set; otherwise falls back to SMTP below.
+function parseFrom(from) {
+  const m = /^\s*(.*?)\s*<([^>]+)>\s*$/.exec(from || '');
+  return m ? { name: m[1] || 'MedClarivo', email: m[2] } : { name: 'MedClarivo', email: from };
+}
+
+async function sendViaBrevo({ to, subject, text, html }) {
+  const sender = parseFrom(process.env.EMAIL_FROM || process.env.SMTP_FROM || 'MedClarivo <official@medclarivo.com>');
+  const res = await fetch('https://api.brevo.com/v3/smtp/email', {
+    method: 'POST',
+    headers: { 'api-key': process.env.BREVO_API_KEY, 'content-type': 'application/json', accept: 'application/json' },
+    body: JSON.stringify({ sender, to: [{ email: to }], subject, textContent: text, htmlContent: html || undefined }),
+    signal: AbortSignal.timeout(15000),
+  });
+  if (!res.ok) {
+    const body = await res.text().catch(() => '');
+    throw new Error(`Brevo ${res.status}: ${body.slice(0, 300)}`);
+  }
+  return { delivered: true, loggedOnly: false };
+}
+
 async function sendMail({ to, subject, text, html }) {
+  if (process.env.BREVO_API_KEY) return sendViaBrevo({ to, subject, text, html });
+
   const t = await getTransporter();
 
   if (!t) {
