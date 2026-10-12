@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<script>try{if(localStorage.getItem('mc_theme')==='dark')document.documentElement.setAttribute('data-theme','dark')}catch(e){}</script>
 <script src="sessionGuard.js"></script>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"/>
@@ -23,12 +24,12 @@
           "teal-deep": "#0A6E64",
           gold:        "#B9924F",
           "gold-soft": "rgba(185,146,79,0.12)",
-          mist:        "#F5F7FA",
-          "mist-2":    "#EEF2F6",
-          ink:         "#0B1220",
-          "ink-soft":  "#56657B",
-          "ink-faint": "#8B97A8",
-          line:        "rgba(11,18,32,0.08)",
+          mist:        "var(--mist, #F5F7FA)",
+          "mist-2":    "var(--mist-2, #EEF2F6)",
+          ink:         "var(--ink, #0B1220)",
+          "ink-soft":  "var(--ink-soft, #56657B)",
+          "ink-faint": "var(--ink-faint, #8B97A8)",
+          line:        "var(--line, rgba(11,18,32,0.08))",
         },
         fontFamily: {
           display: ["DM Serif Display", "serif"],
@@ -122,6 +123,7 @@
   input[type="datetime-local"]{color-scheme:light;}
 </style>
 <link rel="stylesheet" href="ios-safe-area.css">
+<link rel="stylesheet" href="shared/dark-mode.css">
 </head>
 <body>
 <div class="app-shell">

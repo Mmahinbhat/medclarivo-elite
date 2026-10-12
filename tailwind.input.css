@@ -1,0 +1,25 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ── Shared theme palette ───────────────────────────────────────
+   Pages may still declare their own :root variables; these are the
+   defaults. The dark block uses :root[data-theme="dark"] (higher
+   specificity than a page's [data-theme="dark"]) so the dark palette
+   is identical and readable on every page.                        */
+@layer base {
+  :root {
+    --mist: #F5F7FA; --mist-2: #EEF2F6;
+    --ink: #0B1220; --ink-soft: #56657B; --ink-muted: #4A5568; --ink-faint: #8B97A8;
+    --line: rgba(11,18,32,0.08);
+    --surface: #FFFFFF; --card: #FFFFFF; --outline: #E2E8F0;
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --mist: #0D1117; --mist-2: #161B22;
+    --ink: #F0F6FC; --ink-soft: #9BA7B6; --ink-muted: #9BA7B6; --ink-faint: #7D8796;
+    --line: rgba(255,255,255,0.08);
+    --surface: #0D1117; --card: #161B22; --outline: rgba(255,255,255,0.10);
+  }
+  :root[data-theme="dark"] body { background: #0D1117; color: #F0F6FC; }
+}

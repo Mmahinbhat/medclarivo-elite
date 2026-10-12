@@ -293,8 +293,18 @@
     background:var(--navy); color:#fff; font-size:11px; white-space:nowrap; padding:5px 9px;
     border-radius:8px; pointer-events:none; z-index:99; font-weight:500;
   }
+
+  /* Status tabs + subject filter pills (same look as the mentor Doubt Forum) */
+  .tab-btn{padding:8px 14px;border-radius:11px;font-size:13px;font-weight:600;cursor:pointer;border:none;transition:all .15s;white-space:nowrap;}
+  .tab-btn.active{background:var(--navy);color:#fff;}
+  .tab-btn:not(.active){background:transparent;color:var(--ink-soft);}
+  .tab-btn:not(.active):hover{background:var(--mist-2, #EEF2F6);}
+  .subject-tag{padding:7px 12px;border-radius:999px;font-size:12px;font-weight:600;cursor:pointer;border:1px solid var(--line);background:transparent;color:var(--ink-soft);transition:all .15s;white-space:nowrap;}
+  .subject-tag.active{background:var(--teal);border-color:var(--teal);color:#fff;}
+  .subject-tag:not(.active):hover{border-color:var(--teal);color:var(--teal);}
 </style>
 <link rel="stylesheet" href="ios-safe-area.css">
+<link rel="stylesheet" href="shared/dark-mode.css">
 </head>
 <body>
 <div class="app-shell">

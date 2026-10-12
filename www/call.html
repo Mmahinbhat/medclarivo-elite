@@ -190,6 +190,7 @@
   .toast.show{ opacity:1; }
 </style>
 <link rel="stylesheet" href="ios-safe-area.css">
+<link rel="stylesheet" href="shared/dark-mode.css">
 </head>
 <body>
 
@@ -224,9 +225,10 @@
 
 <div class="toast" id="toast"></div>
 
-<!-- TEMPORARY visible debug panel -->
-<div id="dbgPanel" style="position:fixed;top:0;left:0;right:0;z-index:9999;background:rgba(0,0,0,0.85);color:#0f0;font-family:monospace;font-size:10px;padding:4px 8px;max-height:35vh;overflow-y:auto;pointer-events:none;"></div>
+<!-- Debug panel: hidden unless the URL contains debug=1 (logs always go to the console) -->
+<div id="dbgPanel" style="display:none;position:fixed;top:0;left:0;right:0;z-index:9999;background:rgba(0,0,0,0.85);color:#0f0;font-family:monospace;font-size:10px;padding:4px 8px;max-height:35vh;overflow-y:auto;pointer-events:none;"></div>
 <script>
+if (/[?&]debug=1\b/.test(location.search)) document.getElementById('dbgPanel').style.display = 'block';
 function dbg(msg){
   var t = new Date().toLocaleTimeString();
   console.log('[DBG] '+t+' '+msg);

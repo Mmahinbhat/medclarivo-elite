@@ -1,0 +1,98 @@
+/* ═══════════════════════════════════════════════════════════════
+   shared/dark-mode.css — one dark theme for every page
+   ═══════════════════════════════════════════════════════════════
+   Load it as the LAST stylesheet in <head>, right after the
+   one-line theme script:
+     <script>try{if(localStorage.getItem('mc_theme')==='dark')document.documentElement.setAttribute('data-theme','dark')}catch(e){}</script>
+     <link rel="stylesheet" href="shared/dark-mode.css">
+
+   Every rule is scoped to :root[data-theme="dark"], so light mode is
+   never touched. The :root prefix gives these rules higher
+   specificity than the older per-page [data-theme="dark"] rules, so
+   all pages end up with the same palette.                         */
+
+/* ── Palette ───────────────────────────────────────────────────── */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --dm-bg:      #0D1117;   /* page background            */
+  --dm-card:    #161B22;   /* cards, panels, sheets       */
+  --dm-raised:  #1C2230;   /* hover / pressed / chips     */
+  --dm-border:  rgba(255,255,255,0.08);
+
+  --mist: #0D1117; --mist-2: #161B22;
+  --ink: #F0F6FC; --ink-soft: #9BA7B6; --ink-muted: #9BA7B6; --ink-faint: #7D8796;
+  --line: rgba(255,255,255,0.08);
+  --surface: #0D1117; --card: #161B22; --outline: rgba(255,255,255,0.10);
+}
+:root[data-theme="dark"] body { background: var(--dm-bg); color: #F0F6FC; }
+
+/* ── Cards, panels, sheets ─────────────────────────────────────── */
+:root[data-theme="dark"] :is(.panel, .stat-card, .session-card, .doubt-card, .deck-card,
+  .flip-card-face, .modal, .modal-box, .glass-card, .card) {
+  background: var(--dm-card);
+  border-color: var(--dm-border);
+  box-shadow: none;
+}
+/* IDs kept in their own rule so they don't raise the specificity of the one above */
+:root[data-theme="dark"] #chapterModal,
+:root[data-theme="dark"] #missionModal { background: var(--dm-card); border-color: var(--dm-border); box-shadow: none; }
+:root[data-theme="dark"] .flip-card-back { background: #12302E; border-color: var(--teal, #0FA89A); }
+:root[data-theme="dark"] :is(.doubt-card, .deck-card):hover { border-color: rgba(15,168,154,0.45); }
+/* keep the coloured status stripe on doubt cards */
+:root[data-theme="dark"] .doubt-card.open     { border-left-color: var(--teal, #0FA89A); }
+:root[data-theme="dark"] .doubt-card.answered { border-left-color: rgba(22,163,74,0.6); }
+:root[data-theme="dark"] .doubt-card.urgent   { border-left-color: #DC2626; }
+:root[data-theme="dark"] .doubt-card.closed   { border-left-color: rgba(255,255,255,0.15); }
+
+/* ── Top bars & glass headers ──────────────────────────────────── */
+:root[data-theme="dark"] .topbar { background: rgba(13,17,23,0.85); border-color: rgba(255,255,255,0.06); }
+:root[data-theme="dark"] .glass  { background: rgba(22,27,34,0.85); border-color: var(--dm-border); }
+
+/* ── Bottom navigation (has an inline white background) ────────── */
+:root[data-theme="dark"] nav.fixed.bottom-0 {
+  background: var(--dm-card) !important;
+  border-top-color: var(--dm-border) !important;
+  border-color: var(--dm-border) !important;
+}
+:root[data-theme="dark"] nav.fixed.bottom-0 .text-ink-faint { color: #8B97A8 !important; }
+
+/* ── Anything with an inline white background ──────────────────── */
+:root[data-theme="dark"] :is([style*="background:#fff"], [style*="background: #fff"],
+  [style*="background:#FFF"], [style*="background: #FFF"], [style*="background:white"],
+  [style*="background: white"], [style*="background:#ffffff"], [style*="background-color:#fff"],
+  [style*="background-color: #fff"], [style*="background:#FFFFFF"]) {
+  background: var(--dm-card) !important;
+  border-color: var(--dm-border) !important;
+}
+
+/* ── Light utility backgrounds used as cards ───────────────────── */
+:root[data-theme="dark"] :is(.bg-gray-50, .bg-slate-50, .bg-gray-100, .bg-slate-100) { background-color: var(--dm-raised); }
+:root[data-theme="dark"] :is(.border-gray-100, .border-gray-200, .border-slate-200) { border-color: var(--dm-border); }
+:root[data-theme="dark"] :is(.text-gray-700, .text-gray-800, .text-gray-900, .text-slate-700, .text-slate-800, .text-slate-900) { color: #E6EDF3; }
+:root[data-theme="dark"] :is(.text-gray-500, .text-gray-600, .text-slate-500, .text-slate-600) { color: #9BA7B6; }
+:root[data-theme="dark"] .hover\:bg-mist:hover,
+:root[data-theme="dark"] .hover\:bg-gray-100:hover { background-color: var(--dm-raised); }
+
+/* ── Form fields ───────────────────────────────────────────────── */
+:root[data-theme="dark"] :is(input, textarea, select):not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]) {
+  background-color: var(--dm-card);
+  color: #F0F6FC;
+  border-color: rgba(255,255,255,0.12);
+}
+:root[data-theme="dark"] :is(input, textarea)::placeholder { color: #6E7681; }
+:root[data-theme="dark"] select option { background: var(--dm-card); color: #F0F6FC; }
+
+/* ── Small components ──────────────────────────────────────────── */
+:root[data-theme="dark"] .check-btn   { background: transparent; border-color: rgba(255,255,255,0.22); }
+:root[data-theme="dark"] .task-row.done .check-btn { background: var(--teal, #0FA89A); border-color: var(--teal, #0FA89A); }
+:root[data-theme="dark"] .chip-grey   { background: rgba(255,255,255,0.08); color: #9BA7B6; }
+:root[data-theme="dark"] .chip-navy   { background: rgba(255,255,255,0.08); color: #9BA7B6; }
+:root[data-theme="dark"] .btn-ghost-icon:hover { background: rgba(255,255,255,0.06); }
+:root[data-theme="dark"] .tab-btn.active { background: var(--teal, #0FA89A); color: #fff; }
+:root[data-theme="dark"] .tab-btn:not(.active):hover { background: var(--dm-raised); }
+:root[data-theme="dark"] .count-btn { background: var(--dm-raised); color: #9BA7B6; }
+:root[data-theme="dark"] .count-btn.active { background: var(--teal, #0FA89A); color: #fff; }
+:root[data-theme="dark"] .modal-overlay { background: rgba(0,0,0,0.75); }
+
+/* Dark navy buttons/pills would vanish on a dark page — lift them */
+:root[data-theme="dark"] :is(.bg-navy, .bg-ink):not(.text-ink) { background-color: #243049; }
