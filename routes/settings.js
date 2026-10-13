@@ -7,8 +7,9 @@ const { protect } = require('../middleware/auth');
 // GET /api/settings — current user's settings
 // ════════════════════════════════════════════
 router.get('/', protect, async (req, res) => {
-  // req.user already excludes passwordHash via toJSON()
-  res.json({ success: true, user: req.user });
+  // req.user already excludes passwordHash via toJSON(); hasPassword tells the
+  // app whether to ask for a password or for "DELETE" when deleting the account.
+  res.json({ success: true, user: req.user, hasPassword: !!req.user.passwordHash });
 });
 
 // ════════════════════════════════════════════
@@ -57,7 +58,7 @@ router.put('/password', protect, async (req, res) => {
 
     const match = await req.user.comparePassword(currentPassword);
     if (!match) {
-      return res.status(401).json({ success: false, message: 'Current password is incorrect.' });
+      return res.status(403).json({ success: false, message: 'Current password is incorrect.' });
     }
 
     req.user.passwordHash = newPassword; // pre-save hook re-hashes this automatically

@@ -134,6 +134,15 @@ app.use('/api/auth/resend-verification', rateLimit({
   message: { success: false, message: 'Too many requests. Try again in 15 minutes.' },
 }));
 
+// Stops password guessing through the delete-account confirmation
+app.use('/api/auth/delete-account', rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 5,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { success: false, message: 'Too many attempts. Try again in 15 minutes.' },
+}));
+
 // Firebase App Check on sensitive auth routes (monitor mode unless APP_CHECK_ENFORCE=true)
 app.use([
   '/api/auth/otp-request', '/api/auth/phone-login', '/api/auth/link-phone',

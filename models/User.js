@@ -28,6 +28,9 @@ const UserSchema = new mongoose.Schema({
   // OAuth
   googleId:  { type: String },
   appleId:   { type: String },
+  // Sign in with Apple refresh token — only kept so it can be revoked when
+  // the user deletes their account (Apple requirement). Never sent to clients.
+  appleRefreshToken: { type: String, default: null, select: false },
   avatar:    { type: String },
   // Meta
   role: {
@@ -189,6 +192,7 @@ UserSchema.methods.registerSuccessfulLogin = function () {
 UserSchema.methods.toJSON = function () {
   const obj = this.toObject();
   delete obj.passwordHash;
+  delete obj.appleRefreshToken;
   delete obj.__v;
   return obj;
 };

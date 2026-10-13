@@ -96,6 +96,7 @@ if (process.env.APPLE_CLIENT_ID && process.env.APPLE_TEAM_ID && process.env.APPL
       }
 
       user.lastLogin = new Date();
+      if (refreshToken) user.appleRefreshToken = refreshToken; // revoked on account deletion
       await user.save();
       return done(null, user);
     } catch (err) {

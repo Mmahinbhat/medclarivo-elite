@@ -437,7 +437,7 @@ router.post('/link-phone', protect, [
   } catch (err) {
     console.error('[Link Phone Error]', err.message);
     if (typeof err.code === 'string' && err.code.startsWith('auth/')) {
-      return res.status(401).json({ success: false, message: 'Invalid verification. Please try again.' });
+      return res.status(403).json({ success: false, message: 'Invalid verification. Please try again.' });
     }
     res.status(500).json({ success: false, message: 'Server error.' });
   }
@@ -667,7 +667,7 @@ router.patch('/change-password', protect, async (req, res) => {
     if (!user) return res.status(404).json({ success: false, message: 'User not found.' });
 
     const valid = await user.comparePassword(currentPassword);
-    if (!valid) return res.status(401).json({ success: false, message: 'Current password is incorrect.' });
+    if (!valid) return res.status(403).json({ success: false, message: 'Current password is incorrect.' });
 
     user.passwordHash = newPassword;
     user.permissionVersion += 1;
@@ -679,4 +679,42 @@ router.patch('/change-password', protect, async (req, res) => {
     res.status(500).json({ success: false, message: 'Server error.' });
   }
 });
+
+// ════════════════════════════════════════════════════════════════
+// POST /api/auth/delete-account  (protected)
+// Permanently deletes the signed-in user's account and data.
+// Body: { password }        — accounts that have a password
+//       { confirm: 'DELETE' } — Google / Apple / phone-only accounts
+// ════════════════════════════════════════════════════════════════
+const { deleteUserAndData, SELF_DELETE_ROLES } = require('../utils/deleteAccount');
+
+router.post('/delete-account', protect, async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id);
+    if (!user) return res.status(404).json({ success: false, message: 'User not found.' });
+
+    if (!SELF_DELETE_ROLES.includes(user.role)) {
+      return res.status(403).json({
+        success: false,
+        message: 'Staff accounts are deleted by the MedClarivo team. Please email official@medclarivo.com.',
+      });
+    }
+
+    if (user.passwordHash) {
+      const { password } = req.body || {};
+      if (!password) return res.status(400).json({ success: false, message: 'Enter your password to confirm.' });
+      const valid = await user.comparePassword(password);
+      if (!valid) return res.status(403).json({ success: false, code: 'WRONG_PASSWORD', message: 'That password is incorrect.' });
+    } else if ((req.body?.confirm || '').trim().toUpperCase() !== 'DELETE') {
+      return res.status(400).json({ success: false, message: 'Type DELETE to confirm.' });
+    }
+
+    await deleteUserAndData(user._id);
+    res.json({ success: true, message: 'Your account and data have been deleted.' });
+  } catch (err) {
+    console.error('[Delete account] failed:', err);
+    res.status(500).json({ success: false, message: 'Could not delete your account right now. Please try again.' });
+  }
+});
+
 module.exports = router;
