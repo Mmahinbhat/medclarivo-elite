@@ -20,6 +20,8 @@ const CallSchema = new mongoose.Schema({
   endedAt:   { type: Date },
   duration:  { type: Number, default: 0 }, // seconds
   recordingUrl: { type: String, default: null },
+  // The participant whose phone records this call (chosen by the server on accept)
+  recordedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
 }, {
   timestamps: true,
 });

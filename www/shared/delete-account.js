@@ -51,7 +51,7 @@
         <h2 class="da-title">Delete account</h2>
         <p class="da-text">Permanently delete your MedClarivo account and the data linked to it. This can't be undone.</p>
         <button type="button" class="da-btn-outline" id="daOpen">Delete my account</button>
-        <p class="da-links"><a href="privacy.html">Privacy Policy</a> · <a href="delete-account.html">What gets deleted</a></p>
+        <p class="da-links"><a href="terms.html">Terms</a> · <a href="privacy.html">Privacy Policy</a> · <a href="delete-account.html">What gets deleted</a></p>
       </section>`));
 
     document.body.appendChild(el(`

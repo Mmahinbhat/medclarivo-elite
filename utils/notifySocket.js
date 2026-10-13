@@ -4,6 +4,9 @@ const Notification = require('../models/Notification');
 const Call = require('../models/Call');
 const { sendPushToUser, sendPushToAll } = require('./webPush');
 const { sendFcmToUser, sendFcmToAll } = require('./fcmPush');
+const User = require('../models/User');
+const recordingStorage = require('./recordingStorage');
+const STAFF_ROLES = ['mentor', 'assistant', 'admin', 'super_admin'];
 
 let io = null;
 
@@ -113,10 +116,25 @@ function init(httpServer) {
 
         call.status = 'ongoing';
         call.startedAt = new Date();
+
+        // Every call is recorded for quality & safety. One phone records both
+        // voices: the mentor/staff side if there is one (more reliable, and
+        // usually an adult), otherwise the caller.
+        const recordingEnabled = recordingStorage.isConfigured();
+        if (recordingEnabled) {
+          const people = await User.find({ _id: { $in: [call.caller, call.receiver] } }).select('role').lean();
+          const staff = people.find((p) => STAFF_ROLES.includes(p.role));
+          call.recordedBy = staff ? staff._id : call.caller;
+        }
         await call.save();
 
-        io.to(`user:${call.caller.toString()}`).emit('call:accepted', { callId });
-        io.to(`user:${call.receiver.toString()}`).emit('call:accepted', { callId });
+        const acceptedPayload = {
+          callId,
+          recording: recordingEnabled,
+          recorderId: call.recordedBy ? call.recordedBy.toString() : null,
+        };
+        io.to(`user:${call.caller.toString()}`).emit('call:accepted', acceptedPayload);
+        io.to(`user:${call.receiver.toString()}`).emit('call:accepted', acceptedPayload);
       } catch (err) {
         socket.emit('call:error', { message: 'Failed to accept call' });
       }

@@ -151,20 +151,15 @@
   }
   .ctrl-accept:hover{ background:#15803D; }
 
-  .ctrl-record{
-    background:rgba(255,255,255,0.12);
-    color:#fff;
+  /* "This call is recorded" notice (shown on both phones) */
+  .rec-notice{
+    display:inline-flex; align-items:center; gap:8px; margin-top:14px;
+    padding:6px 12px; border-radius:999px;
+    background:rgba(220,38,38,0.16); color:#FCA5A5;
+    font-size:12px; font-weight:600; letter-spacing:.01em;
   }
-  .ctrl-record.active{
-    background:var(--red-soft);
-    color:var(--red);
-  }
-  .ctrl-record.active::after{
-    content:''; position:absolute; top:8px; right:8px;
-    width:8px; height:8px; border-radius:50%;
-    background:var(--red);
-    animation:recBlink 1s ease-in-out infinite;
-  }
+  .rec-notice[hidden]{ display:none; }
+  .rec-dot{ width:8px; height:8px; border-radius:50%; background:#EF4444; animation:recBlink 1.2s ease-in-out infinite; }
   @keyframes recBlink{0%,100%{opacity:1;} 50%{opacity:0.3;}}
 
   /* Incoming call overlay */
@@ -204,13 +199,11 @@
   <div class="call-name" id="callName">Connecting...</div>
   <div class="call-status" id="callStatus">Calling</div>
   <div class="call-timer" id="callTimer"></div>
+  <div class="rec-notice" id="recNotice" hidden><span class="rec-dot"></span>This call is recorded for quality and safety</div>
 
   <div class="controls" id="controls">
     <button class="ctrl-btn ctrl-mute" id="btnMute" onclick="toggleMute()" title="Mute">
       <i data-lucide="mic" class="w-6 h-6"></i>
-    </button>
-    <button class="ctrl-btn ctrl-record" id="btnRecord" onclick="toggleRecord()" title="Record">
-      <i data-lucide="circle" class="w-6 h-6"></i>
     </button>
     <button class="ctrl-btn ctrl-end" id="btnEnd" onclick="endCall()" title="End Call">
       <i data-lucide="phone-off" class="w-6 h-6"></i>
@@ -271,9 +264,6 @@ let localStream   = null;
 let remoteStream  = null;
 let isMuted       = false;
 let isSpeaker     = true;
-let isRecording   = false;
-let mediaRecorder = null;
-let recordedChunks = [];
 let timerInterval  = null;
 let callStartTime  = null;
 let ringtoneCtx    = null;
@@ -643,6 +633,7 @@ async function setupWebRTC(isInitiator) {
     if (state === 'connected') {
       setStatus('In call');
       startTimer();
+      onCallConnected();
     } else if (state === 'disconnected' || state === 'failed') {
       if (callEndedGracefully) return; // already handled by call:ended socket event
       setStatus('Connection lost');
@@ -667,6 +658,7 @@ async function setupWebRTC(isInitiator) {
     if (s === 'connected' || s === 'completed') {
       setStatus('In call');
       if (!timerInterval) startTimer();
+      onCallConnected();
     } else if (s === 'disconnected' || s === 'failed') {
       if (!callEndedGracefully) setStatus('Connection lost');
       // Don't call endCall() here — onconnectionstatechange handles the fallback
@@ -720,99 +712,14 @@ function toggleSpeaker() {
   lucide.createIcons();
 }
 
-function toggleRecord() {
-  if (!isRecording) {
-    startRecording();
-  } else {
-    stopRecording();
-  }
-}
-
 function endCall() {
   dbg('endCall() called, callId=' + callId);
   if (callId) {
     socket.emit('call:end', { callId });
   }
-  if (isRecording) {
-    stopRecording();
-  }
   cleanupCall();
   setStatus('Call ended');
   setTimeout(function() { goBack(); }, 1500);
-}
-
-// -- Recording (client-side) --
-function startRecording() {
-  if (!remoteStream && !localStream) return;
-
-  try {
-    var audioCtx = new AudioContext();
-    var dest = audioCtx.createMediaStreamDestination();
-
-    if (localStream) {
-      var localSrc = audioCtx.createMediaStreamSource(localStream);
-      localSrc.connect(dest);
-    }
-    if (remoteStream) {
-      var remoteSrc = audioCtx.createMediaStreamSource(remoteStream);
-      remoteSrc.connect(dest);
-    }
-
-    recordedChunks = [];
-    mediaRecorder = new MediaRecorder(dest.stream, {
-      mimeType: MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
-        ? 'audio/webm;codecs=opus' : 'audio/webm'
-    });
-
-    mediaRecorder.ondataavailable = function(e) {
-      if (e.data.size > 0) recordedChunks.push(e.data);
-    };
-
-    mediaRecorder.onstop = function() {
-      saveRecording();
-    };
-
-    mediaRecorder.start(1000);
-    isRecording = true;
-
-    var btn = document.getElementById('btnRecord');
-    btn.classList.add('active');
-    btn.innerHTML = '<i data-lucide="circle" class="w-6 h-6"></i>';
-    lucide.createIcons();
-    showToast('Recording started');
-  } catch (err) {
-    console.error('[Call] Recording error:', err);
-    showToast('Could not start recording');
-  }
-}
-
-function stopRecording() {
-  if (mediaRecorder && mediaRecorder.state !== 'inactive') {
-    mediaRecorder.stop();
-  }
-  isRecording = false;
-
-  var btn = document.getElementById('btnRecord');
-  btn.classList.remove('active');
-  btn.innerHTML = '<i data-lucide="circle" class="w-6 h-6"></i>';
-  lucide.createIcons();
-}
-
-function saveRecording() {
-  if (recordedChunks.length === 0) return;
-
-  var blob = new Blob(recordedChunks, { type: 'audio/webm' });
-  var timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-  var fileName  = 'call-recording-' + timestamp + '.webm';
-
-  var url = URL.createObjectURL(blob);
-  var a   = document.createElement('a');
-  a.href = url;
-  a.download = fileName;
-  a.click();
-  URL.revokeObjectURL(url);
-
-  showToast('Recording saved');
 }
 
 // -- Timer --
@@ -887,6 +794,7 @@ function showToast(msg) {
 
 function cleanupCall() {
   dbg('cleanupCall()');
+  CallRecorder.stop(); // flush the last part before the microphone is released
   stopRingtone();
   if (iceDisconnectTimer) { clearTimeout(iceDisconnectTimer); iceDisconnectTimer = null; }
   if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
@@ -898,6 +806,11 @@ function cleanupCall() {
 }
 
 function goBack() {
+  // Give the recording up to 8 s to finish uploading before leaving the screen
+  CallRecorder.whenDone(8000).then(leaveCallScreen);
+}
+
+function leaveCallScreen() {
   if (window.history.length > 1) {
     window.history.back();
   } else {
@@ -906,6 +819,131 @@ function goBack() {
     window.location.href = (role === 'mentor') ? 'mentor-dashboard.html' : 'my-mentor.html';
   }
 }
+
+// ═══════════════════════════════════════════════════════════════
+// Automatic call recording (quality & safety)
+// The server picks ONE phone per call to record (Call.recordedBy). Both
+// phones show the notice; the chosen one mixes both voices and uploads
+// ~15 s parts while the call runs, so a dropped call keeps what was recorded.
+// ═══════════════════════════════════════════════════════════════
+var connectedHandled = false;
+async function onCallConnected() {
+  if (connectedHandled || !callId) return;
+  connectedHandled = true;
+  try {
+    var r = await fetch(API_BASE + '/calls/' + callId, { headers: { Authorization: 'Bearer ' + mcToken } });
+    var d = await r.json();
+    var recorder = d && d.call && d.call.recordedBy;
+    if (!recorder) { dbg('Recording off for this call'); return; }
+    document.getElementById('recNotice').hidden = false;
+    showToast('This call is recorded for quality and safety');
+    var me = String(mcUser._id || mcUser.id);
+    if (String(recorder) === me) {
+      // ontrack usually fires before "connected", but wait briefly just in case
+      for (var i = 0; i < 25 && !remoteStream; i++) await new Promise(function (res) { setTimeout(res, 200); });
+      CallRecorder.start(localStream, remoteStream);
+    }
+  } catch (e) { dbg('Recording check failed: ' + e.message); }
+}
+
+var CallRecorder = (function () {
+  var PART_MS = 15000;
+  var rec = null, ctx = null, mime = '', seq = 0, startedAt = 0;
+  var queue = [], uploading = false, disabled = false, finished = false, finishSent = false;
+  var doneResolvers = [];
+
+  function pickMime() {
+    if (typeof MediaRecorder === 'undefined') return null;
+    var c = ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4;codecs=mp4a.40.2', 'audio/mp4', 'audio/aac'];
+    for (var i = 0; i < c.length; i++) { if (MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(c[i])) return c[i]; }
+    return '';
+  }
+
+  function start(local, remote) {
+    if (rec || disabled) return;
+    var m = pickMime();
+    if (m === null) { dbg('MediaRecorder not available — cannot record'); return; }
+    try {
+      var AC = window.AudioContext || window.webkitAudioContext;
+      ctx = new AC();
+      if (ctx.state === 'suspended' && ctx.resume) ctx.resume();
+      var dest = ctx.createMediaStreamDestination();
+      if (local)  ctx.createMediaStreamSource(local).connect(dest);
+      if (remote) ctx.createMediaStreamSource(remote).connect(dest);
+      var opts = { audioBitsPerSecond: 24000 };
+      if (m) opts.mimeType = m;
+      rec = new MediaRecorder(dest.stream, opts);
+      mime = (rec.mimeType || m || 'audio/webm');
+      rec.ondataavailable = function (e) {
+        if (e.data && e.data.size > 0) { queue.push({ seq: seq++, blob: e.data }); pump(); }
+      };
+      rec.onstop = function () { finished = true; pump(); };
+      rec.start(PART_MS);
+      startedAt = Date.now();
+      dbg('Recording started (' + mime + ')');
+    } catch (e) {
+      dbg('Recording could not start: ' + e.message);
+      rec = null;
+    }
+  }
+
+  async function sendPart(item, isLast) {
+    for (var attempt = 0; attempt < 5; attempt++) {
+      try {
+        var res = await fetch(API_BASE + '/calls/' + callId + '/recording/chunk?seq=' + item.seq, {
+          method: 'POST',
+          headers: { 'Content-Type': mime.split(';')[0], 'X-Recording-Type': mime, Authorization: 'Bearer ' + mcToken },
+          body: item.blob,
+          keepalive: isLast && item.blob.size < 60000, // lets the last part finish even if the page closes
+        });
+        if (res.ok) return true;
+        if (res.status === 503 || res.status === 409 || res.status === 404) { disabled = true; return false; }
+      } catch (e) { /* network hiccup — retry */ }
+      await new Promise(function (r) { setTimeout(r, 1000 * Math.pow(2, attempt)); });
+    }
+    dbg('Gave up on recording part ' + item.seq);
+    return false;
+  }
+
+  async function pump() {
+    if (uploading) return;
+    uploading = true;
+    while (queue.length && !disabled) {
+      var item = queue.shift();
+      await sendPart(item, finished && queue.length === 0);
+    }
+    uploading = false;
+    if (finished && !queue.length && !finishSent) {
+      finishSent = true;
+      if (!disabled && seq > 0) {
+        try {
+          await fetch(API_BASE + '/calls/' + callId + '/recording/finish', {
+            method: 'POST', keepalive: true,
+            headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + mcToken },
+            body: JSON.stringify({ durationSeconds: Math.round((Date.now() - startedAt) / 1000) }),
+          });
+        } catch (e) {}
+      }
+      doneResolvers.forEach(function (r) { r(); }); doneResolvers = [];
+    }
+  }
+
+  function stop() {
+    if (rec && rec.state !== 'inactive') { try { rec.stop(); } catch (e) { finished = true; pump(); } }
+    if (ctx) { try { ctx.close(); } catch (e) {} ctx = null; }
+  }
+
+  // Resolves when the last part and "finish" are uploaded, or after maxMs
+  function whenDone(maxMs) {
+    if (!rec || finishSent) return Promise.resolve();
+    return new Promise(function (resolve) {
+      doneResolvers.push(resolve);
+      setTimeout(resolve, maxMs);
+    });
+  }
+
+  return { start: start, stop: stop, whenDone: whenDone };
+})();
 
 // Init icons
 lucide.createIcons();

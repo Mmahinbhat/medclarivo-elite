@@ -11,8 +11,8 @@
 </head>
 <body>
 <header class="lg-top">
-  <a class="lg-brand" href="index.html">Med<em>Clarivo</em> Elite</a>
-  <nav class="lg-nav"><a href="privacy.html" aria-current="page">Privacy</a><a href="delete-account.html">Delete account</a></nav>
+  <a class="lg-brand" href="index.html">Med<em>Clarivo</em><span class="lg-elite"> Elite</span></a>
+  <nav class="lg-nav"><a href="terms.html">Terms</a><a href="privacy.html" aria-current="page">Privacy</a><a href="delete-account.html">Delete account</a></nav>
 </header>
 
 <main class="lg-main">
@@ -45,7 +45,7 @@
   </ul>
   <h3>Information collected automatically</h3>
   <ul>
-    <li><strong>Voice calls:</strong> who called whom, when, and how long the call lasted. We do not record or store call audio (see section 5).</li>
+    <li><strong>Voice calls:</strong> who called whom, when, and how long the call lasted, and an audio recording of the call (see section 5).</li>
     <li><strong>Notifications:</strong> a push-notification token for your device, or a browser push subscription if you use the website.</li>
     <li><strong>Security data:</strong> your IP address when you request a phone verification code (to limit abuse), failed sign-in attempts, and basic device information sent by your browser or phone.</li>
   </ul>
@@ -58,6 +58,7 @@
     <li>To connect you with a mentor, and let you message, call and hold sessions with them.</li>
     <li>To let a linked parent or guardian follow your progress.</li>
     <li>To send you notifications and emails about your account, sessions and replies. You can turn off optional notifications in Settings.</li>
+    <li>To review call recordings for the quality of mentoring and the safety of students.</li>
     <li>To keep the service safe, investigate reports, and prevent abuse.</li>
   </ul>
   <p>We do not use your information for advertising, and we do not sell it.</p>
@@ -74,6 +75,7 @@
       <tr><td>Google Firebase</td><td>Push notifications, phone number verification, and app integrity checks</td></tr>
       <tr><td>Google and Apple</td><td>"Sign in with Google" and "Sign in with Apple", if you choose them</td></tr>
       <tr><td>Brevo</td><td>Sends emails such as verification codes and password resets</td></tr>
+      <tr><td>Backblaze</td><td>Stores call recordings (kept private; only our admin team can play them)</td></tr>
       <tr><td>Metered</td><td>Relays voice-call connections. Call audio is end-to-end encrypted between the two phones, so the relay cannot listen to it.</td></tr>
       <tr><td>Anthropic</td><td>When a mentor asks for an AI-drafted reply, the student's question and name are sent to Anthropic's AI service to write a draft. The mentor reviews it before sending.</td></tr>
     </tbody>
@@ -81,13 +83,19 @@
   <p>Some of these providers store data on servers outside India. We may also disclose information if the law requires it, or to protect someone's safety.</p>
 
   <h2 id="recordings">5. Call recordings</h2>
-  <p>During a voice call, either person can choose to record the call. The recording is saved only on the device of the person who recorded it. It is not uploaded to MedClarivo, and we cannot access it. If you don't want to be recorded, please tell the other person, or end the call.</p>
+  <p>Every voice call in MedClarivo is recorded, so we can check the quality of mentoring and keep students safe. Both people on the call see a "This call is recorded" notice while it is being recorded. If you don't want to be recorded, please don't use in-app calls, and message your mentor instead.</p>
+  <ul>
+    <li><strong>Who can listen:</strong> only MedClarivo's admin team. Mentors, students and parents cannot play recordings in the app. Every time an admin plays or deletes a recording, it is logged.</li>
+    <li><strong>How long we keep them:</strong> recordings are deleted automatically after 90 days.</li>
+    <li><strong>Where they're stored:</strong> in private cloud storage (see section 4), never shared publicly.</li>
+    <li><strong>If you delete your account,</strong> recordings of calls you were on are deleted too.</li>
+  </ul>
 
   <h2 id="children">6. Students under 18</h2>
   <p>Many students preparing for NEET are under 18. If you are under 18, please use MedClarivo with the knowledge and permission of your parent or guardian. A parent or guardian can request a parent account linked to their child, review the child's progress, and ask us to access, correct or delete the child's data by emailing <a href="mailto:official@medclarivo.com">official@medclarivo.com</a>. We do not show ads to anyone, and we do not use students' data for advertising or behavioural tracking.</p>
 
   <h2 id="retention">7. How long we keep it</h2>
-  <p>We keep your information while your account is active. When you delete your account, we permanently delete your profile and the data linked to it, as described on our <a href="delete-account.html">account deletion page</a>. Safety reports and our internal audit logs are kept for safety and legal reasons.</p>
+  <p>We keep your information while your account is active. Call recordings are deleted automatically after 90 days. When you delete your account, we permanently delete your profile and the data linked to it, as described on our <a href="delete-account.html">account deletion page</a>. Safety reports and our internal audit logs are kept for safety and legal reasons.</p>
 
   <h2 id="rights">8. Your choices and rights</h2>
   <ul>
@@ -108,6 +116,6 @@
   <p>For any question, request or complaint about your data, email <a href="mailto:official@medclarivo.com">official@medclarivo.com</a>. We'll acknowledge it promptly and respond within 30 days.</p>
 </main>
 
-<footer class="lg-foot">© 2026 MedClarivo Elite · <a href="privacy.html">Privacy</a> · <a href="delete-account.html">Delete account</a></footer>
+<footer class="lg-foot">© 2026 MedClarivo Elite · <a href="terms.html">Terms</a> · <a href="privacy.html">Privacy</a> · <a href="delete-account.html">Delete account</a></footer>
 </body>
 </html>

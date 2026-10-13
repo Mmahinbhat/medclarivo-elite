@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"/>
+<meta http-equiv="Pragma" content="no-cache"/>
+<meta http-equiv="Expires" content="0"/>
+
+<script src="sessionGuard.js"></script>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"/>
+<title>MedClarivo Elite | Admin — Call Recordings</title>
+<link rel="stylesheet" href="tailwind.min.css">
+<link rel="stylesheet" href="fonts.css">
+<script src="https://cdn.jsdelivr.net/npm/lucide@0.460.0/dist/umd/lucide.min.js"></script>
+
+<style>
+  :root{
+    --navy:#0A1424; --navy-2:#0F2038; --navy-3:#16304F;
+    --teal:#0FA89A; --teal-2:#33D9C8; --teal-deep:#0A6E64;
+    --gold:#B9924F; --mist:#F5F7FA; --ink:#0B1220; --ink-soft:#56657B;
+  }
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    font-family:'DM Sans', sans-serif;
+    background:var(--mist);
+    color:var(--ink);
+    -webkit-font-smoothing:antialiased;
+    min-height:100dvh;
+  }
+  .font-display{font-family:'DM Serif Display', serif;}
+  .font-mono{font-family:'JetBrains Mono', monospace;}
+  ::selection{background:rgba(15,168,154,0.18);}
+
+  .app-shell{display:flex; min-height:100dvh;}
+
+  .sidebar{
+    position:fixed; left:16px; top:16px; bottom:16px;
+    width:240px; border-radius:24px;
+    background:linear-gradient(174deg, var(--navy-2) 0%, var(--navy) 78%);
+    box-shadow:0 20px 50px -20px rgba(10,20,36,0.55), 0 0 0 1px rgba(255,255,255,0.04) inset;
+    display:flex; flex-direction:column; z-index:60;
+  }
+  @media (max-width:1023px){ .sidebar{ transform:translateX(-130%); transition:transform .3s ease; } .sidebar.open{ transform:translateX(0); } }
+  .main-content{ margin-left:272px; flex:1; min-width:0; }
+  @media (max-width:1023px){ .main-content{ margin-left:0; } }
+
+  .nav-item{
+    display:flex; align-items:center; gap:12px;
+    padding:10px 16px; border-radius:14px;
+    color:rgba(255,255,255,0.52); font-size:13.5px; font-weight:500;
+    cursor:pointer; transition:all .2s ease; margin:1px 12px;
+    text-decoration:none; position:relative;
+  }
+  .nav-item:hover{ background:rgba(255,255,255,0.06); color:#fff; }
+  .nav-item.active{ background:rgba(15,168,154,0.16); color:#7FE9DD; }
+  .nav-item svg{ width:18px; height:18px; flex-shrink:0; }
+
+  .panel{
+    background:#fff; border:1px solid var(--line); border-radius:20px;
+    box-shadow:0 1px 2px rgba(11,18,32,0.03);
+  }
+  .topbar{
+    position:sticky; top:16px; z-index:50; margin:0 16px 24px 16px;
+    border-radius:20px; background:rgba(255,255,255,0.85);
+    backdrop-filter:blur(18px) saturate(160%);
+    border:1px solid rgba(255,255,255,0.7);
+    box-shadow:0 8px 28px -16px rgba(11,18,32,0.18);
+    padding:14px 22px; display:flex; align-items:center; justify-content:space-between;
+  }
+  .chip{ display:inline-flex; align-items:center; gap:5px; padding:3px 10px; border-radius:999px; font-size:11px; font-weight:700; }
+  .chip-open{ background:rgba(185,146,79,0.14); color:var(--gold); }
+  .chip-reviewing{ background:rgba(37,99,235,0.1); color:#1D4ED8; }
+  .chip-resolved{ background:rgba(15,168,154,0.12); color:var(--teal-deep); }
+
+  table{ width:100%; border-collapse:collapse; font-size:13px; }
+  th{ text-align:left; padding:10px 12px; color:var(--ink-faint); font-size:11px; text-transform:uppercase; letter-spacing:.04em; font-weight:700; border-bottom:1px solid var(--line); }
+  td{ padding:12px; border-bottom:1px solid var(--line); vertical-align:middle; }
+  tr:last-child td{ border-bottom:none; }
+  tr:hover td{ background:var(--mist); }
+  .btn-sm{ padding:5px 12px; border-radius:10px; font-size:12px; font-weight:600; cursor:pointer; transition:all .15s ease; border:1px solid var(--line); background:#fff; }
+  .btn-sm:hover{ background:var(--mist-2); }
+
+  .modal-backdrop{ position:fixed; inset:0; background:rgba(10,20,36,0.45); backdrop-filter:blur(2px); z-index:100; display:flex; align-items:center; justify-content:center; padding:20px; }
+  .modal{ background:#fff; border-radius:20px; width:100%; max-width:520px; padding:24px; max-height:90vh; overflow-y:auto; }
+  .btn-primary{ background:linear-gradient(135deg,var(--teal),var(--teal-deep)); color:#fff; border-radius:12px; padding:10px; font-weight:700; font-size:13px; width:100%; cursor:pointer; }
+  .btn-primary:disabled{ opacity:.5; cursor:not-allowed; }
+  .toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%);background:#0A1424;color:#fff;padding:11px 20px;border-radius:12px;font-size:13px;font-weight:600;z-index:200;box-shadow:0 10px 28px rgba(0,0,0,0.28);opacity:0;pointer-events:none;transition:opacity .25s ease;}
+  .toast.show{opacity:1;}
+  .rec-player{ width:100%; margin-top:10px; }
+  .who{ display:flex; flex-direction:column; gap:2px; }
+  .who small{ color:var(--ink-faint); font-size:11px; }
+  .pill{ display:inline-flex; padding:3px 9px; border-radius:999px; font-size:11px; font-weight:700; }
+  .pill-ok{ background:rgba(15,168,154,0.12); color:var(--teal-deep); }
+  .pill-live{ background:rgba(220,38,38,0.1); color:#B91C1C; }
+  .btn-danger{ color:#B91C1C; border-color:rgba(220,38,38,0.3); }
+  .notice{ background:rgba(185,146,79,0.12); color:#7A5A22; border-radius:14px; padding:12px 14px; font-size:13px; }
+</style>
+<link rel="stylesheet" href="ios-safe-area.css">
+</head>
+<body>
+
+<div class="app-shell">
+
+  <!-- ── Sidebar ── -->
+  <aside class="sidebar" id="sidebar">
+    <div class="px-6 pt-7 pb-5">
+      <p class="font-display text-white text-xl leading-none">MedClarivo</p>
+      <p class="text-teal-2 text-[11px] tracking-widest uppercase font-semibold mt-1" id="roleLabel">Admin</p>
+    </div>
+    <nav class="flex-1 px-0 py-2 space-y-1 overflow-y-auto">
+      <a class="nav-item" href="admin-dashboard.html"><i data-lucide="layout-dashboard"></i><span>Dashboard</span></a>
+      <a class="nav-item" href="admin-users.html"><i data-lucide="users"></i><span>Users</span></a>
+      <a class="nav-item" href="admin-mentors.html"><i data-lucide="graduation-cap"></i><span>Mentors</span></a>
+      <a class="nav-item" href="admin-students.html"><i data-lucide="user-check"></i><span>Students</span></a>
+      <a class="nav-item" href="admin-assignments.html"><i data-lucide="clipboard-list"></i><span>Assignments</span></a>
+      <a class="nav-item" href="admin-calendar.html"><i data-lucide="calendar"></i><span>Calendar</span></a>
+      <a class="nav-item" href="admin-session-notes.html"><i data-lucide="notebook-pen"></i><span>Session Notes</span></a>
+      <a class="nav-item active" href="admin-recordings.html"><i data-lucide="audio-lines"></i><span>Call Recordings</span></a>
+      <a class="nav-item" href="admin-evaluations.html"><i data-lucide="star"></i><span>Evaluations</span></a>
+      <a class="nav-item" href="#" onclick="showToast('Content Library coming soon')"><i data-lucide="library"></i><span>Content Library</span></a>
+      <a class="nav-item" href="admin-messaging.html"><i data-lucide="message-circle"></i><span>Messaging</span></a>
+      <a class="nav-item" href="#" onclick="showToast('Payments coming soon')"><i data-lucide="credit-card"></i><span>Payments</span></a>
+      <a class="nav-item" href="#" onclick="showToast('Reports coming soon')"><i data-lucide="bar-chart-3"></i><span>Reports</span></a>
+      <a class="nav-item" href="admin-permissions.html"><i data-lucide="shield"></i><span>Permissions</span></a>
+      <a class="nav-item" href="admin-audit.html"><i data-lucide="scroll-text"></i><span>Audit Log</span></a>
+      <a class="nav-item" href="admin-tickets.html"><i data-lucide="shield-alert"></i><span>Tickets</span></a>
+      <a class="nav-item" href="admin-profile.html"><i data-lucide="user-circle"></i><span>Profile</span></a>
+    </nav>
+    <div class="px-3 pb-6">
+      <a href="#" id="signOutLink" class="nav-item text-red-300/70 hover:text-red-300 hover:bg-red-500/10">
+        <i data-lucide="log-out"></i><span>Sign Out</span>
+      </a>
+    </div>
+  </aside>
+
+  <!-- ── Main content ── -->
+  <main class="main-content">
+    <div class="topbar">
+      <div>
+        <p class="text-ink font-semibold text-sm" id="adminGreeting">Welcome</p>
+        <p class="text-ink-faint text-xs">Voice calls recorded for quality and safety · kept 90 days</p>
+      </div>
+      <button class="lg:hidden" onclick="document.getElementById('sidebar').classList.toggle('open')">
+        <i data-lucide="menu"></i>
+      </button>
+    </div>
+
+    <div class="px-4 md:px-6 pb-16 max-w-6xl mx-auto space-y-6">
+
+      <div class="notice hidden" id="storageNotice">Recording storage isn't connected yet, so new calls aren't being recorded. Add the S3_* settings on Render to turn it on.</div>
+
+      <section class="panel p-6">
+        <div class="flex items-center justify-between mb-5 flex-wrap gap-3">
+          <div>
+            <h2 class="font-display text-lg text-ink">Call Recordings</h2>
+            <p class="text-ink-faint text-xs" id="countLabel">Loading…</p>
+          </div>
+          <div class="flex gap-2">
+            <button class="btn-sm" id="prevBtn" disabled>Newer</button>
+            <button class="btn-sm" id="nextBtn" disabled>Older</button>
+          </div>
+        </div>
+        <p class="text-ink-faint text-xs mb-4">Every time you play or delete a recording it is written to the Audit Log.</p>
+        <div class="overflow-x-auto">
+          <table>
+            <thead><tr><th>When</th><th>Participants</th><th>Length</th><th>Size</th><th>Status</th><th>Auto-deletes</th><th></th></tr></thead>
+            <tbody id="recBody"><tr><td colspan="7" class="text-ink-faint text-center py-6">Loading…</td></tr></tbody>
+          </table>
+        </div>
+      </section>
+
+    </div>
+  </main>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  const API_BASE = 'https://med-clarivo.onrender.com/api';
+  const token = localStorage.getItem('mc_token');
+  const LIMIT = 20;
+  let page = 1, total = 0, playingUrl = null;
+
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg; t.className = 'toast show';
+    setTimeout(() => t.classList.remove('show'), 3000);
+  }
+  const esc = (v) => String(v ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const fmtDur = (s) => { s = Math.round(s || 0); const m = Math.floor(s / 60); return m + ':' + String(s % 60).padStart(2, '0'); };
+  const fmtSize = (b) => b >= 1048576 ? (b / 1048576).toFixed(1) + ' MB' : Math.max(1, Math.round((b || 0) / 1024)) + ' KB';
+  const fmtDate = (d) => d ? new Date(d).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' }) : '—';
+
+  document.getElementById('signOutLink').addEventListener('click', (e) => {
+    e.preventDefault();
+    localStorage.removeItem('mc_token'); localStorage.removeItem('mc_user');
+    window.location.href = 'index.html';
+  });
+  try {
+    const u = JSON.parse(localStorage.getItem('mc_user') || '{}');
+    if (u.name) document.getElementById('adminGreeting').textContent = 'Welcome, ' + u.name.split(' ')[0];
+  } catch (e) {}
+
+  async function load() {
+    const body = document.getElementById('recBody');
+    try {
+      const res = await fetch(`${API_BASE}/admin/recordings?page=${page}&limit=${LIMIT}`, { headers: { Authorization: 'Bearer ' + token } });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        body.innerHTML = `<tr><td colspan="7" class="text-center py-6" style="color:#B91C1C">${esc(data.message || 'Could not load recordings.')}</td></tr>`;
+        return;
+      }
+      total = data.total;
+      document.getElementById('storageNotice').classList.toggle('hidden', !!data.storageConfigured);
+      document.getElementById('countLabel').textContent = total === 1 ? '1 recording' : total + ' recordings';
+      document.getElementById('prevBtn').disabled = page <= 1;
+      document.getElementById('nextBtn').disabled = page * LIMIT >= total;
+      if (!data.recordings.length) {
+        body.innerHTML = '<tr><td colspan="7" class="text-ink-faint text-center py-6">No recordings yet.</td></tr>';
+        return;
+      }
+      body.innerHTML = data.recordings.map((r) => {
+        const people = (r.participants || []).map((p) => p ? `<span>${esc(p.name || 'Deleted user')} <small>${esc(p.role || '')}</small></span>` : '<span>Deleted user</span>').join('');
+        const status = r.status === 'complete' ? '<span class="pill pill-ok">Complete</span>' : '<span class="pill pill-live">In progress / cut off</span>';
+        return `<tr id="row-${r._id}">
+          <td class="text-ink-soft whitespace-nowrap">${fmtDate(r.startedAt || r.createdAt)}</td>
+          <td><div class="who">${people}</div></td>
+          <td class="text-ink-soft">${r.durationSeconds ? fmtDur(r.durationSeconds) : '—'}</td>
+          <td class="text-ink-soft">${fmtSize(r.totalBytes)}</td>
+          <td>${status}</td>
+          <td class="text-ink-faint whitespace-nowrap">${fmtDate(r.expiresAt).split(',')[0]}</td>
+          <td class="text-right whitespace-nowrap">
+            <button class="btn-sm" onclick="play('${r._id}', this)">Play</button>
+            <button class="btn-sm btn-danger" onclick="removeRec('${r._id}')">Delete</button>
+          </td></tr>
+          <tr class="hidden" id="player-${r._id}"><td colspan="7"><audio class="rec-player" controls></audio></td></tr>`;
+      }).join('');
+      if (window.lucide) lucide.createIcons();
+    } catch (e) {
+      body.innerHTML = '<tr><td colspan="7" class="text-center py-6" style="color:#B91C1C">Cannot reach the server.</td></tr>';
+    }
+  }
+
+  // <audio> can't send the login header, so fetch the file and play it from memory
+  async function play(id, btn) {
+    const row = document.getElementById('player-' + id);
+    const audio = row.querySelector('audio');
+    if (!row.classList.contains('hidden')) { audio.pause(); row.classList.add('hidden'); return; }
+    btn.disabled = true; btn.textContent = 'Loading…';
+    try {
+      const res = await fetch(`${API_BASE}/admin/recordings/${id}/audio`, { headers: { Authorization: 'Bearer ' + token } });
+      if (!res.ok) { const d = await res.json().catch(() => ({})); showToast(d.message || 'Could not load the audio.'); return; }
+      const blob = await res.blob();
+      if (playingUrl) URL.revokeObjectURL(playingUrl);
+      playingUrl = URL.createObjectURL(blob);
+      document.querySelectorAll('tr[id^="player-"]').forEach((r) => { r.classList.add('hidden'); r.querySelector('audio').pause(); });
+      audio.src = playingUrl; row.classList.remove('hidden'); audio.play().catch(() => {});
+    } catch (e) { showToast('Cannot reach the server.'); }
+    finally { btn.disabled = false; btn.textContent = 'Play'; }
+  }
+
+  async function removeRec(id) {
+    if (!confirm('Delete this recording permanently? This cannot be undone.')) return;
+    try {
+      const res = await fetch(`${API_BASE}/admin/recordings/${id}`, { method: 'DELETE', headers: { Authorization: 'Bearer ' + token } });
+      const d = await res.json().catch(() => ({}));
+      if (!res.ok || !d.success) { showToast(d.message || 'Could not delete.'); return; }
+      showToast('Recording deleted');
+      load();
+    } catch (e) { showToast('Cannot reach the server.'); }
+  }
+
+  document.getElementById('prevBtn').onclick = () => { if (page > 1) { page--; load(); } };
+  document.getElementById('nextBtn').onclick = () => { if (page * LIMIT < total) { page++; load(); } };
+  if (window.lucide) lucide.createIcons();
+  load();
+</script>
+</body>
+</html>

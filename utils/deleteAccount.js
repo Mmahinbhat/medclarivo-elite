@@ -58,6 +58,9 @@ async function deleteUserAndData(userId) {
     User.updateMany({ childId: id }, { $set: { childId: null } }),
   ].filter(Boolean));
 
+  // Call recordings this user took part in (audio in storage + entries)
+  await require('./recordingCleanup').deleteRecordings({ participants: id });
+
   // 2. Outside services (best effort — never block the deletion).
   await Promise.all([
     revokeAppleToken(user.appleRefreshToken),

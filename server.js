@@ -32,6 +32,8 @@ const notificationRoutes = require('./routes/notifications');
 const pushRoutes = require('./routes/push');
 const myMentorRoutes = require('./routes/myMentor');
 const callRoutes = require('./routes/calls');
+const adminRecordingRoutes = require('./routes/adminRecordings');
+const { startRecordingCleanup } = require('./utils/recordingCleanup');
 const studentDashboardRoutes = require('./routes/studentDashboard');
 const mentorDashboardRoutes  = require('./routes/mentorDashboard');
 
@@ -63,7 +65,7 @@ app.use(cors({
     'http://localhost',
   ].filter(Boolean),
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Firebase-AppCheck'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Firebase-AppCheck', 'X-Recording-Type'],
   credentials: true,
 }));
 
@@ -177,6 +179,7 @@ app.use('/api/notifications',    notificationRoutes);
 app.use('/api/push',             pushRoutes);
 app.use('/api/student/mentor',   myMentorRoutes);
 app.use('/api/calls',            callRoutes);
+app.use('/api/admin/recordings', adminRecordingRoutes);
 app.use('/api/student',          studentDashboardRoutes);
 app.use('/api/mentor',           mentorDashboardRoutes);
 
@@ -211,6 +214,7 @@ initFcmPush();
 mongoose.connect(process.env.MONGO_URI)
   .then(() => {
     console.log('✅ MongoDB connected');
+    startRecordingCleanup();
     server.listen(PORT, () => {
       console.log(`🚀 MedClarivo API running on port ${PORT}`);
       console.log(`   Health: http://localhost:${PORT}/health`);
