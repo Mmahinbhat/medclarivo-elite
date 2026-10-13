@@ -273,15 +273,17 @@ let callWasAccepted = alreadyAccepted; // tracks if call was already accepted (p
 let callEndedGracefully = false; // true when call:ended socket event arrived
 let iceDisconnectTimer = null;   // fallback timer for ICE disconnect without socket event
 
-// -- STUN/TURN (correct Metered.ca relay hostnames) --
-const ICE_SERVERS = [
-  { urls: 'stun:stun.l.google.com:19302' },
-  { urls: 'stun:stun.relay.metered.ca:80' },
-  { urls: 'turn:global.relay.metered.ca:80', username: 'b9ace2950e1d37f0d711b482', credential: 'u0h1w1s+qf2SKC9i' },
-  { urls: 'turn:global.relay.metered.ca:80?transport=tcp', username: 'b9ace2950e1d37f0d711b482', credential: 'u0h1w1s+qf2SKC9i' },
-  { urls: 'turn:global.relay.metered.ca:443', username: 'b9ace2950e1d37f0d711b482', credential: 'u0h1w1s+qf2SKC9i' },
-  { urls: 'turns:global.relay.metered.ca:443?transport=tcp', username: 'b9ace2950e1d37f0d711b482', credential: 'u0h1w1s+qf2SKC9i' },
-];
+// -- STUN/TURN relay servers --
+// Fetched from our server (which gets short-lived credentials from Metered),
+// so no relay password is ever stored in this public file. Started at page
+// load so it's ready by the time the call connects.
+var iceServersPromise = fetch(API_BASE + '/calls/ice-servers', { headers: { Authorization: 'Bearer ' + mcToken } })
+  .then(function (r) { return r.json(); })
+  .then(function (d) {
+    if (d && d.success && Array.isArray(d.iceServers) && d.iceServers.length) return d.iceServers;
+    throw new Error((d && d.message) || 'no relay servers');
+  })
+  .catch(function (e) { dbg('ICE servers unavailable: ' + e.message); return null; });
 
 // -- Socket --
 const socketOrigin = API_BASE.replace(/\/api\/?$/, '');
@@ -556,8 +558,15 @@ async function setupWebRTC(isInitiator) {
     return;
   }
 
+  var iceServers = await iceServersPromise;
+  if (!iceServers) {
+    setStatus('Call service unavailable. Please try again.');
+    if (localStream) { localStream.getTracks().forEach(function (t) { t.stop(); }); localStream = null; }
+    window._setupInProgress = false;
+    return;
+  }
   peerConnection = new RTCPeerConnection({
-    iceServers: ICE_SERVERS,
+    iceServers: iceServers,
     iceTransportPolicy: 'relay'  // Skip host/srflx — go straight to TURN relay
   });
 

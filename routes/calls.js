@@ -24,6 +24,32 @@ router.get('/history', protect, async (req, res) => {
   }
 });
 
+// GET /api/calls/ice-servers — STUN/TURN servers for WebRTC.
+// Credentials come from Metered's API using METERED_API_KEY (kept on the
+// server), so they never appear in the public app code. Cached for 10 min.
+let iceCache = { at: 0, servers: null };
+router.get('/ice-servers', protect, async (req, res) => {
+  try {
+    if (iceCache.servers && Date.now() - iceCache.at < 10 * 60 * 1000) {
+      return res.json({ success: true, iceServers: iceCache.servers });
+    }
+    const key = process.env.METERED_API_KEY;
+    const domain = process.env.METERED_DOMAIN || 'medclarivo.metered.live';
+    if (!key) return res.status(503).json({ success: false, message: 'Calling is not configured (METERED_API_KEY missing).' });
+    const r = await fetch(`https://${domain}/api/v1/turn/credentials?apiKey=${encodeURIComponent(key)}`);
+    const servers = await r.json().catch(() => null);
+    if (!r.ok || !Array.isArray(servers) || !servers.length) {
+      console.error('[ICE] Metered returned', r.status);
+      return res.status(502).json({ success: false, message: 'Could not get call relay servers.' });
+    }
+    iceCache = { at: Date.now(), servers };
+    res.json({ success: true, iceServers: servers });
+  } catch (err) {
+    console.error('GET /api/calls/ice-servers error:', err.message);
+    res.status(502).json({ success: false, message: 'Could not get call relay servers.' });
+  }
+});
+
 // GET /api/calls/:id — single call details
 router.get('/:id', protect, async (req, res) => {
   try {
