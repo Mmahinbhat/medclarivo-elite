@@ -16,6 +16,8 @@
   :root[data-theme="dark"] .da-section{background:#161B22;}
   .da-title{font-family:'DM Serif Display',serif;font-size:20px;color:var(--ink,#0B1220);margin:0 0 4px;}
   .da-text{font-size:14px;color:var(--ink-soft,#56657B);margin:0 0 16px;line-height:1.5;}
+  .da-links{margin:16px 0 0;font-size:13px;}
+  .da-links a{color:var(--teal,#0FA89A);font-weight:600;text-decoration:none;}
   .da-btn-outline{padding:10px 18px;border-radius:10px;border:1.5px solid #DC2626;color:#DC2626;background:transparent;font-weight:600;font-size:14px;cursor:pointer;}
   .da-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:1000;display:none;align-items:flex-end;justify-content:center;}
   .da-backdrop.open{display:flex;}
@@ -49,6 +51,7 @@
         <h2 class="da-title">Delete account</h2>
         <p class="da-text">Permanently delete your MedClarivo account and the data linked to it. This can't be undone.</p>
         <button type="button" class="da-btn-outline" id="daOpen">Delete my account</button>
+        <p class="da-links"><a href="privacy.html">Privacy Policy</a> · <a href="delete-account.html">What gets deleted</a></p>
       </section>`));
 
     document.body.appendChild(el(`
