@@ -15,3 +15,6 @@ ios/App/Pods/
 ios/App/build/
 /android
 /ios
+
+# Backups / exported archives (never commit — they can contain tokens)
+/*.zip
